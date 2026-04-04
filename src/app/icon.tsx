@@ -1,40 +1,37 @@
-/* eslint-disable @next/next/no-img-element */
 import { ImageResponse } from "next/og";
-export const runtime = "edge";
+import { logoBase64 } from "./_assets/logo-b64";
 
 export const size = {
-  width: 256,
-  height: 256,
+  width: 32,
+  height: 32,
 };
 
 export const contentType = "image/png";
 
-export default async function Icon() {
-  const logoData = await fetch(new URL("./_assets/logo.png", import.meta.url)).then((res) => res.arrayBuffer());
-
+export default function Icon() {
   return new ImageResponse(
     (
       <div
         style={{
-          display: "flex",
-          height: "100%",
+          fontSize: 24,
+          background: "transparent",
           width: "100%",
+          height: "100%",
+          display: "flex",
           alignItems: "center",
           justifyContent: "center",
-          background: "transparent",
+          borderRadius: "50%",
         }}
       >
         <img
-          src={logoData as any}
-          alt="Mascot"
-          style={{
-            width: "100%",
-            height: "100%",
-            objectFit: "contain",
-          }}
+          src={logoBase64}
+          alt="icon"
+          style={{ width: "100%", height: "100%", objectFit: "contain" }}
         />
       </div>
     ),
-    size
+    {
+      ...size,
+    }
   );
 }

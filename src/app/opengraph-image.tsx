@@ -1,5 +1,6 @@
 /* eslint-disable @next/next/no-img-element */
 import { ImageResponse } from "next/og";
+import { logoBase64 } from "./_assets/logo-b64";
 export const runtime = "edge";
 
 export const size = {
@@ -10,8 +11,6 @@ export const size = {
 export const contentType = "image/png";
 
 export default async function OpenGraphImage() {
-  const logoData = await fetch(new URL("./_assets/logo.png", import.meta.url)).then((res) => res.arrayBuffer());
-
   return new ImageResponse(
     (
       <div
@@ -50,7 +49,7 @@ export default async function OpenGraphImage() {
             }}
           >
             <img
-              src={logoData as any}
+              src={logoBase64}
               alt="Mascot"
               style={{
                 height: "64px",

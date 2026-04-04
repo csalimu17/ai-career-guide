@@ -1,6 +1,5 @@
-/* eslint-disable @next/next/no-img-element */
 import { ImageResponse } from "next/og";
-export const runtime = "edge";
+import { logoBase64 } from "./_assets/logo-b64";
 
 export const size = {
   width: 180,
@@ -9,34 +8,30 @@ export const size = {
 
 export const contentType = "image/png";
 
-export default async function AppleIcon() {
-  const logoData = await fetch(new URL("./_assets/logo.png", import.meta.url)).then((res) => res.arrayBuffer());
-
+export default function AppleIcon() {
   return new ImageResponse(
     (
       <div
         style={{
-          display: "flex",
-          height: "100%",
+          fontSize: 120,
+          background: "white",
           width: "100%",
+          height: "100%",
+          display: "flex",
           alignItems: "center",
           justifyContent: "center",
-          background: "#ffffff",
-          borderRadius: "40px",
-          padding: "20px",
+          borderRadius: "12%",
         }}
       >
         <img
-          src={logoData as any}
-          alt="Mascot"
-          style={{
-            width: "100%",
-            height: "100%",
-            objectFit: "contain",
-          }}
+          src={logoBase64}
+          alt="apple-icon"
+          style={{ width: "90%", height: "90%", objectFit: "contain" }}
         />
       </div>
     ),
-    size
+    {
+      ...size,
+    }
   );
 }
