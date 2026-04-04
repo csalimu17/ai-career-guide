@@ -1,0 +1,40 @@
+# Settings to manage and configure a Firebase App Hosting backend.
+# https://firebase.google.com/docs/app-hosting/configure
+
+runConfig:
+  # Increase this value if you'd like to automatically spin up
+  # more instances in response to increased traffic.
+  maxInstances: 1
+
+secrets:
+  - variable: GEMINI_API_KEY
+    secret: GEMINI_API_KEY
+  - variable: STRIPE_SECRET_KEY
+    secret: STRIPE_SECRET_KEY
+  - variable: STRIPE_WEBHOOK_SECRET
+    secret: STRIPE_WEBHOOK_SECRET
+  - variable: RAPID_API_KEY
+    secret: RAPID_API_KEY
+  - variable: OPENAI_API_KEY
+    secret: OPENAI_API_KEY
+env:
+  - variable: GEMINI_API_KEY
+    secret: GEMINI_API_KEY
+  - variable: STRIPE_SECRET_KEY
+    secret: STRIPE_SECRET_KEY
+  - variable: STRIPE_WEBHOOK_SECRET
+    secret: STRIPE_WEBHOOK_SECRET
+  - variable: RAPID_API_KEY
+    secret: RAPID_API_KEY
+  - variable: OPENAI_API_KEY
+    secret: OPENAI_API_KEY
+  - variable: ADZUNA_APP_ID
+    value: 49b7fcf9
+  - variable: ADZUNA_APP_KEY
+    value: 8b4ad87ce14007d187615f3237c20270
+  - variable: REED_API_KEY
+    value: 5f9f3771-9991-4b52-bdb9-0c82b8926746
+  - variable: NEXT_PUBLIC_FIREBASE_PROJECT_ID
+    value: studio-3704831244-a5638
+  - variable: NEXT_PUBLIC_APP_URL
+    value: https://aicareerguide.uk

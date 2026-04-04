@@ -1,0 +1,60 @@
+{
+  "auth": {
+    "providers": {
+      "googleSignIn": {
+        "oAuthBrandDisplayName": "AI Career Guide",
+        "supportEmail": "csalimu17@gmail.com",
+        "authorizedRedirectUris": [
+          "https://aicareerguide.uk",
+          "https://www.aicareerguide.uk",
+          "https://studio--studio-studio-3704831244-a5638.us-central1.hosted.app",
+          "http://localhost:3000"
+        ]
+      },
+      "emailPassword": true,
+      "anonymous": true
+    }
+  },
+  "firestore": {
+    "rules": "firestore.rules"
+  },
+  "storage": {
+    "rules": "storage.rules"
+  },
+  "apphosting": {
+    "backendId": "studio",
+    "rootDir": "/",
+    "ignore": [
+      "node_modules",
+      ".next",
+      ".git",
+      ".agents",
+      ".idx",
+      ".venv",
+      "tmp",
+      "qa_second_pass",
+      "firebase-debug.log",
+      "firebase-debug.*.log",
+      "functions",
+      "experimental_scripts",
+      "build_output.txt",
+      "build.log",
+      "*.log",
+      ".*.log",
+      "*.err",
+      ".*.err",
+      "*.out",
+      ".*.out",
+      "*.pdf",
+      "*.png",
+      "tmp_*",
+      ".smoke-*",
+      ".qa-*",
+      ".qa2-*",
+      ".diag-*",
+      ".launch-*",
+      ".localhost-*",
+      ".next-*"
+    ]
+  }
+}
