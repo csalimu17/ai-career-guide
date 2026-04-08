@@ -1,0 +1,1143 @@
+
+"use client"
+
+import { useState } from "react"
+import { CareerRoutingService, RoutingResult, AgentRole, CAREER_AGENTS } from "@/services/CareerRoutingService"
+import { AnimatePresence, motion } from "framer-motion"
+import { 
+  User, 
+  Briefcase, 
+  GraduationCap, 
+  Wrench, 
+  Globe, 
+  Target, 
+  Award,
+  Sparkles,
+  Undo,
+  Redo,
+  Eye,
+  FileText,
+  LayoutTemplate,
+  Paintbrush2,
+  FileDown,
+  Loader2,
+  Share2,
+  Ellipsis,
+  Trash2,
+  Plus,
+  PanelsTopLeft,
+  SlidersHorizontal
+} from "lucide-react"
+import { Button } from "@/components/ui/button"
+import { ScrollArea } from "@/components/ui/scroll-area"
+import { Card } from "@/components/ui/card"
+import { Input } from "@/components/ui/input"
+import { Badge } from "@/components/ui/badge"
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { getTemplateConfig, getTemplateTierLabel } from "@/lib/templates-config"
+import { ResumeTemplate } from "./resume-template"
+import { EditorDesignStudio } from "./editor-design-studio"
+import { RichTextField } from "./rich-text-field"
+import { cn } from "@/lib/utils"
+
+interface DesktopEditorProps {
+  editor: any 
+}
+
+export function DesktopEditor({ editor }: DesktopEditorProps) {
+  const [activeSection, setActiveSection] = useState<string>("personal")
+  const [activeStudioTab, setActiveStudioTab] = useState<"preview" | "templates" | "theme">("preview")
+  const { 
+    resume, 
+    handleUpdate, 
+    handleUndo, 
+    handleRedo, 
+    historyIndex, 
+    historyLength,
+    isExporting,
+    handleDownloadPdf,
+    saveStatus,
+    runEnhanceContent,
+    isEnhancing,
+    isGeneratingSummarySuggestions,
+    summarySuggestions,
+    runSummarySuggestions,
+    applyTemplate,
+    updateStyle,
+    resetTemplateStyles,
+    profile,
+    routingLogs,
+    chatMessages,
+    sendAdvisoryMessage,
+  } = editor
+
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false)
+  const [isChatOpen, setIsChatOpen] = useState(false)
+  const [chatInput, setChatInput] = useState("")
+  const [isTyping, setIsTyping] = useState(false)
+
+  const handleChatSend = async () => {
+    if (!chatInput.trim() || isTyping) return
+    const text = chatInput.trim()
+    setChatInput("")
+    setIsTyping(true)
+    try {
+      await sendAdvisoryMessage(text)
+    } finally {
+      setIsTyping(false)
+    }
+  }
+
+  if (!resume) return null
+  const activeTemplate = getTemplateConfig(resume.templateId)
+
+  const sections = [
+    { id: "personal", icon: User, label: "Personal" },
+    { id: "summary", icon: Sparkles, label: "Summary" },
+    { id: "experience", icon: Briefcase, label: "Experience" },
+    { id: "education", icon: GraduationCap, label: "Education" },
+    { id: "skills", icon: Wrench, label: "Skills" },
+    { id: "projects", icon: Target, label: "Projects" },
+    { id: "certifications", icon: Award, label: "Certifications" },
+    { id: "languages", icon: Globe, label: "Languages" },
+  ]
+
+  const studioNavigation = [
+    { id: "preview" as const, icon: FileText, label: "Resume Builder", hint: "Edit and preview" },
+    { id: "templates" as const, icon: PanelsTopLeft, label: "Templates", hint: "Switch layouts" },
+    { id: "theme" as const, icon: SlidersHorizontal, label: "Theme", hint: "Tune styles" },
+  ]
+
+  const activeStudioItem = studioNavigation.find((item) => item.id === activeStudioTab) ?? studioNavigation[0]
+
+  return (
+    <div className="relative min-h-[calc(100vh-64px)] overflow-hidden bg-[radial-gradient(circle_at_top_left,rgba(103,58,183,0.26),transparent_18%),radial-gradient(circle_at_bottom_right,rgba(33,150,243,0.18),transparent_22%),radial-gradient(circle_at_bottom_left,rgba(255,152,0,0.14),transparent_18%),linear-gradient(180deg,#eef3ff_0%,#f6f8ff_56%,#f8f2ff_100%)] px-6 py-6">
+      <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_14%_72%,rgba(86,169,255,0.18),transparent_14%),radial-gradient(circle_at_87%_18%,rgba(155,92,255,0.22),transparent_12%),radial-gradient(circle_at_78%_84%,rgba(255,159,67,0.16),transparent_12%)]" />
+      <div className="relative mx-auto flex h-[calc(100vh-112px)] max-w-[1500px] flex-col overflow-hidden rounded-[2.25rem] border border-white/80 bg-white/68 shadow-[0_42px_90px_-52px_rgba(15,23,42,0.42)] backdrop-blur-xl">
+        <div className="flex h-12 items-center justify-between border-b border-slate-200/60 bg-white/82 px-4">
+          <div className="flex items-center gap-3">
+            <div className="flex items-center gap-1.5">
+              <span className="h-2.5 w-2.5 rounded-full bg-[#ff6d5a]" />
+              <span className="h-2.5 w-2.5 rounded-full bg-[#ffbe2f]" />
+              <span className="h-2.5 w-2.5 rounded-full bg-[#27c93f]" />
+            </div>
+            <div className="rounded-full border border-slate-200 bg-slate-50 px-3 py-1 text-[0.7rem] font-semibold text-slate-500">
+              app.aicareerguide.com/builder
+            </div>
+          </div>
+          <div className="flex items-center gap-2">
+            <Button variant="outline" size="icon" className="h-8 w-8 rounded-xl border-slate-200 bg-white text-slate-400">
+              <Undo className="h-3.5 w-3.5" />
+            </Button>
+            <Button variant="outline" size="icon" className="h-8 w-8 rounded-xl border-slate-200 bg-white text-slate-400">
+              <Redo className="h-3.5 w-3.5" />
+            </Button>
+            <Button className="h-8 rounded-xl bg-[linear-gradient(135deg,#6d46d8,#5a86f5_58%,#ff9d52)] px-3 text-xs font-bold text-white shadow-[0_18px_30px_-20px_rgba(103,58,183,0.42)] hover:opacity-95">
+              <FileDown className="mr-1.5 h-3.5 w-3.5" />
+              Download PDF
+            </Button>
+            <Button variant="outline" className="h-8 rounded-xl border-slate-200 bg-white px-3 text-xs font-semibold text-slate-600">
+              <Share2 className="mr-1.5 h-3.5 w-3.5" />
+              Share
+            </Button>
+            <Button variant="outline" size="icon" className="h-8 w-8 rounded-xl border-slate-200 bg-white text-slate-500">
+              <Ellipsis className="h-3.5 w-3.5" />
+            </Button>
+            <div className="h-4 w-px bg-slate-200 mx-1" />
+            <Button 
+              variant="outline" 
+              size="icon" 
+              onClick={() => setIsSidebarOpen(!isSidebarOpen)}
+              className={cn("h-8 w-8 rounded-xl border-slate-200 transition-all shadow-sm", isSidebarOpen ? "bg-slate-900 text-white border-slate-900" : "bg-white text-slate-500")}
+              title="Activity Logs"
+            >
+              <Eye className="h-3.5 w-3.5" />
+            </Button>
+            <Button 
+              variant="outline" 
+              size="icon" 
+              onClick={() => setIsChatOpen(!isChatOpen)}
+              className={cn("h-8 w-8 rounded-xl border-slate-200 transition-all shadow-sm", isChatOpen ? "bg-primary text-white border-primary shadow-lg shadow-primary/20" : "bg-white text-slate-500")}
+              title="AI Advisor"
+            >
+              <Sparkles className="h-3.5 w-3.5" />
+            </Button>
+          </div>
+        </div>
+
+        <div className="grid min-h-0 flex-1 grid-cols-[4.75rem_12rem_minmax(0,1fr)_minmax(430px,0.96fr)]">
+      {/* 1st Column: Navigation Sidebar */}
+      <aside className="z-10 flex flex-col items-center gap-4 border-r border-white/60 bg-white/48 px-3 py-5 backdrop-blur-xl">
+        <div className="flex h-10 w-10 items-center justify-center rounded-[1rem] bg-[linear-gradient(135deg,#6d46d8,#4f8df6_55%,#ff9a45)] text-[0.72rem] font-black text-white shadow-[0_18px_30px_-18px_rgba(103,58,183,0.55)]">
+          AI
+        </div>
+
+        <div className="flex flex-col items-center gap-2 rounded-[1.6rem] border border-white/80 bg-white/78 px-2 py-3 shadow-[0_24px_44px_-36px_rgba(15,23,42,0.35)]">
+          {studioNavigation.map((item) => (
+            <button
+              key={item.id}
+              type="button"
+              onClick={() => setActiveStudioTab(item.id)}
+              className={cn(
+                "flex h-10 w-10 items-center justify-center rounded-[0.95rem] transition-all",
+                activeStudioTab === item.id
+                  ? "bg-[linear-gradient(135deg,rgba(103,58,183,0.14),rgba(33,150,243,0.16),rgba(255,152,0,0.18))] text-primary shadow-[0_18px_30px_-22px_rgba(79,70,229,0.45)]"
+                  : "text-slate-400 hover:bg-slate-50 hover:text-slate-700"
+              )}
+              title={item.label}
+            >
+              <item.icon className="h-4.5 w-4.5" />
+            </button>
+          ))}
+        </div>
+
+        <div className="flex flex-1 flex-col items-center justify-center gap-2 rounded-[1.8rem] border border-white/70 bg-white/72 px-2 py-3 shadow-[0_20px_44px_-38px_rgba(15,23,42,0.28)]">
+          {sections.map((section) => (
+            <button
+              key={section.id}
+              onClick={() => setActiveSection(section.id)}
+              className={cn(
+                "group relative flex h-10 w-10 items-center justify-center rounded-[0.95rem] transition-all duration-200",
+                activeSection === section.id
+                  ? "bg-[linear-gradient(135deg,#6d46d8,#5a86f5_58%,#ff9d52)] text-white shadow-[0_16px_26px_-18px_rgba(103,58,183,0.6)]"
+                  : "text-slate-400 hover:bg-slate-100 hover:text-slate-700"
+              )}
+              title={section.label}
+            >
+              <section.icon className="h-4.5 w-4.5" />
+            </button>
+          ))}
+        </div>
+        
+        <div className="flex flex-col items-center gap-2 rounded-[1.3rem] border border-white/70 bg-white/72 py-3 shadow-[0_20px_40px_-36px_rgba(15,23,42,0.28)]">
+          <Button variant="ghost" size="icon" className="h-9 w-9 rounded-xl" onClick={handleUndo} disabled={historyIndex <= 0}>
+            <Undo className="h-4 w-4" />
+          </Button>
+          <Button variant="ghost" size="icon" className="h-9 w-9 rounded-xl" onClick={handleRedo} disabled={historyIndex >= historyLength - 1}>
+            <Redo className="h-4 w-4" />
+          </Button>
+        </div>
+      </aside>
+
+      <aside className="flex flex-col border-r border-white/60 bg-white/58 px-4 py-5">
+        <div className="mb-5">
+          <p className="text-[0.92rem] font-black tracking-tight text-slate-950">Ai Career Guide</p>
+        </div>
+        <div className="space-y-2">
+          {studioNavigation.map((item) => (
+            <button
+              key={item.id}
+              type="button"
+              onClick={() => setActiveStudioTab(item.id)}
+              className={cn(
+                "flex w-full items-center gap-2 rounded-[0.95rem] border px-3 py-2.5 text-left transition-all",
+                activeStudioTab === item.id
+                  ? "border-slate-200 bg-white text-slate-950 shadow-[0_16px_30px_-24px_rgba(15,23,42,0.28)]"
+                  : "border-transparent bg-transparent text-slate-500 hover:border-slate-200/70 hover:bg-white/70"
+              )}
+            >
+              <item.icon className={cn("h-4 w-4", activeStudioTab === item.id && "text-primary")} />
+              <span className="text-[0.76rem] font-semibold">{item.label}</span>
+            </button>
+          ))}
+        </div>
+        <div className="mt-5 rounded-[1.4rem] border border-white/80 bg-[linear-gradient(180deg,rgba(255,255,255,0.92),rgba(244,247,255,0.96))] p-3 shadow-[0_22px_40px_-34px_rgba(15,23,42,0.28)]">
+          <p className="text-[0.64rem] font-black uppercase tracking-[0.18em] text-slate-400">Current panel</p>
+          <div className="mt-2 flex items-center gap-2">
+            <activeStudioItem.icon className="h-4 w-4 text-primary" />
+            <div>
+              <p className="text-sm font-bold text-slate-900">{activeStudioItem.label}</p>
+              <p className="text-[0.72rem] text-slate-500">{activeStudioItem.hint}</p>
+            </div>
+          </div>
+        </div>
+        <div className="mt-auto flex items-center justify-between rounded-[1.2rem] border border-white/80 bg-white/80 px-3 py-2.5 text-slate-500">
+          <div className="flex h-8 w-8 items-center justify-center rounded-full bg-slate-200 text-[0.7rem] font-bold text-slate-700">AS</div>
+          <Share2 className="h-4 w-4" />
+        </div>
+      </aside>
+
+      {/* Activity Sidebar (Ported from Agent Manager) */}
+      <AnimatePresence>
+        {isSidebarOpen && (
+          <motion.aside
+            initial={{ x: "100%", opacity: 0 }}
+            animate={{ x: 0, opacity: 1 }}
+            exit={{ x: "100%", opacity: 0 }}
+            transition={{ type: "spring", damping: 25, stiffness: 200 }}
+            className="fixed right-6 top-32 bottom-10 z-50 w-80 rounded-[2.5rem] border border-white/80 bg-white/60 p-6 shadow-[0_40px_80px_-30px_rgba(15,23,42,0.5)] backdrop-blur-3xl"
+          >
+            <div className="flex items-center justify-between mb-8">
+              <div>
+                <h2 className="text-[10px] font-black uppercase tracking-[0.25em] text-slate-400">Intelligence Audit</h2>
+                <div className="flex items-center gap-1.5 mt-1">
+                  <div className="h-1.5 w-1.5 rounded-full bg-emerald-400 animate-pulse" />
+                  <p className="text-[9px] font-bold text-slate-500 uppercase tracking-widest leading-none">Real-time routing</p>
+                </div>
+              </div>
+              <button 
+                onClick={() => setIsSidebarOpen(false)}
+                className="h-8 w-8 rounded-full hover:bg-slate-100 flex items-center justify-center text-slate-400"
+              >
+                <Plus className="h-4 w-4 rotate-45" />
+              </button>
+            </div>
+            
+            <ScrollArea className="h-[calc(100%-80px)] pr-4 -mr-4">
+              <div className="space-y-4">
+                {routingLogs.length === 0 ? (
+                  <div className="py-24 text-center">
+                    <div className="h-16 w-16 rounded-[2rem] bg-slate-50 flex items-center justify-center mx-auto mb-6 border border-slate-100/50 rotate-12 transition-transform hover:rotate-0 duration-500 shadow-sm">
+                      <Cpu className="h-7 w-7 text-slate-200" />
+                    </div>
+                    <p className="text-[10px] font-black text-slate-300 uppercase tracking-[0.2em] leading-relaxed">
+                      System monitoring idle
+                      <span className="block text-[8px] font-bold mt-3 opacity-60 text-slate-400">Trigger AI to observe routing</span>
+                    </p>
+                  </div>
+                ) : (
+                  [...routingLogs].reverse().map((log, i) => {
+                    const agent = CAREER_AGENTS[log.role];
+                    return (
+                      <motion.div 
+                        key={i}
+                        initial={{ opacity: 0, x: 20 }}
+                        animate={{ opacity: 1, x: 0 }}
+                        className="group p-5 rounded-[2.2rem] border border-white/80 bg-white/40 backdrop-blur-md shadow-sm hover:shadow-xl hover:shadow-slate-200/50 transition-all duration-500"
+                      >
+                         <div className="flex items-center justify-between mb-3.5">
+                           <div className="flex items-center gap-3">
+                             <div className="h-9 w-9 rounded-[1rem] bg-white flex items-center justify-center border border-slate-100 text-base shadow-sm group-hover:scale-110 group-hover:rotate-3 transition-all duration-500">
+                               {agent.icon}
+                             </div>
+                             <div>
+                               <span className="text-[10px] font-black uppercase tracking-wider text-slate-800 block">{agent.name}</span>
+                               <span className="text-[8px] font-bold text-slate-400 uppercase tracking-widest">Active Agent</span>
+                             </div>
+                           </div>
+                         </div>
+                         <div className="pl-12">
+                           <p className="text-[11px] text-slate-500 leading-relaxed font-medium">
+                             <span className="font-bold text-slate-900 opacity-60 uppercase text-[8px] tracking-widest block mb-1">Decision Logic</span> 
+                             {log.reason}
+                           </p>
+                         </div>
+                      </motion.div>
+                    );
+                  })
+                )}
+              </div>
+            </ScrollArea>
+          </motion.aside>
+        )}
+      </AnimatePresence>
+
+      {/* AI Advisor Chat Overlay */}
+      <AnimatePresence>
+        {isChatOpen && (
+          <motion.div
+            initial={{ opacity: 0, y: 20, scale: 0.95 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: 20, scale: 0.95 }}
+            className="fixed right-6 bottom-32 z-50 w-96 rounded-[3rem] border border-white/80 bg-white/80 p-6 shadow-[0_50px_100px_-30px_rgba(15,23,42,0.4)] backdrop-blur-3xl overflow-hidden"
+          >
+             <div className="flex items-center justify-between mb-6">
+                <div className="flex items-center gap-3">
+                   <div className="h-10 w-10 rounded-2xl bg-primary/10 flex items-center justify-center text-primary">
+                      <Sparkles className="h-5 w-5" />
+                   </div>
+                   <div>
+                      <h3 className="text-xs font-black uppercase tracking-widest text-slate-950">AI Advisor</h3>
+                      <p className="text-[9px] font-bold text-slate-400 uppercase tracking-[0.2em] mt-0.5">Gemini 2.5 Intelligence</p>
+                   </div>
+                </div>
+                <Button variant="ghost" size="icon" className="rounded-full" onClick={() => setIsChatOpen(false)}>
+                   <Plus className="h-4 w-4 rotate-45 text-slate-400" />
+                </Button>
+             </div>
+
+             <ScrollArea className="h-96 pr-4 -mr-4 mb-4">
+                <div className="space-y-6">
+                   {chatMessages.map((msg, i) => (
+                      <div key={i} className={cn("flex flex-col", msg.role === "user" ? "items-end" : "items-start")}>
+                         <div className={cn(
+                            "max-w-[85%] px-5 py-4 rounded-[1.8rem] text-[13px] font-medium leading-relaxed shadow-sm transition-all",
+                            msg.role === "user" 
+                               ? "bg-slate-950 text-white rounded-tr-none" 
+                               : "bg-white border border-slate-100 text-slate-700 rounded-tl-none"
+                         )}>
+                            {msg.agent && msg.role === "assistant" && (
+                               <div className="flex items-center gap-2 mb-2">
+                                  <span className="text-base">{CAREER_AGENTS[msg.agent].icon}</span>
+                                  <span className="text-[10px] font-black uppercase tracking-widest text-slate-400">{CAREER_AGENTS[msg.agent].name}</span>
+                               </div>
+                            )}
+                            {msg.text}
+                         </div>
+                      </div>
+                   ))}
+                   {isTyping && (
+                      <div className="flex items-center gap-3 animate-pulse">
+                         <div className="h-8 w-8 rounded-full bg-slate-100 border border-slate-200 flex items-center justify-center">
+                            <Loader2 className="h-3 w-3 animate-spin text-slate-400" />
+                         </div>
+                         <div className="text-[10px] font-black uppercase tracking-widest text-slate-300">Thinking...</div>
+                      </div>
+                   )}
+                </div>
+             </ScrollArea>
+
+             <div className="relative">
+                <Input 
+                  value={chatInput}
+                  onChange={(e) => setChatInput(e.target.value)}
+                  onKeyDown={(e) => e.key === "Enter" && handleChatSend()}
+                  placeholder="Ask about your brand, ATS, or ROI..."
+                  className="h-14 pl-6 pr-14 rounded-[1.8rem] bg-white/50 border-white/80 focus-visible:ring-primary/20 transition-all font-medium text-sm"
+                />
+                <Button 
+                   size="icon"
+                   onClick={handleChatSend}
+                   disabled={!chatInput.trim() || isTyping}
+                   className="absolute right-1.5 top-1.5 h-11 w-11 rounded-full shadow-lg shadow-primary/20 transition-all hover:scale-105 active:scale-95"
+                >
+                   <SendHorizontal className="h-5 w-5" />
+                </Button>
+             </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* 2nd Column: Main Edit Workspace */}
+      <main className="min-w-0 overflow-hidden border-r border-white/60 bg-white/22 px-4 py-4">
+        <div className="flex h-full min-w-0 flex-col overflow-hidden rounded-[2rem] border border-white/80 bg-white/78 shadow-[0_35px_70px_-48px_rgba(15,23,42,0.35)] backdrop-blur-xl">
+          <header className="sticky top-0 z-20 flex items-center justify-between border-b border-slate-200/70 bg-white/88 px-8 py-6 backdrop-blur-xl">
+            <div>
+              <div className="flex items-center gap-2">
+                <Badge variant="outline" className="rounded-full border-primary/10 bg-primary/5 text-[10px] font-bold uppercase tracking-[0.18em] text-primary">
+                  Resume builder
+                </Badge>
+                <Badge variant="outline" className="rounded-full border-slate-200 bg-white text-[10px] font-bold uppercase tracking-[0.18em] text-slate-500">
+                  {activeTemplate.category}
+                </Badge>
+              </div>
+              <h1 className="mt-2 text-[2rem] font-black tracking-tight text-slate-950">Edit Your Resume</h1>
+              <p className="mt-1 text-sm font-medium text-slate-500">
+                Update the section on the left, then watch the recruiter-ready version refresh on the right.
+              </p>
+            </div>
+
+            <div className="flex items-center gap-2">
+              <Button variant="outline" size="sm" className="h-10 rounded-full border-slate-200 bg-white px-4 text-slate-500" onClick={handleUndo} disabled={historyIndex <= 0}>
+                <Undo className="mr-2 h-4 w-4" />
+                Undo
+              </Button>
+              <Button variant="outline" size="sm" className="h-10 rounded-full border-slate-200 bg-white px-4 text-slate-500" onClick={handleRedo} disabled={historyIndex >= historyLength - 1}>
+                <Redo className="mr-2 h-4 w-4" />
+                Redo
+              </Button>
+              <div className={cn(
+                "hidden xl:flex items-center gap-2 rounded-full border px-3 py-2 text-[11px] font-bold uppercase tracking-[0.18em]",
+                saveStatus === "saved" ? "border-emerald-100 bg-emerald-50 text-emerald-600" : "border-blue-100 bg-blue-50 text-blue-600"
+              )}>
+                {saveStatus === "saving" ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <div className="h-1.5 w-1.5 rounded-full bg-current animate-pulse" />}
+                {saveStatus === "saved" ? "Live Synced" : "Saving"}
+              </div>
+              <Button 
+                onClick={handleDownloadPdf} 
+                disabled={isExporting}
+                className="h-10 rounded-full bg-[linear-gradient(135deg,#6d46d8,#5a86f5_58%,#ff9d52)] px-4 font-bold text-white shadow-[0_20px_35px_-18px_rgba(103,58,183,0.48)] hover:opacity-95"
+              >
+                {isExporting ? <Loader2 className="h-4 w-4 animate-spin" /> : <FileDown className="h-4 w-4" />}
+                <span className="ml-2">Download PDF</span>
+              </Button>
+            </div>
+          </header>
+
+          <ScrollArea className="flex-1 px-8 py-8">
+          <div className="max-w-3xl space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
+            {activeSection === "personal" && (
+              <div className="space-y-6">
+                <div className="grid grid-cols-2 gap-6">
+                  <div className="space-y-2">
+                    <label className="text-xs font-bold uppercase tracking-widest text-slate-400">Full Name</label>
+                    <Input 
+                      value={resume.content.personal.name} 
+                      onChange={(e) => handleUpdate("content.personal.name", e.target.value)}
+                      placeholder="e.g. Alex Johnson"
+                      className="h-12 rounded-xl focus:ring-4 focus:ring-primary/10 transition-all text-lg font-bold"
+                    />
+                  </div>
+                   <div className="space-y-2">
+                    <label className="text-xs font-bold uppercase tracking-widest text-slate-400">Professional Title</label>
+                    <Input 
+                      value={resume.content.personal.title} 
+                      onChange={(e) => handleUpdate("content.personal.title", e.target.value)}
+                      placeholder="e.g. Senior Product Manager"
+                      className="h-12 rounded-xl focus:ring-4 focus:ring-primary/10 transition-all"
+                    />
+                  </div>
+                </div>
+                
+                <div className="grid grid-cols-2 gap-6">
+                   <div className="space-y-2">
+                    <label className="text-xs font-bold uppercase tracking-widest text-slate-400">Email Address</label>
+                    <Input 
+                      value={resume.content.personal.email} 
+                      onChange={(e) => handleUpdate("content.personal.email", e.target.value)}
+                      placeholder="alex@example.com"
+                      className="h-12 rounded-xl"
+                    />
+                  </div>
+                   <div className="space-y-2">
+                    <label className="text-xs font-bold uppercase tracking-widest text-slate-400">Phone Number</label>
+                    <Input 
+                      value={resume.content.personal.phone} 
+                      onChange={(e) => handleUpdate("content.personal.phone", e.target.value)}
+                      placeholder="+1 234 567 890"
+                      className="h-12 rounded-xl"
+                    />
+                  </div>
+                   <div className="space-y-2">
+                    <label className="text-xs font-bold uppercase tracking-widest text-slate-400">Location</label>
+                    <Input 
+                      value={resume.content.personal.location} 
+                      onChange={(e) => handleUpdate("content.personal.location", e.target.value)}
+                      placeholder="New York, NY"
+                      className="h-12 rounded-xl"
+                    />
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {activeSection === "summary" && (
+              <div className="space-y-6">
+                <div className="flex items-center justify-between">
+                  <p className="text-sm text-slate-500 font-medium">Briefly describe your value proposition and career goals.</p>
+                  <div className="flex items-center gap-2">
+                    <Popover>
+                      <PopoverTrigger asChild>
+                        <Button 
+                          variant="ghost" 
+                          size="sm" 
+                          disabled={isGeneratingSummarySuggestions}
+                          onClick={runSummarySuggestions}
+                          className="gap-2 rounded-xl text-primary font-bold hover:bg-primary/5"
+                        >
+                          {isGeneratingSummarySuggestions ? <Loader2 className="h-4 w-4 animate-spin" /> : <Target className="h-4 w-4" />}
+                          AI Options
+                        </Button>
+                      </PopoverTrigger>
+                      <PopoverContent className="w-[450px] p-4 bg-white/95 backdrop-blur-xl border-slate-200 shadow-2xl rounded-2xl" align="end">
+                        <div className="space-y-4">
+                          <div className="flex items-center justify-between border-b pb-2">
+                            <h3 className="text-xs font-black uppercase tracking-widest text-slate-400">AI Generated Variants</h3>
+                            <div className="h-1.5 w-1.5 rounded-full bg-primary animate-pulse" />
+                          </div>
+                          {summarySuggestions.length > 0 ? (
+                            <div className="space-y-2">
+                              {summarySuggestions.map((suggestion: string, i: number) => (
+                                <button
+                                  key={i}
+                                  onClick={() => handleUpdate("content.summary", suggestion)}
+                                  className="w-full text-left p-3 rounded-xl hover:bg-slate-50 border border-transparent hover:border-slate-100 transition-all group"
+                                >
+                                  <p className="text-sm text-slate-600 line-clamp-3 group-hover:text-slate-900">{suggestion}</p>
+                                  <div className="mt-2 flex items-center gap-1.5 opacity-0 group-hover:opacity-100 transition-opacity">
+                                    <span className="text-[10px] font-bold uppercase text-primary">Apply Now</span>
+                                  </div>
+                                </button>
+                              ))}
+                            </div>
+                          ) : (
+                            <div className="py-8 text-center">
+                              <Sparkles className="h-8 w-8 mx-auto text-slate-200 mb-2" />
+                              <p className="text-[10px] font-bold uppercase tracking-widest text-slate-300">Click AI Options to generate variants</p>
+                            </div>
+                          )}
+                        </div>
+                      </PopoverContent>
+                    </Popover>
+
+                    <Button 
+                      variant="outline" 
+                      size="sm" 
+                      disabled={isEnhancing}
+                      onClick={() => runEnhanceContent("summary")}
+                      className="gap-2 rounded-xl border-primary/20 text-primary hover:bg-primary/5"
+                    >
+                      {isEnhancing ? <Loader2 className="h-4 w-4 animate-spin" /> : <Sparkles className="h-4 w-4" />}
+                      AI Enhance
+                    </Button>
+                  </div>
+                </div>
+                <RichTextField
+                  value={resume.content.summary}
+                  onChange={(val) => handleUpdate("content.summary", val)}
+                  placeholder="Senior Software Engineer with 8+ years of experience building scalable systems..."
+                  minHeightClassName="min-h-[300px]"
+                />
+              </div>
+            )}
+
+            {activeSection === "experience" && (
+              <div className="space-y-6">
+                <div className="flex items-center justify-between">
+                  <p className="text-sm text-slate-500 font-medium">List your relevant roles, achievements, and impact.</p>
+                  <Button 
+                    onClick={() => {
+                        const newExp = [...(resume.content.experience || []), { 
+                            id: Date.now(), 
+                            title: "", 
+                            company: "", 
+                            period: "", 
+                            description: "" 
+                        }]
+                        handleUpdate("content.experience", newExp)
+                    }}
+                    className="gap-2 rounded-xl shadow-lg shadow-primary/15"
+                  >
+                    <Plus className="h-4 w-4" /> Add Experience
+                  </Button>
+                </div>
+                
+                <div className="space-y-4">
+                  {resume.content.experience?.map((exp: any, idx: number) => (
+                    <Card key={exp.id || idx} className="p-6 border-slate-100 shadow-sm hover:shadow-md transition-all duration-300 relative group/card">
+                       <div className="absolute right-4 top-4 flex items-center gap-1 opacity-0 group-hover/card:opacity-100 transition-opacity">
+                         <Button 
+                            variant="ghost" 
+                            size="icon" 
+                            disabled={isEnhancing}
+                            onClick={() => runEnhanceContent("experience", idx)}
+                            className="text-primary hover:bg-primary/5"
+                          >
+                            <Sparkles className="h-4 w-4" />
+                          </Button>
+                          <Button 
+                            variant="ghost" 
+                            size="icon" 
+                            className="text-slate-400 hover:text-destructive"
+                            onClick={() => {
+                                const newExp = resume.content.experience.filter((_: any, i: number) => i !== idx)
+                                handleUpdate("content.experience", newExp)
+                            }}
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                       </div>
+                      <div className="grid grid-cols-2 gap-4 mb-4">
+                        <Input 
+                          value={exp.title} 
+                          onChange={(e) => {
+                            const next = [...resume.content.experience]
+                            next[idx] = { ...next[idx], title: e.target.value }
+                            handleUpdate("content.experience", next)
+                          }}
+                          placeholder="Role Title"
+                          className="font-bold border-none bg-slate-50 h-10 px-3"
+                        />
+                        <Input 
+                          value={exp.period} 
+                          onChange={(e) => {
+                             const next = [...resume.content.experience]
+                             next[idx] = { ...next[idx], period: e.target.value }
+                             handleUpdate("content.experience", next)
+                          }}
+                          placeholder="e.g., 2020 - Present"
+                          className="border-none bg-slate-50 h-10 px-3 text-slate-500 text-sm"
+                        />
+                      </div>
+                      <Input 
+                         value={exp.company} 
+                         onChange={(e) => {
+                            const next = [...resume.content.experience]
+                            next[idx] = { ...next[idx], company: e.target.value }
+                            handleUpdate("content.experience", next)
+                         }}
+                         placeholder="Company Name"
+                         className="border-none bg-slate-50 h-10 px-3 mb-4 text-primary font-bold"
+                      />
+                      <RichTextField
+                        value={exp.description}
+                        onChange={(val) => {
+                            const next = [...resume.content.experience]
+                            next[idx] = { ...next[idx], description: val }
+                            handleUpdate("content.experience", next)
+                        }}
+                        placeholder="Key accomplishments and responsibilities..."
+                      />
+                    </Card>
+                  ))}
+                </div>
+              </div>
+            )}
+            
+            {/* Other sections would follow similar patterns */}
+            {activeSection === "education" && (
+              <div className="space-y-6">
+                <div className="flex items-center justify-between">
+                  <p className="text-sm text-slate-500 font-medium">Add your academic background and credentials.</p>
+                  <Button 
+                    onClick={() => {
+                        const next = [...(resume.content.education || []), { 
+                            id: Date.now(), 
+                            institution: "", 
+                            degree: "", 
+                            period: "", 
+                            description: "" 
+                        }]
+                        handleUpdate("content.education", next)
+                    }}
+                    className="gap-2 rounded-xl shadow-lg shadow-primary/15"
+                  >
+                    <Plus className="h-4 w-4" /> Add Education
+                  </Button>
+                </div>
+                
+                <div className="space-y-4">
+                  {resume.content.education?.map((edu: any, idx: number) => (
+                    <Card key={edu.id || idx} className="p-6 border-slate-100 shadow-sm relative group/card hover:shadow-md transition-all">
+                       <div className="absolute right-4 top-4 flex items-center gap-1 opacity-0 group-hover/card:opacity-100 transition-opacity">
+                         <Button 
+                            variant="ghost" 
+                            size="icon" 
+                            disabled={isEnhancing}
+                            onClick={() => runEnhanceContent("education", idx)}
+                            className="text-primary"
+                          >
+                            <Sparkles className="h-4 w-4" />
+                          </Button>
+                          <Button 
+                            variant="ghost" 
+                            size="icon" 
+                            className="text-slate-400 hover:text-destructive"
+                            onClick={() => {
+                                const next = resume.content.education.filter((_: any, i: number) => i !== idx)
+                                handleUpdate("content.education", next)
+                            }}
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                       </div>
+                       <Input 
+                          value={edu.institution} 
+                          onChange={(e) => {
+                             const next = [...resume.content.education]
+                             next[idx] = { ...next[idx], institution: e.target.value }
+                             handleUpdate("content.education", next)
+                          }}
+                          placeholder="Institution / University"
+                          className="font-bold border-none bg-slate-50 h-10 px-3 mb-3"
+                       />
+                       <div className="grid grid-cols-2 gap-4 mb-4">
+                         <Input 
+                           value={edu.degree} 
+                           onChange={(e) => {
+                             const next = [...resume.content.education]
+                             next[idx] = { ...next[idx], degree: e.target.value }
+                             handleUpdate("content.education", next)
+                           }}
+                           placeholder="Degree (e.g. BS in CS)"
+                           className="border-none bg-slate-50 h-10 px-3 text-sm"
+                         />
+                         <Input 
+                           value={edu.period} 
+                           onChange={(e) => {
+                              const next = [...resume.content.education]
+                              next[idx] = { ...next[idx], period: e.target.value }
+                              handleUpdate("content.education", next)
+                           }}
+                           placeholder="e.g., 2016 - 2020"
+                           className="border-none bg-slate-50 h-10 px-3 text-slate-500 text-sm"
+                         />
+                       </div>
+                       <RichTextField
+                        value={edu.description}
+                        onChange={(val) => {
+                            const next = [...resume.content.education]
+                            next[idx] = { ...next[idx], description: val }
+                            handleUpdate("content.education", next)
+                        }}
+                        placeholder="Achievements, GPA, or relevant coursework..."
+                      />
+                    </Card>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {activeSection === "skills" && (
+              <div className="space-y-6">
+                <div className="flex flex-col gap-4">
+                  <p className="text-sm text-slate-500 font-medium">List your core competencies, tools, and technical proficiencies.</p>
+                  <Input 
+                    placeholder="Type a skill and press Enter (e.g. React, Python, Product Strategy)"
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter") {
+                        const val = e.currentTarget.value.trim()
+                        if (val && !resume.content.skills.includes(val)) {
+                          handleUpdate("content.skills", [...resume.content.skills, val])
+                          e.currentTarget.value = ""
+                        }
+                      }
+                    }}
+                    className="h-14 rounded-2xl border-2 border-slate-100 focus:border-primary/20 text-lg shadow-sm"
+                  />
+                  <div className="flex flex-wrap gap-2">
+                    {resume.content.skills?.map((skill: string, i: number) => (
+                      <Badge 
+                        key={i} 
+                        variant="secondary"
+                        className="py-2 px-4 rounded-full bg-slate-100 hover:bg-slate-200 transition-colors text-slate-700 font-bold gap-2 cursor-default group/badge"
+                      >
+                        {skill}
+                        <button 
+                          onClick={() => {
+                            const next = resume.content.skills.filter((_: any, idx: number) => idx !== i)
+                            handleUpdate("content.skills", next)
+                          }}
+                          className="opacity-20 hover:opacity-100 transition-opacity"
+                        >
+                          <Trash2 className="h-3 w-3" />
+                        </button>
+                      </Badge>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {activeSection === "projects" && (
+              <div className="space-y-6">
+                <div className="flex items-center justify-between">
+                  <p className="text-sm text-slate-500 font-medium">Showcase personal projects, open source, or side ventures.</p>
+                  <Button 
+                    onClick={() => {
+                        const next = [...(resume.content.projects || []), { 
+                            id: Date.now(), 
+                            name: "", 
+                            url: "", 
+                            description: "" 
+                        }]
+                        handleUpdate("content.projects", next)
+                    }}
+                    className="gap-2 rounded-xl shadow-lg shadow-primary/15"
+                  >
+                    <Plus className="h-4 w-4" /> Add Project
+                  </Button>
+                </div>
+                
+                <div className="space-y-4">
+                  {resume.content.projects?.map((proj: any, idx: number) => (
+                    <Card key={proj.id || idx} className="p-6 border-slate-100 shadow-sm relative group/card">
+                       <div className="absolute right-4 top-4 flex items-center gap-1 opacity-0 group-hover/card:opacity-100 transition-opacity">
+                         <Button 
+                            variant="ghost" 
+                            size="icon" 
+                            disabled={isEnhancing}
+                            onClick={() => runEnhanceContent("projects", idx)}
+                            className="text-primary"
+                          >
+                            <Sparkles className="h-4 w-4" />
+                          </Button>
+                          <Button 
+                            variant="ghost" 
+                            size="icon" 
+                            className="text-slate-400 hover:text-destructive"
+                            onClick={() => {
+                                const next = resume.content.projects.filter((_: any, i: number) => i !== idx)
+                                handleUpdate("content.projects", next)
+                            }}
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                       </div>
+                       <div className="grid grid-cols-2 gap-4 mb-4">
+                          <Input 
+                            value={proj.name} 
+                            onChange={(e) => {
+                               const next = [...resume.content.projects]
+                               next[idx] = { ...next[idx], name: e.target.value }
+                               handleUpdate("content.projects", next)
+                            }}
+                            placeholder="Project Name"
+                            className="font-bold border-none bg-slate-50 h-10 px-3"
+                          />
+                          <Input 
+                             value={proj.url} 
+                             onChange={(e) => {
+                                const next = [...resume.content.projects]
+                                next[idx] = { ...next[idx], url: e.target.value }
+                                handleUpdate("content.projects", next)
+                             }}
+                             placeholder="URL (e.g. github.com/...)"
+                             className="border-none bg-slate-50 h-10 px-3 text-primary text-sm font-medium"
+                          />
+                       </div>
+                       <RichTextField
+                        value={proj.description}
+                        onChange={(val) => {
+                            const next = [...resume.content.projects]
+                            next[idx] = { ...next[idx], description: val }
+                            handleUpdate("content.projects", next)
+                        }}
+                        placeholder="Impact, technology stack, and outcomes..."
+                      />
+                    </Card>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {activeSection === "certifications" && (
+              <div className="space-y-6">
+                <div className="flex items-center justify-between">
+                  <p className="text-sm text-slate-500 font-medium">Verify your expertise with official certificates.</p>
+                  <Button 
+                    variant="secondary"
+                    onClick={() => handleUpdate("content.certifications", [...(resume.content.certifications || []), { name: "", date: "" }])}
+                    className="gap-2 rounded-xl"
+                  >
+                    <Plus className="h-4 w-4" /> Add Certificate
+                  </Button>
+                </div>
+                <div className="grid grid-cols-1 gap-3">
+                  {resume.content.certifications?.map((cert: any, i: number) => (
+                    <div key={i} className="flex gap-4 items-center bg-white p-3 rounded-2xl border border-slate-100 shadow-sm group">
+                      <Input 
+                        value={cert.name}
+                        onChange={(e) => {
+                          const next = [...resume.content.certifications]
+                          next[i] = { ...cert, name: e.target.value }
+                          handleUpdate("content.certifications", next)
+                        }}
+                        placeholder="Certification Name (e.g. AWS Solutions Architect)"
+                        className="flex-1 h-11 rounded-xl border-none bg-slate-50 font-bold"
+                      />
+                      <Input 
+                         value={cert.date}
+                         onChange={(e) => {
+                           const next = [...resume.content.certifications]
+                           next[i] = { ...cert, date: e.target.value }
+                           handleUpdate("content.certifications", next)
+                         }}
+                         placeholder="Year"
+                         className="w-24 h-11 rounded-xl border-none bg-slate-50 text-center"
+                      />
+                      <Button 
+                        variant="ghost" 
+                        size="icon" 
+                        onClick={() => {
+                          const next = resume.content.certifications.filter((_: any, idx: number) => idx !== i)
+                          handleUpdate("content.certifications", next)
+                        }}
+                        className="text-slate-200 hover:text-destructive opacity-0 group-hover:opacity-100"
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {activeSection === "languages" && (
+              <div className="space-y-6">
+                <p className="text-sm text-slate-500 font-medium">Specify your linguistic capabilities.</p>
+                <div className="grid grid-cols-2 gap-4">
+                  {resume.content.languages?.map((lang: any, i: number) => (
+                    <div key={i} className="flex gap-2 items-center bg-white p-3 rounded-2xl border border-slate-100 shadow-sm group">
+                       <Input 
+                        value={lang.name}
+                        onChange={(e) => {
+                          const next = [...resume.content.languages]
+                          next[i] = { ...lang, name: e.target.value }
+                          handleUpdate("content.languages", next)
+                        }}
+                        placeholder="Language"
+                        className="flex-1 h-10 border-none bg-slate-50 font-bold"
+                      />
+                      <Input 
+                         value={lang.proficiency}
+                         onChange={(e) => {
+                           const next = [...resume.content.languages]
+                           next[i] = { ...lang, proficiency: e.target.value }
+                           handleUpdate("content.languages", next)
+                         }}
+                         placeholder="e.g. Native"
+                         className="w-24 h-10 border-none bg-slate-50 text-xs"
+                      />
+                      <Button 
+                        variant="ghost" 
+                        size="icon" 
+                        onClick={() => {
+                          const next = resume.content.languages.filter((_: any, idx: number) => idx !== i)
+                          handleUpdate("content.languages", next)
+                        }}
+                        className="h-8 w-8 text-slate-200 hover:text-destructive"
+                      >
+                        <Trash2 className="h-3.5 w-3.5" />
+                      </Button>
+                    </div>
+                  ))}
+                  <Button 
+                    variant="outline" 
+                    onClick={() => handleUpdate("content.languages", [...(resume.content.languages || []), { name: "", proficiency: "" }])}
+                    className="h-16 border-dashed border-2 rounded-2xl gap-2 text-slate-400 hover:text-primary hover:border-primary/20"
+                  >
+                    <Plus className="h-4 w-4" /> Add Language
+                  </Button>
+                </div>
+              </div>
+            )}
+          </div>
+          </ScrollArea>
+        </div>
+      </main>
+
+      {/* 3rd Column: Preview + Design Studio */}
+      <aside className="min-w-0 overflow-hidden bg-white/20 px-6 py-6">
+        <Tabs value={activeStudioTab} onValueChange={(value) => setActiveStudioTab(value as "preview" | "templates" | "theme")} className="flex h-full flex-col overflow-hidden rounded-[2rem] border border-white/80 bg-white/78 shadow-[0_35px_70px_-48px_rgba(15,23,42,0.35)] backdrop-blur-xl">
+          <div className="border-b border-slate-200/60 bg-white/88 px-6 py-6">
+            <div className="flex items-start justify-between gap-4">
+              <div className="min-w-0">
+                <div className="flex flex-wrap items-center gap-2">
+                  <Badge className="rounded-full bg-slate-900 px-3 py-1 text-[0.68rem] font-bold uppercase tracking-[0.18em] text-white">
+                    Design pane
+                  </Badge>
+                  <Badge className="rounded-full bg-emerald-500/12 px-3 py-1 text-[0.68rem] font-bold uppercase tracking-[0.18em] text-emerald-700">
+                    Live sync
+                  </Badge>
+                </div>
+                <h2 className="mt-3 text-[2rem] font-black tracking-tight text-slate-950">Live Preview</h2>
+                <p className="mt-1 max-w-2xl text-sm text-slate-600">
+                  Review the polished output, then jump between layout and theme controls without leaving the builder.
+                </p>
+              </div>
+
+              <div className="hidden items-center gap-2 xl:flex">
+                <Button variant="outline" size="sm" className="h-10 rounded-full border-slate-200 bg-white px-4 text-slate-500">
+                  <Eye className="mr-2 h-4 w-4" />
+                  Live Preview
+                </Button>
+                <Button 
+                  onClick={handleDownloadPdf} 
+                  disabled={isExporting}
+                  className="h-10 rounded-full bg-[linear-gradient(135deg,#6d46d8,#5a86f5_58%,#ff9d52)] px-4 font-bold text-white shadow-[0_20px_35px_-18px_rgba(103,58,183,0.48)] hover:opacity-95"
+                >
+                  {isExporting ? <Loader2 className="h-4 w-4 animate-spin" /> : <FileDown className="h-4 w-4" />}
+                  <span className="ml-2">Download PDF</span>
+                </Button>
+              </div>
+            </div>
+
+            <div className="mt-4 flex flex-wrap items-center gap-2">
+              <Badge variant="outline" className="rounded-full border-slate-200 bg-white px-3 py-1 text-[0.68rem] font-bold uppercase tracking-[0.18em] text-slate-700">
+                {activeTemplate.name}
+              </Badge>
+              <Badge variant="outline" className="rounded-full border-slate-200 bg-white px-3 py-1 text-[0.68rem] font-bold uppercase tracking-[0.18em] text-slate-500">
+                {activeTemplate.category}
+              </Badge>
+              <Badge variant="outline" className="rounded-full border-slate-200 bg-white px-3 py-1 text-[0.68rem] font-bold uppercase tracking-[0.18em] text-slate-500">
+                {getTemplateTierLabel(activeTemplate.accessTier)} tier
+              </Badge>
+              <div className="ml-auto flex items-center gap-2 xl:hidden">
+                <Button 
+                  onClick={handleDownloadPdf} 
+                  disabled={isExporting}
+                  className="h-9 rounded-full bg-[linear-gradient(135deg,#6d46d8,#5a86f5_58%,#ff9d52)] px-3.5 text-xs font-bold text-white shadow-[0_20px_35px_-18px_rgba(103,58,183,0.48)] hover:opacity-95"
+                >
+                  {isExporting ? <Loader2 className="h-4 w-4 animate-spin" /> : <FileDown className="h-4 w-4" />}
+                </Button>
+              </div>
+            </div>
+
+            <TabsList className="mt-5 grid h-auto w-full grid-cols-3 rounded-[1.35rem] bg-slate-100 p-1">
+              <TabsTrigger
+                value="preview"
+                className="h-12 rounded-[1rem] gap-2 text-[0.7rem] font-bold uppercase tracking-[0.16em] text-slate-500 data-[state=active]:bg-white data-[state=active]:text-slate-950"
+              >
+                <Eye className="h-4 w-4" />
+                Preview
+              </TabsTrigger>
+              <TabsTrigger
+                value="templates"
+                className="h-12 rounded-[1rem] gap-2 text-[0.7rem] font-bold uppercase tracking-[0.16em] text-slate-500 data-[state=active]:bg-white data-[state=active]:text-slate-950"
+              >
+                <LayoutTemplate className="h-4 w-4" />
+                Templates
+              </TabsTrigger>
+              <TabsTrigger
+                value="theme"
+                className="h-12 rounded-[1rem] gap-2 text-[0.7rem] font-bold uppercase tracking-[0.16em] text-slate-500 data-[state=active]:bg-white data-[state=active]:text-slate-950"
+              >
+                <Paintbrush2 className="h-4 w-4" />
+                Theme
+              </TabsTrigger>
+            </TabsList>
+          </div>
+
+          <TabsContent value="preview" className="mt-0 min-h-0 flex-1 overflow-hidden data-[state=inactive]:hidden">
+            <ScrollArea className="h-full">
+              <div className="flex h-full flex-col gap-4 bg-[radial-gradient(circle_at_bottom_left,rgba(103,58,183,0.12),transparent_28%),linear-gradient(180deg,#f8fbff_0%,#f7f3ff_100%)] px-6 py-6">
+                <div className="rounded-[1.5rem] border border-white/80 bg-white/76 p-4 shadow-[0_28px_50px_-40px_rgba(15,23,42,0.3)]">
+                  <div className="flex items-center gap-3 text-[0.68rem] font-bold uppercase tracking-[0.18em] text-slate-500">
+                    <span className="inline-flex items-center rounded-full border border-slate-200 bg-white px-3 py-1">Live Preview</span>
+                    <span className="inline-flex items-center rounded-full border border-emerald-100 bg-emerald-50 px-3 py-1 text-emerald-600">Recruiter View</span>
+                    <span className="text-slate-400">A4 canvas</span>
+                  </div>
+                  <p className="mt-3 text-sm leading-relaxed text-slate-500">
+                    This preview uses the same page proportions as the exported PDF, so spacing and manual page breaks stay visible while you edit.
+                  </p>
+                </div>
+
+                <div className="flex grow items-start justify-center overflow-hidden rounded-[1.8rem] border border-white/80 bg-white/55 p-5 shadow-[0_30px_60px_-45px_rgba(15,23,42,0.28)]">
+                  <div className="max-h-[calc(100vh-338px)] w-full overflow-y-auto rounded-[1.5rem] border border-slate-200/70 bg-[linear-gradient(180deg,#fefefe_0%,#f8fbff_100%)] p-6">
+                    <div className="mx-auto w-[210mm] rounded-[1.25rem] bg-white shadow-[0_28px_52px_-34px_rgba(15,23,42,0.28)]">
+                      <ResumeTemplate data={resume} />
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </ScrollArea>
+          </TabsContent>
+
+          <TabsContent value="templates" className="mt-0 min-h-0 flex-1 overflow-hidden data-[state=inactive]:hidden">
+            <ScrollArea className="h-full">
+              <div className="p-6">
+                <EditorDesignStudio
+                  resume={resume}
+                  plan={profile?.plan}
+                  sections={["templates"]}
+                  onSelectTemplate={applyTemplate}
+                  onUpdateStyle={updateStyle}
+                  onResetStyles={resetTemplateStyles}
+                />
+              </div>
+            </ScrollArea>
+          </TabsContent>
+
+          <TabsContent value="theme" className="mt-0 min-h-0 flex-1 overflow-hidden data-[state=inactive]:hidden">
+            <ScrollArea className="h-full">
+              <div className="p-6">
+                <EditorDesignStudio
+                  resume={resume}
+                  plan={profile?.plan}
+                  sections={["styles"]}
+                  onSelectTemplate={applyTemplate}
+                  onUpdateStyle={updateStyle}
+                  onResetStyles={resetTemplateStyles}
+                />
+              </div>
+            </ScrollArea>
+          </TabsContent>
+        </Tabs>
+      </aside>
+        </div>
+      </div>
+    </div>
+  )
+}

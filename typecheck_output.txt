@@ -1,0 +1,6 @@
+
+> nextn@0.1.0 typecheck
+> tsc --noEmit -p tsconfig.typecheck.json
+
+src/hooks/use-editor-state.ts(446,24): error TS1005: ';' expected.
+src/hooks/use-editor-state.ts(459,1): error TS1128: Declaration or statement expected.

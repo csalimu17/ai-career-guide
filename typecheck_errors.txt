@@ -1,0 +1,9 @@
+
+> nextn@0.1.0 typecheck
+> tsc --noEmit -p tsconfig.typecheck.json
+
+src/components/editor/DesktopEditor.tsx(213,56): error TS7006: Parameter 'suggestion' implicitly has an 'any' type.
+src/components/editor/DesktopEditor.tsx(213,68): error TS7006: Parameter 'i' implicitly has an 'any' type.
+src/components/editor/MobileEditor.tsx(229,62): error TS7006: Parameter 'suggestion' implicitly has an 'any' type.
+src/components/editor/MobileEditor.tsx(229,74): error TS7006: Parameter 'i' implicitly has an 'any' type.
+src/hooks/use-editor-state.ts(277,15): error TS2339: Property 'runFlow' does not exist on type 'typeof import("C:/Users/csali/.gemini/antigravity/scratch/aicareerguide/src/ai/flows/ats-optimization-scoring-flow")'.

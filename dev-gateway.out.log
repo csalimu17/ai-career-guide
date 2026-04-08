@@ -1,0 +1,53 @@
+
+> nextn@0.1.0 dev
+> next dev --turbopack -p 3000
+
+   ▲ Next.js 15.5.14 (Turbopack)
+   - Local:        http://localhost:3000
+   - Network:      http://172.25.64.1:3000
+   - Experiments (use with caution):
+     · serverActions
+
+ ✓ Starting...
+Creating turbopack project {
+  dir: 'C:\\Users\\csali\\.gemini\\antigravity\\scratch\\aicareerguide',
+  testMode: true
+}
+ ○ Compiling middleware ...
+ ✓ Compiled middleware in 689ms
+ ✓ Ready in 3.9s
+ ○ Compiling /editor ...
+ ✓ Compiled /editor in 39.7s
+ GET /editor 200 in 45211ms
+ GET / 200 in 29042ms
+ ○ Compiling /icon ...
+ ✓ Compiled /icon in 9.8s
+ GET /icon 200 in 13988ms
+ GET /icon 200 in 1391ms
+ GET /icon 200 in 788ms
+ GET /icon 200 in 2682ms
+ GET /editor 200 in 4879ms
+ GET /editor 200 in 10094ms
+ GET / 200 in 14082ms
+ ✓ Compiled in 4.2s
+ ✓ Compiled in 2.9s
+ ✓ Compiled in 90.1s
+ ✓ Compiled in 3.6s
+ ✓ Compiled in 3.8s
+ ✓ Compiled in 60ms
+ ○ Compiling /_error ...
+ ✓ Compiled /_error in 5s
+ GET /editor 500 in 9816ms
+ GET /editor 500 in 13402ms
+ ✓ Compiled in 61.7s
+ ✓ Compiled in 6.5s
+ ○ Compiling /editor ...
+ ✓ Compiled /editor in 873ms
+ ✓ Compiled in 3.6s
+ ✓ Compiled middleware in 193ms
+ ✓ Compiled in 9.6s
+ ✓ Compiled middleware in 9ms
+ ✓ Compiled in 4s
+ ✓ Compiled in 1306ms
+ ✓ Compiled in 792ms
+ ✓ Compiled in 919ms

@@ -1,0 +1,119 @@
+
+> nextn@0.1.0 build
+> next build
+
+   Ôû▓ Next.js 15.5.14
+   - Experiments (use with caution):
+     ┬À serverActions
+
+   Creating an optimized production build ...
+ ÔÜá Compiled with warnings in 13.8s
+
+./node_modules/@opentelemetry/instrumentation/build/esm/platform/node/instrumentation.js
+Critical dependency: the request of a dependency is an expression
+
+Import trace for requested module:
+./node_modules/@opentelemetry/instrumentation/build/esm/platform/node/instrumentation.js
+./node_modules/@opentelemetry/instrumentation/build/esm/platform/node/index.js
+./node_modules/@opentelemetry/instrumentation/build/esm/platform/index.js
+./node_modules/@opentelemetry/instrumentation/build/esm/index.js
+./node_modules/@opentelemetry/sdk-node/build/src/sdk.js
+./node_modules/@opentelemetry/sdk-node/build/src/index.js
+./node_modules/@genkit-ai/core/lib/tracing/node-telemetry-provider.js
+./node_modules/@genkit-ai/core/lib/node.js
+./node_modules/genkit/lib/common.js
+./node_modules/genkit/lib/index.mjs
+./src/ai/flows/linkedin-job-parse-flow.ts
+./src/app/api/jobs/import/linkedin/route.ts
+
+   Linting and checking validity of types ...
+   Collecting page data ...
+ ÔÜá Using edge runtime on a page currently disables static generation for that page
+[Genkit] WARNING: No API key found (GEMINI_API_KEY). AI features may fail.
+[Genkit] WARNING: No API key found (GEMINI_API_KEY). AI features may fail.
+   Generating static pages (0/52) ...
+   Generating static pages (13/52) 
+[Genkit] WARNING: No API key found (GEMINI_API_KEY). AI features may fail.
+   Generating static pages (26/52) 
+   Generating static pages (39/52) 
+ Ô£ô Generating static pages (52/52)
+   Finalizing page optimization ...
+   Collecting build traces ...
+
+Route (app)                                       Size  First Load JS
+Ôöî Ôùï /                                          7.27 kB         279 kB
+Ôö£ ãÆ /__/auth/[...path]                             0 B            0 B
+Ôö£ Ôùï /_not-found                                  197 B         102 kB
+Ôö£ Ôùï /admin                                     4.25 kB         245 kB
+Ôö£ Ôùï /admin/audit-logs                          6.79 kB         263 kB
+Ôö£ Ôùï /admin/content                             4.65 kB         245 kB
+Ôö£ ãÆ /admin/content/[slug]                      4.29 kB         249 kB
+Ôö£ Ôùï /admin/diagnostics                         6.53 kB         243 kB
+Ôö£ Ôùï /admin/ingestion                           8.41 kB         118 kB
+Ôö£ Ôùï /admin/pricing                             2.99 kB         248 kB
+Ôö£ ãÆ /admin/pricing/[planId]                     5.7 kB         250 kB
+Ôö£ Ôùï /admin/settings                            7.47 kB         251 kB
+Ôö£ Ôùï /admin/settings/ai                           176 B         105 kB
+Ôö£ Ôùï /admin/settings/flags                      5.01 kB         249 kB
+Ôö£ Ôùï /admin/settings/security                     176 B         105 kB
+Ôö£ Ôùï /admin/settings/storage                      176 B         105 kB
+Ôö£ Ôùï /admin/subscriptions                       7.94 kB         248 kB
+Ôö£ Ôùï /admin/templates                            6.3 kB         128 kB
+Ôö£ Ôùï /admin/unauthorized                        3.39 kB         116 kB
+Ôö£ Ôùï /admin/users                               9.04 kB         278 kB
+Ôö£ ãÆ /admin/users/[id]                          10.5 kB         258 kB
+Ôö£ ãÆ /api/admin/users/sync                        197 B         102 kB
+Ôö£ ãÆ /api/billing-portal                          197 B         102 kB
+Ôö£ ãÆ /api/checkout                                197 B         102 kB
+Ôö£ ãÆ /api/diagnostics/extraction                  197 B         102 kB
+Ôö£ ãÆ /api/diagnostics/quality-engineer            197 B         102 kB
+Ôö£ ãÆ /api/jobs/apply-intent                       197 B         102 kB
+Ôö£ ãÆ /api/jobs/import/linkedin                    197 B         102 kB
+Ôö£ ãÆ /api/jobs/partners/[source]/apply-intents    197 B         102 kB
+Ôö£ ãÆ /api/jobs/partners/[source]/dispositions     197 B         102 kB
+Ôö£ ãÆ /api/jobs/partners/[source]/search           197 B         102 kB
+Ôö£ ãÆ /api/jobs/partners/[source]/webhooks         197 B         102 kB
+Ôö£ ãÆ /api/jobs/search                             197 B         102 kB
+Ôö£ ãÆ /api/marketing-bot                           197 B         102 kB
+Ôö£ ãÆ /api/quality/report                          197 B         102 kB
+Ôö£ ãÆ /api/webhook/stripe                          197 B         102 kB
+Ôö£ ãÆ /apple-icon                                  197 B         102 kB
+Ôö£ Ôùï /ats                                       12.5 kB         253 kB
+Ôö£ Ôùï /chat                                      7.79 kB         121 kB
+Ôö£ Ôùï /cover-letters                             11.6 kB         285 kB
+Ôö£ ãÆ /cover-letters/[id]                        7.21 kB         250 kB
+Ôö£ Ôùï /dashboard                                   15 kB         259 kB
+Ôö£ Ôùï /editor                                    21.1 kB         294 kB
+Ôö£ Ôùï /forgot-password                           4.12 kB         393 kB
+Ôö£ ãÆ /icon                                        197 B         102 kB
+Ôö£ Ôùï /jobs                                      8.71 kB         290 kB
+Ôö£ Ôùï /jobs/apply                                7.68 kB         248 kB
+Ôö£ Ôùï /login                                        3 kB         394 kB
+Ôö£ Ôùï /manifest.webmanifest                        197 B         102 kB
+Ôö£ Ôùï /onboarding                                8.19 kB         272 kB
+Ôö£ Ôùï /onboarding/review                         6.57 kB         266 kB
+Ôö£ Ôùï /onboarding/upload                         5.98 kB         265 kB
+Ôö£ ãÆ /opengraph-image                             197 B         102 kB
+Ôö£ Ôùï /pricing                                   2.04 kB         273 kB
+Ôö£ ãÆ /print/resume/[id]                         5.42 kB         255 kB
+Ôö£ Ôùï /privacy                                   2.05 kB         273 kB
+Ôö£ Ôùï /qa/resume-templates                         759 B         119 kB
+Ôö£ Ôùï /resumes                                   19.7 kB         308 kB
+Ôö£ Ôùï /robots.txt                                  197 B         102 kB
+Ôö£ Ôùï /settings                                  11.7 kB         255 kB
+Ôö£ Ôùï /signup                                    3.25 kB         395 kB
+Ôö£ Ôùï /sitemap.xml                                 197 B         102 kB
+Ôö£ Ôùï /support                                   2.04 kB         273 kB
+Ôö£ Ôùï /terms                                     2.05 kB         273 kB
+Ôöö Ôùï /tracker                                   11.9 kB         305 kB
++ First Load JS shared by all                   102 kB
+  Ôö£ chunks/1255-dae3977b913d5e96.js            45.2 kB
+  Ôö£ chunks/4bd1b696-182b6b13bdad92e3.js        54.2 kB
+  Ôöö other shared chunks (total)                 2.4 kB
+
+
+ãÆ Middleware                                   33.7 kB
+
+Ôùï  (Static)   prerendered as static content
+ãÆ  (Dynamic)  server-rendered on demand
+

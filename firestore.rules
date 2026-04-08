@@ -1,0 +1,123 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Basic Authentication Helpers
+    function isSignedIn() {
+      return request.auth != null;
+    }
+    
+    function isOwner(userId) {
+      return isSignedIn() && request.auth.uid == userId;
+    }
+
+    // RBAC Helpers
+    function getAdminData() {
+      return get(/databases/$(database)/documents/adminUsers/$(request.auth.uid)).data;
+    }
+
+    function isAdmin() {
+      return isSignedIn() && 
+             exists(/databases/$(database)/documents/adminUsers/$(request.auth.uid)) && 
+             getAdminData().isActive == true;
+    }
+
+    function hasRole(role) {
+      return isAdmin() && role in getAdminData().roleIds;
+    }
+
+    function isSuperAdmin() {
+      return hasRole('super-admin');
+    }
+
+    function canManageUsers() {
+      return isSuperAdmin() || hasRole('admin') || hasRole('support-manager');
+    }
+
+    function canManageContent() {
+      return isSuperAdmin() || hasRole('admin') || hasRole('content-manager');
+    }
+
+    function canManageSystem() {
+      return isSuperAdmin() || hasRole('admin');
+    }
+
+    // User Data & Assets
+    match /users/{userId} {
+      allow read, write: if isOwner(userId) || canManageUsers();
+      
+      match /resumes/{resumeId} {
+        allow read, write: if isOwner(userId) || canManageUsers();
+      }
+      
+      match /jobApplications/{applicationId} {
+        allow read, write: if isOwner(userId) || canManageUsers();
+      }
+
+      match /jobPartnerConnections/{connectionId} {
+        allow read, write: if isOwner(userId) || canManageUsers();
+      }
+
+      match /coverLetters/{letterId} {
+        allow read, write: if isOwner(userId) || canManageUsers();
+      }
+
+      match /atsReports/{reportId} {
+        allow read, write: if isOwner(userId) || canManageUsers();
+      }
+    }
+
+    // Administrative Collections
+    match /adminUsers/{userId} {
+      allow read: if isOwner(userId) || isAdmin();
+      allow create: if isSuperAdmin();
+      allow update, delete: if isSuperAdmin();
+    }
+
+    match /adminAuditLogs/{logId} {
+      allow read: if isAdmin();
+      // Logs are immutable: Create only, no update or delete.
+      allow create: if isAdmin();
+      allow update, delete: if false;
+    }
+
+    match /featureFlags/{flagId} {
+      allow read: if isSignedIn();
+      allow write: if canManageSystem();
+    }
+
+    match /planConfigs/{configId} {
+      allow read: if isSignedIn();
+      allow write: if canManageSystem();
+    }
+
+    match /systemConfigs/{configId} {
+      allow read, write: if canManageSystem();
+    }
+
+    match /contentPages/{pageId} {
+      allow read: if true;
+      allow write: if canManageContent();
+    }
+
+    match /contentVersions/{versionId} {
+      allow read: if isAdmin();
+      allow create: if canManageContent();
+      allow update, delete: if false;
+    }
+
+    match /cvTemplates/{templateId} {
+      allow read: if true;
+      allow write: if canManageContent();
+    }
+
+    match /jobListings/{listingId} {
+      allow read: if true;
+      allow write: if canManageContent() || canManageSystem();
+    }
+
+    match /resumeExtractionJobs/{jobId} {
+      allow read: if isAdmin();
+      allow write: if false;
+    }
+  }
+}

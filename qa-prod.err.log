@@ -1,0 +1,105 @@
+[Genkit] WARNING: No API key found (GEMINI_API_KEY). AI features may fail.
+[ExtractionFlow] GEMINI CRITICAL FAILURE: FAILED_PRECONDITION: Please pass in the API key or set the GEMINI_API_KEY or GOOGLE_API_KEY environment variable.
+For more details see https://genkit.dev/docs/plugins/google-genai/
+[DocumentParser] Buffer fetch failed: [TypeError: fetch failed] {
+  [cause]: [Error: getaddrinfo ENOTFOUND example.invalid] {
+    errno: -3008,
+    code: 'ENOTFOUND',
+    syscall: 'getaddrinfo',
+    hostname: 'example.invalid'
+  }
+}
+[ExtractionFlow] GEMINI CRITICAL FAILURE: fetch failed
+[ExtractionGuardian] Python parser failed: [TypeError: fetch failed] {
+  [cause]: [Error: getaddrinfo ENOTFOUND example.invalid] {
+    errno: -3008,
+    code: 'ENOTFOUND',
+    syscall: 'getaddrinfo',
+    hostname: 'example.invalid'
+  }
+}
+[DocumentParser] Buffer fetch failed: [TypeError: fetch failed] {
+  [cause]: [Error: getaddrinfo ENOTFOUND example.invalid] {
+    errno: -3008,
+    code: 'ENOTFOUND',
+    syscall: 'getaddrinfo',
+    hostname: 'example.invalid'
+  }
+}
+[PythonParser] Script reported error: Failed to extract text from file.
+[Job Error] Extraction monitor could not initialize: Error: Unable to detect a Project Id in the current environment. 
+To learn more about authentication and Google APIs, visit: 
+https://cloud.google.com/docs/authentication/getting-started
+    at <unknown> (https://cloud.google.com/docs/authentication/getting-started)
+    at async i (C:\Users\csali\.gemini\antigravity\scratch\aicareerguide\.next\server\app\api\diagnostics\extraction\route.js:11:4095)
+    at async k (C:\Users\csali\.gemini\antigravity\scratch\aicareerguide\.next\server\app\api\diagnostics\extraction\route.js:11:5297)
+    at async n (C:\Users\csali\.gemini\antigravity\scratch\aicareerguide\.next\server\app\api\diagnostics\extraction\route.js:58:438)
+    at g.with (C:\Users\csali\.gemini\antigravity\scratch\aicareerguide\.next\server\chunks\7271.js:61:113219)
+[ExtractionFlow] GEMINI CRITICAL FAILURE: FAILED_PRECONDITION: Please pass in the API key or set the GEMINI_API_KEY or GOOGLE_API_KEY environment variable.
+For more details see https://genkit.dev/docs/plugins/google-genai/
+[PythonParser] Script reported error: Failed to extract text from file.
+[QualityEngineer] Failed to record quality signal: Error: Unable to detect a Project Id in the current environment. 
+To learn more about authentication and Google APIs, visit: 
+https://cloud.google.com/docs/authentication/getting-started
+    at <unknown> (https://cloud.google.com/docs/authentication/getting-started)
+    at async i (C:\Users\csali\.gemini\antigravity\scratch\aicareerguide\.next\server\app\api\diagnostics\extraction\route.js:11:4095)
+    at async k (C:\Users\csali\.gemini\antigravity\scratch\aicareerguide\.next\server\app\api\diagnostics\extraction\route.js:11:5297)
+    at async n (C:\Users\csali\.gemini\antigravity\scratch\aicareerguide\.next\server\app\api\diagnostics\extraction\route.js:58:438)
+    at g.with (C:\Users\csali\.gemini\antigravity\scratch\aicareerguide\.next\server\chunks\7271.js:61:113219)
+    at g.with (C:\Users\csali\.gemini\antigravity\scratch\aicareerguide\.next\server\chunks\7271.js:61:113219)
+[Job Error] Extraction monitor could not initialize: Error: Unable to detect a Project Id in the current environment. 
+To learn more about authentication and Google APIs, visit: 
+https://cloud.google.com/docs/authentication/getting-started
+    at <unknown> (https://cloud.google.com/docs/authentication/getting-started)
+    at async i (C:\Users\csali\.gemini\antigravity\scratch\aicareerguide\.next\server\app\api\diagnostics\extraction\route.js:11:4095)
+    at async k (C:\Users\csali\.gemini\antigravity\scratch\aicareerguide\.next\server\app\api\diagnostics\extraction\route.js:11:5297)
+    at async n (C:\Users\csali\.gemini\antigravity\scratch\aicareerguide\.next\server\app\api\diagnostics\extraction\route.js:58:438)
+    at g.with (C:\Users\csali\.gemini\antigravity\scratch\aicareerguide\.next\server\chunks\7271.js:61:113219)
+    at g.with (C:\Users\csali\.gemini\antigravity\scratch\aicareerguide\.next\server\chunks\7271.js:61:113219)
+    at g.with (C:\Users\csali\.gemini\antigravity\scratch\aicareerguide\.next\server\chunks\7271.js:61:113219)
+    at g.with (C:\Users\csali\.gemini\antigravity\scratch\aicareerguide\.next\server\chunks\7271.js:61:113219)
+[Job Error] Extraction monitor could not initialize: Error: Unable to detect a Project Id in the current environment. 
+To learn more about authentication and Google APIs, visit: 
+https://cloud.google.com/docs/authentication/getting-started
+    at <unknown> (https://cloud.google.com/docs/authentication/getting-started)
+    at async i (C:\Users\csali\.gemini\antigravity\scratch\aicareerguide\.next\server\app\api\diagnostics\extraction\route.js:11:4095)
+    at async k (C:\Users\csali\.gemini\antigravity\scratch\aicareerguide\.next\server\app\api\diagnostics\extraction\route.js:11:5297)
+    at async n (C:\Users\csali\.gemini\antigravity\scratch\aicareerguide\.next\server\app\api\diagnostics\extraction\route.js:58:438)
+    at g.with (C:\Users\csali\.gemini\antigravity\scratch\aicareerguide\.next\server\chunks\7271.js:61:113219)
+    at g.with (C:\Users\csali\.gemini\antigravity\scratch\aicareerguide\.next\server\chunks\7271.js:61:113219)
+    at g.with (C:\Users\csali\.gemini\antigravity\scratch\aicareerguide\.next\server\chunks\7271.js:61:113219)
+    at g.with (C:\Users\csali\.gemini\antigravity\scratch\aicareerguide\.next\server\chunks\7271.js:61:113219)
+[ExtractionFlow] GEMINI CRITICAL FAILURE: FAILED_PRECONDITION: Please pass in the API key or set the GEMINI_API_KEY or GOOGLE_API_KEY environment variable.
+For more details see https://genkit.dev/docs/plugins/google-genai/
+[ExtractionFlow] GEMINI CRITICAL FAILURE: FAILED_PRECONDITION: Please pass in the API key or set the GEMINI_API_KEY or GOOGLE_API_KEY environment variable.
+For more details see https://genkit.dev/docs/plugins/google-genai/
+[ExtractionFlow] GEMINI CRITICAL FAILURE: FAILED_PRECONDITION: Please pass in the API key or set the GEMINI_API_KEY or GOOGLE_API_KEY environment variable.
+For more details see https://genkit.dev/docs/plugins/google-genai/
+[PythonParser] Script reported error: Failed to extract text from file.
+[PythonParser] Script reported error: Failed to extract text from file.
+[QualityEngineer] Failed to record quality signal: Error: Unable to detect a Project Id in the current environment. 
+To learn more about authentication and Google APIs, visit: 
+https://cloud.google.com/docs/authentication/getting-started
+    at <unknown> (https://cloud.google.com/docs/authentication/getting-started)
+    at async i (C:\Users\csali\.gemini\antigravity\scratch\aicareerguide\.next\server\app\api\diagnostics\extraction\route.js:11:4095)
+    at async k (C:\Users\csali\.gemini\antigravity\scratch\aicareerguide\.next\server\app\api\diagnostics\extraction\route.js:11:5297)
+    at async n (C:\Users\csali\.gemini\antigravity\scratch\aicareerguide\.next\server\app\api\diagnostics\extraction\route.js:58:438)
+    at g.with (C:\Users\csali\.gemini\antigravity\scratch\aicareerguide\.next\server\chunks\7271.js:61:113219)
+    at g.with (C:\Users\csali\.gemini\antigravity\scratch\aicareerguide\.next\server\chunks\7271.js:61:113219)
+    at g.with (C:\Users\csali\.gemini\antigravity\scratch\aicareerguide\.next\server\chunks\7271.js:61:113219)
+    at g.with (C:\Users\csali\.gemini\antigravity\scratch\aicareerguide\.next\server\chunks\7271.js:61:113219)
+    at g.with (C:\Users\csali\.gemini\antigravity\scratch\aicareerguide\.next\server\chunks\7271.js:61:113219)
+[PythonParser] Script reported error: Failed to extract text from file.
+[QualityEngineer] Failed to record quality signal: Error: Unable to detect a Project Id in the current environment. 
+To learn more about authentication and Google APIs, visit: 
+https://cloud.google.com/docs/authentication/getting-started
+    at <unknown> (https://cloud.google.com/docs/authentication/getting-started)
+    at async i (C:\Users\csali\.gemini\antigravity\scratch\aicareerguide\.next\server\app\api\diagnostics\extraction\route.js:11:4095)
+    at async k (C:\Users\csali\.gemini\antigravity\scratch\aicareerguide\.next\server\app\api\diagnostics\extraction\route.js:11:5297)
+    at async n (C:\Users\csali\.gemini\antigravity\scratch\aicareerguide\.next\server\app\api\diagnostics\extraction\route.js:58:438)
+    at g.with (C:\Users\csali\.gemini\antigravity\scratch\aicareerguide\.next\server\chunks\7271.js:61:113219)
+    at g.with (C:\Users\csali\.gemini\antigravity\scratch\aicareerguide\.next\server\chunks\7271.js:61:113219)
+    at g.with (C:\Users\csali\.gemini\antigravity\scratch\aicareerguide\.next\server\chunks\7271.js:61:113219)
+    at g.with (C:\Users\csali\.gemini\antigravity\scratch\aicareerguide\.next\server\chunks\7271.js:61:113219)
+    at g.with (C:\Users\csali\.gemini\antigravity\scratch\aicareerguide\.next\server\chunks\7271.js:61:113219)
+    at g.with (C:\Users\csali\.gemini\antigravity\scratch\aicareerguide\.next\server\chunks\7271.js:61:113219)

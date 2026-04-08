@@ -1,0 +1,42 @@
+
+> nextn@0.1.0 build
+> next build
+
+   Ôû▓ Next.js 15.5.14
+   - Experiments (use with caution):
+     ┬À serverActions
+
+   Creating an optimized production build ...
+ ÔÜá Compiled with warnings in 17.5s
+
+./node_modules/@opentelemetry/instrumentation/build/esm/platform/node/instrumentation.js
+Critical dependency: the request of a dependency is an expression
+
+Import trace for requested module:
+./node_modules/@opentelemetry/instrumentation/build/esm/platform/node/instrumentation.js
+./node_modules/@opentelemetry/instrumentation/build/esm/platform/node/index.js
+./node_modules/@opentelemetry/instrumentation/build/esm/platform/index.js
+./node_modules/@opentelemetry/instrumentation/build/esm/index.js
+./node_modules/@opentelemetry/sdk-node/build/src/sdk.js
+./node_modules/@opentelemetry/sdk-node/build/src/index.js
+./node_modules/@genkit-ai/core/lib/tracing/node-telemetry-provider.js
+./node_modules/@genkit-ai/core/lib/node.js
+./node_modules/genkit/lib/common.js
+./node_modules/genkit/lib/index.mjs
+./src/ai/flows/linkedin-job-parse-flow.ts
+./src/app/api/jobs/import/linkedin/route.ts
+
+   Linting and checking validity of types ...
+Failed to compile.
+
+./src/components/editor/DesktopEditor.tsx:213:56
+Type error: Parameter 'suggestion' implicitly has an 'any' type.
+
+  211 |                           {summarySuggestions.length > 0 ? (
+  212 |                             <div className="space-y-2">
+> 213 |                               {summarySuggestions.map((suggestion, i) => (
+      |                                                        ^
+  214 |                                 <button
+  215 |                                   key={i}
+  216 |                                   onClick={() => handleUpdate("content.summary", suggestion)}
+Next.js build worker exited with code: 1 and signal: null

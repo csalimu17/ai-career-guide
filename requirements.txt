@@ -1,0 +1,7 @@
+pdfplumber
+python-docx
+docx2txt
+pytesseract
+pillow
+spacy
+pyresparser

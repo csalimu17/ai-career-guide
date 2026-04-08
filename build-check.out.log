@@ -1,0 +1,97 @@
+
+> nextn@0.1.0 build
+> next build
+
+   ▲ Next.js 15.5.14
+   - Experiments (use with caution):
+     · serverActions
+
+   Creating an optimized production build ...
+   Linting and checking validity of types ...
+   Collecting page data ...
+   Generating static pages (0/52) ...
+   Generating static pages (13/52) 
+   Generating static pages (26/52) 
+   Generating static pages (39/52) 
+ ✓ Generating static pages (52/52)
+   Finalizing page optimization ...
+   Collecting build traces ...
+
+Route (app)                                       Size  First Load JS
+┌ ○ /                                          7.27 kB         279 kB
+├ ƒ /__/auth/[...path]                             0 B            0 B
+├ ○ /_not-found                                  197 B         102 kB
+├ ○ /admin                                     4.25 kB         245 kB
+├ ○ /admin/audit-logs                          6.79 kB         263 kB
+├ ○ /admin/content                             4.65 kB         245 kB
+├ ƒ /admin/content/[slug]                      4.29 kB         249 kB
+├ ○ /admin/diagnostics                         6.53 kB         243 kB
+├ ○ /admin/ingestion                           8.41 kB         118 kB
+├ ○ /admin/pricing                             2.99 kB         248 kB
+├ ƒ /admin/pricing/[planId]                     5.7 kB         250 kB
+├ ○ /admin/settings                            7.47 kB         251 kB
+├ ○ /admin/settings/ai                           176 B         105 kB
+├ ○ /admin/settings/flags                      5.01 kB         249 kB
+├ ○ /admin/settings/security                     176 B         105 kB
+├ ○ /admin/settings/storage                      176 B         105 kB
+├ ○ /admin/subscriptions                       7.94 kB         248 kB
+├ ○ /admin/templates                           6.35 kB         128 kB
+├ ○ /admin/unauthorized                        3.39 kB         116 kB
+├ ○ /admin/users                               9.04 kB         278 kB
+├ ƒ /admin/users/[id]                          10.5 kB         258 kB
+├ ƒ /api/admin/users/sync                        197 B         102 kB
+├ ƒ /api/billing-portal                          197 B         102 kB
+├ ƒ /api/checkout                                197 B         102 kB
+├ ƒ /api/diagnostics/extraction                  197 B         102 kB
+├ ƒ /api/diagnostics/quality-engineer            197 B         102 kB
+├ ƒ /api/jobs/apply-intent                       197 B         102 kB
+├ ƒ /api/jobs/import/linkedin                    197 B         102 kB
+├ ƒ /api/jobs/partners/[source]/apply-intents    197 B         102 kB
+├ ƒ /api/jobs/partners/[source]/dispositions     197 B         102 kB
+├ ƒ /api/jobs/partners/[source]/search           197 B         102 kB
+├ ƒ /api/jobs/partners/[source]/webhooks         197 B         102 kB
+├ ƒ /api/jobs/search                             197 B         102 kB
+├ ƒ /api/marketing-bot                           197 B         102 kB
+├ ƒ /api/quality/report                          197 B         102 kB
+├ ƒ /api/webhook/stripe                          197 B         102 kB
+├ ƒ /apple-icon                                  197 B         102 kB
+├ ○ /ats                                       12.5 kB         253 kB
+├ ○ /chat                                      7.79 kB         121 kB
+├ ○ /cover-letters                             11.7 kB         285 kB
+├ ƒ /cover-letters/[id]                        7.21 kB         250 kB
+├ ○ /dashboard                                   15 kB         259 kB
+├ ○ /editor                                    11.2 kB         319 kB
+├ ○ /forgot-password                           4.12 kB         393 kB
+├ ƒ /icon                                        197 B         102 kB
+├ ○ /jobs                                      8.71 kB         290 kB
+├ ○ /jobs/apply                                7.68 kB         248 kB
+├ ○ /login                                        3 kB         394 kB
+├ ○ /manifest.webmanifest                        197 B         102 kB
+├ ○ /onboarding                                8.21 kB         272 kB
+├ ○ /onboarding/review                         6.57 kB         266 kB
+├ ○ /onboarding/upload                         5.98 kB         265 kB
+├ ƒ /opengraph-image                             197 B         102 kB
+├ ○ /pricing                                   2.04 kB         273 kB
+├ ƒ /print/resume/[id]                         5.42 kB         255 kB
+├ ○ /privacy                                   2.05 kB         273 kB
+├ ○ /qa/editor-shell                           1.97 kB         180 kB
+├ ○ /qa/resume-templates                         810 B         119 kB
+├ ○ /resumes                                   19.7 kB         309 kB
+├ ○ /robots.txt                                  197 B         102 kB
+├ ○ /settings                                  11.7 kB         255 kB
+├ ○ /signup                                    3.25 kB         395 kB
+├ ○ /sitemap.xml                                 197 B         102 kB
+├ ○ /support                                   2.04 kB         273 kB
+├ ○ /terms                                     2.05 kB         273 kB
+└ ○ /tracker                                   11.9 kB         305 kB
++ First Load JS shared by all                   102 kB
+  ├ chunks/1255-dae3977b913d5e96.js            45.2 kB
+  ├ chunks/4bd1b696-182b6b13bdad92e3.js        54.2 kB
+  └ other shared chunks (total)                 2.4 kB
+
+
+ƒ Middleware                                   33.7 kB
+
+○  (Static)   prerendered as static content
+ƒ  (Dynamic)  server-rendered on demand
+

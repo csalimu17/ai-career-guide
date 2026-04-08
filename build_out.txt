@@ -1,0 +1,27 @@
+   Ôû▓ Next.js 15.5.14
+   - Experiments (use with caution):
+     ┬À serverActions
+
+   Creating an optimized production build ...
+Failed to compile.
+
+./src/ai/model-router.ts
+Error:   x You're importing a component that needs "server-only". That only works in a Server Component which is not supported in the pages/ directory. Read more: https://nextjs.org/docs/app/building-your-application/rendering/server-components
+  |
+
+   ,-[C:\Users\csali\.gemini\antigravity\scratch\aicareerguide\src\ai\model-router.ts:1:1]
+ 1 | import "server-only";
+   : ^^^^^^^^^^^^^^^^^^^^^
+ 2 | 
+ 3 | import { db } from "@/firebase/admin";
+   `----
+
+Import trace for requested module:
+./src/ai/model-router.ts
+./src/ai/genkit.ts
+./src/services/CareerRoutingService.ts
+./src/hooks/use-editor-state.ts
+./src/app/(dashboard)/editor/page.tsx
+
+
+> Build failed because of webpack errors

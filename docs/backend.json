@@ -1,0 +1,120 @@
+
+{
+  "entities": {
+    "UserProfile": {
+      "title": "UserProfile",
+      "type": "object",
+      "description": "Represents a user's profile information and application settings.",
+      "properties": {
+        "id": { "type": "string" },
+        "email": { "type": "string", "format": "email" },
+        "firstName": { "type": "string" },
+        "lastName": { "type": "string" },
+        "plan": { "type": "string", "enum": ["free", "pro", "master"] },
+        "onboardingComplete": { "type": "boolean" },
+        "usage": {
+          "type": "object",
+          "properties": {
+            "aiGenerations": { "type": "number" },
+            "atsChecks": { "type": "number" }
+          }
+        },
+        "industry": { "type": "string" },
+        "targetRoles": { "type": "string" },
+        "experienceLevel": { "type": "string" },
+        "yearsOfExperience": { "type": "string" },
+        "employmentStatus": { "type": "string" },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["id", "email", "plan", "onboardingComplete"]
+    },
+    "Resume": {
+      "title": "Resume",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "userId": { "type": "string" },
+        "name": { "type": "string" },
+        "templateId": { "type": "string" },
+        "content": { "type": "object" },
+        "styles": { "type": "object" },
+        "sectionOrder": { "type": "array", "items": { "type": "string" } },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      }
+    },
+    "JobApplication": {
+      "title": "JobApplication",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "userId": { "type": "string" },
+        "company": { "type": "string" },
+        "role": { "type": "string" },
+        "status": { "type": "string", "enum": ["saved", "applied", "interviewing", "offer", "rejected"] },
+        "appliedDate": { "type": "string" },
+        "location": { "type": "string" },
+        "notes": { "type": "string" },
+        "resumeId": { "type": "string" },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      }
+    },
+    "CoverLetter": {
+      "title": "CoverLetter",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "userId": { "type": "string" },
+        "resumeId": { "type": "string" },
+        "company": { "type": "string" },
+        "role": { "type": "string" },
+        "jobDescription": { "type": "string" },
+        "content": { "type": "string" },
+        "tone": { "type": "string" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      }
+    },
+    "AtsReport": {
+      "title": "AtsReport",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "userId": { "type": "string" },
+        "resumeId": { "type": "string" },
+        "jobDescription": { "type": "string" },
+        "atsScore": { "type": "number" },
+        "missingKeywords": { "type": "array", "items": { "type": "string" } },
+        "warnings": { "type": "array", "items": { "type": "string" } },
+        "recommendations": { "type": "array" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      }
+    }
+  },
+  "auth": {
+    "providers": ["password", "google"]
+  },
+  "firestore": {
+    "/users/{userId}": {
+      "schema": "UserProfile",
+      "description": "User profile document."
+    },
+    "/users/{userId}/resumes/{resumeId}": {
+      "schema": "Resume",
+      "description": "User resume documents."
+    },
+    "/users/{userId}/jobApplications/{applicationId}": {
+      "schema": "JobApplication",
+      "description": "User job application tracking records."
+    },
+    "/users/{userId}/coverLetters/{letterId}": {
+      "schema": "CoverLetter",
+      "description": "AI-generated cover letters."
+    },
+    "/users/{userId}/atsReports/{reportId}": {
+      "schema": "AtsReport",
+      "description": "Historical ATS reports for a user."
+    }
+  }
+}

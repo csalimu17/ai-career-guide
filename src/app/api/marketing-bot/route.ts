@@ -93,7 +93,7 @@ function safeJsonParse(value: any) {
 function dedupeActions(actions: any[]) {
   const seen = new Set();
   return actions.filter((action) => {
-    const key = `\${action.type}:\${action.label}:\${action.url}`;
+    const key = `${action.type}:${action.label}:${action.url}`;
     if (seen.has(key)) return false;
     seen.add(key);
     return true;

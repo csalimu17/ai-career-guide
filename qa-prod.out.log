@@ -1,0 +1,117 @@
+   ▲ Next.js 15.5.14
+   - Local:        http://localhost:3001
+   - Network:      http://192.168.1.77:3001
+
+ ✓ Starting...
+ ✓ Ready in 1647ms
+[Job job_1775491354033] Started for MIME: text/plain
+[job_1775491354364] INIT: Initializing multi-strategy CV extraction. { mimeType: 'application/pdf' }
+[DocumentParser] Initializing extraction for MIME: application/pdf
+[job_1775491354426] INIT: Initializing multi-strategy CV extraction. { mimeType: 'text/plain' }
+[DocumentParser] Initializing extraction for MIME: text/plain
+[job_1775491354426] SCAN: Base extraction complete. {
+  method: 'native',
+  isScanned: false,
+  textQuality: 0.75,
+  hints: { location: true, summary: true, email: true, phone: false }
+}
+[job_1775491354426] BRAIN: Executing Multimodal Analysis (Gemini 2.5 Flash)... 
+[job_1775491354426] WARN: Gemini Multimodal failed: FAILED_PRECONDITION: Please pass in the API key or set the GEMINI_API_KEY or GOOGLE_API_KEY environment variable.
+For more details see https://genkit.dev/docs/plugins/google-genai/ 
+[job_1775491354426] BRAIN: Executing Text Fallback (Gemini 2.5 Flash)... 
+[job_1775491354426] WARN: Flash Fallback failed. {
+  error: 'FAILED_PRECONDITION: Please pass in the API key or set the GEMINI_API_KEY or GOOGLE_API_KEY environment variable.\n' +
+    'For more details see https://genkit.dev/docs/plugins/google-genai/'
+}
+[job_1775491354426] CRITICAL: All AI strategies failed. Returning soft-fail state. 
+[job_1775491354364] SCAN: Base extraction complete. {
+  method: 'fallback',
+  isScanned: false,
+  textQuality: 0.1,
+  hints: { location: false, summary: false, email: false, phone: false }
+}
+[job_1775491354364] BRAIN: Executing Multimodal Analysis (Gemini 2.5 Flash)... 
+[job_1775491354364] WARN: Gemini Multimodal failed: fetch failed 
+[job_1775491354364] BRAIN: Executing Text Fallback (Gemini 2.5 Flash)... 
+[job_1775491354364] CRITICAL: All AI strategies failed. Returning soft-fail state. 
+[DocumentParser] Initializing extraction for MIME: application/pdf
+[PythonParser] Invoking pipeline for: C:\Users\csali\AppData\Local\Temp\resume_1775491354487.png
+[DocumentParser] Initializing extraction for MIME: text/plain
+[job_1775491356751] INIT: Initializing multi-strategy CV extraction. { mimeType: 'text/plain' }
+[DocumentParser] Initializing extraction for MIME: text/plain
+[job_1775491356751] SCAN: Base extraction complete. {
+  method: 'native',
+  isScanned: false,
+  textQuality: 0.75,
+  hints: { location: true, summary: true, email: true, phone: false }
+}
+[job_1775491356751] BRAIN: Executing Multimodal Analysis (Gemini 2.5 Flash)... 
+[job_1775491356751] WARN: Gemini Multimodal failed: FAILED_PRECONDITION: Please pass in the API key or set the GEMINI_API_KEY or GOOGLE_API_KEY environment variable.
+For more details see https://genkit.dev/docs/plugins/google-genai/ 
+[job_1775491356751] BRAIN: Executing Text Fallback (Gemini 2.5 Flash)... 
+[job_1775491356751] WARN: Flash Fallback failed. {
+  error: 'FAILED_PRECONDITION: Please pass in the API key or set the GEMINI_API_KEY or GOOGLE_API_KEY environment variable.\n' +
+    'For more details see https://genkit.dev/docs/plugins/google-genai/'
+}
+[job_1775491356751] CRITICAL: All AI strategies failed. Returning soft-fail state. 
+[PythonParser] Invoking pipeline for: C:\Users\csali\AppData\Local\Temp\resume_1775491356757.png
+[DocumentParser] Initializing extraction for MIME: text/plain
+[DocumentParser] Initializing extraction for MIME: application/pdf
+[Job job_1775491357569] Started for MIME: application/pdf
+[Job job_1775491357569] Started for MIME: application/pdf
+[job_1775491357571] INIT: Initializing multi-strategy CV extraction. { mimeType: 'application/pdf' }
+[DocumentParser] Initializing extraction for MIME: application/pdf
+[job_1775491357581] INIT: Initializing multi-strategy CV extraction. { mimeType: 'application/pdf' }
+[DocumentParser] Initializing extraction for MIME: application/pdf
+[job_1775491357582] INIT: Initializing multi-strategy CV extraction. { mimeType: 'application/pdf' }
+[DocumentParser] Initializing extraction for MIME: application/pdf
+[job_1775491357571] SCAN: Base extraction complete. {
+  method: 'native',
+  isScanned: false,
+  textQuality: 0.7999999999999999,
+  hints: { location: false, summary: true, email: true, phone: false }
+}
+[job_1775491357571] BRAIN: Executing Multimodal Analysis (Gemini 2.5 Flash)... 
+[job_1775491357571] WARN: Gemini Multimodal failed: FAILED_PRECONDITION: Please pass in the API key or set the GEMINI_API_KEY or GOOGLE_API_KEY environment variable.
+For more details see https://genkit.dev/docs/plugins/google-genai/ 
+[job_1775491357571] BRAIN: Executing Text Fallback (Gemini 2.5 Flash)... 
+[job_1775491357571] WARN: Flash Fallback failed. {
+  error: 'FAILED_PRECONDITION: Please pass in the API key or set the GEMINI_API_KEY or GOOGLE_API_KEY environment variable.\n' +
+    'For more details see https://genkit.dev/docs/plugins/google-genai/'
+}
+[job_1775491357571] CRITICAL: All AI strategies failed. Returning soft-fail state. 
+[job_1775491357581] SCAN: Base extraction complete. {
+  method: 'native',
+  isScanned: false,
+  textQuality: 0.7999999999999999,
+  hints: { location: false, summary: true, email: true, phone: false }
+}
+[job_1775491357581] BRAIN: Executing Multimodal Analysis (Gemini 2.5 Flash)... 
+[job_1775491357582] SCAN: Base extraction complete. {
+  method: 'native',
+  isScanned: false,
+  textQuality: 0.7999999999999999,
+  hints: { location: false, summary: true, email: true, phone: false }
+}
+[job_1775491357582] BRAIN: Executing Multimodal Analysis (Gemini 2.5 Flash)... 
+[job_1775491357581] WARN: Gemini Multimodal failed: FAILED_PRECONDITION: Please pass in the API key or set the GEMINI_API_KEY or GOOGLE_API_KEY environment variable.
+For more details see https://genkit.dev/docs/plugins/google-genai/ 
+[job_1775491357581] BRAIN: Executing Text Fallback (Gemini 2.5 Flash)... 
+[job_1775491357582] WARN: Gemini Multimodal failed: FAILED_PRECONDITION: Please pass in the API key or set the GEMINI_API_KEY or GOOGLE_API_KEY environment variable.
+For more details see https://genkit.dev/docs/plugins/google-genai/ 
+[job_1775491357582] BRAIN: Executing Text Fallback (Gemini 2.5 Flash)... 
+[job_1775491357581] WARN: Flash Fallback failed. {
+  error: 'FAILED_PRECONDITION: Please pass in the API key or set the GEMINI_API_KEY or GOOGLE_API_KEY environment variable.\n' +
+    'For more details see https://genkit.dev/docs/plugins/google-genai/'
+}
+[job_1775491357581] CRITICAL: All AI strategies failed. Returning soft-fail state. 
+[job_1775491357582] WARN: Flash Fallback failed. {
+  error: 'FAILED_PRECONDITION: Please pass in the API key or set the GEMINI_API_KEY or GOOGLE_API_KEY environment variable.\n' +
+    'For more details see https://genkit.dev/docs/plugins/google-genai/'
+}
+[job_1775491357582] CRITICAL: All AI strategies failed. Returning soft-fail state. 
+[PythonParser] Invoking pipeline for: C:\Users\csali\AppData\Local\Temp\resume_1775491357845.pdf
+[PythonParser] Invoking pipeline for: C:\Users\csali\AppData\Local\Temp\resume_1775491357851.pdf
+[PythonParser] Invoking pipeline for: C:\Users\csali\AppData\Local\Temp\resume_1775491357852.pdf
+[DocumentParser] Initializing extraction for MIME: application/pdf
+[DocumentParser] Initializing extraction for MIME: application/pdf

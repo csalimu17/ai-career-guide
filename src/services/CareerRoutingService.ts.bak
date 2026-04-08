@@ -1,0 +1,119 @@
+import { ai } from "@/ai/genkit";
+import { reasoningGeminiModel } from "@/ai/genkit";
+import { z } from "zod";
+
+export type AgentRole = "STRATEGIST" | "ATS" | "MANAGER" | "RECRUITER" | "GENERAL";
+
+export interface RoutingResult {
+  role: AgentRole;
+  reason: string;
+}
+
+export interface CareerAgent {
+  role: AgentRole;
+  name: string;
+  icon: string;
+  theme: string; // Tailwind color classes
+  systemPrompt: string;
+}
+
+export const CAREER_AGENTS: Record<AgentRole, CareerAgent> = {
+  STRATEGIST: {
+    role: "STRATEGIST",
+    name: "Career Strategist",
+    icon: "🎯",
+    theme: "indigo",
+    systemPrompt: "You are a Senior Career Strategist. Focus on the user's high-level branding, value proposition, and professional narrative. Help them stand out as a leader and a unique talent."
+  },
+  ATS: {
+    role: "ATS",
+    name: "ATS Specialist",
+    icon: "🔬",
+    theme: "amber",
+    systemPrompt: "You are an Applicant Tracking System (ATS) Specialist. Your goal is to optimize the resume for machine readability, keyword matching, and technical accuracy. Ensure the skills and experience align with job descriptions."
+  },
+  MANAGER: {
+    role: "MANAGER",
+    name: "Hiring Manager",
+    icon: "👔",
+    theme: "emerald",
+    systemPrompt: "You are an experienced Hiring Manager. Focus on impact, results, and ROI. Transform tasks into accomplishments. Ask: 'What was the business outcome?'"
+  },
+  RECRUITER: {
+    role: "RECRUITER",
+    name: "Growth Recruiter",
+    icon: "📱",
+    theme: "rose",
+    systemPrompt: "You are an Executive Recruiter. Your job is to make the candidate 'pitchable'. Focus on punchy summaries, clear communication, and translating complex roles into clear value."
+  },
+  GENERAL: {
+    role: "GENERAL",
+    name: "AI Advisor",
+    icon: "🚀",
+    theme: "slate",
+    systemPrompt: "You are a general Career AI Advisor. Help the user with general formatting, grammar, and navigation of the resume builder."
+  }
+};
+
+const RoutingSchema = z.object({
+  role: z.enum(["STRATEGIST", "ATS", "MANAGER", "RECRUITER", "GENERAL"]),
+  reason: z.string(),
+});
+
+export class CareerRoutingService {
+  /**
+   * Classifies the user's input into one of the specialized career roles.
+   */
+  static async classify(text: string): Promise<RoutingResult> {
+    const roles = Object.keys(CAREER_AGENTS).join(", ");
+    
+    try {
+      const { output } = await ai.generate({
+        model: reasoningGeminiModel,
+        prompt: `
+          Classify this career-related query into one of the following roles: ${roles}.
+          
+          Guidelines:
+          - STRATEGIST: Questions about goals, branding, summary, or "how to tell my story".
+          - ATS: Questions about keywords, tech stack, formatting for systems, or specific tools.
+          - MANAGER: Questions about making experience sound "better", showing results, or business impact.
+          - RECRUITER: Questions about summaries, quick pitches, or how to appear more attractive to companies.
+          - GENERAL: Formatting, general layout, or tool help.
+
+          User Query: "${text}"
+        `,
+        output: { schema: RoutingSchema }
+      });
+
+      if (!output) throw new Error("No classification output");
+      return output;
+    } catch (error) {
+      console.error("[CareerRouting] Classification failed:", error);
+      return { role: "GENERAL", reason: "Fallback due to system error" };
+    }
+  }
+
+  /**
+   * Generates a response based on the selected role and the user's resume context.
+   */
+  static async getAgentResponse(
+    role: AgentRole, 
+    text: string, 
+    resumeContext: any
+  ): Promise<string> {
+    const agent = CAREER_AGENTS[role];
+    
+    try {
+      const { text: responseText } = await ai.generate({
+        model: reasoningGeminiModel,
+        system: agent.systemPrompt + "\n\nUse the following resume context to provide specific help:\n" + JSON.stringify(resumeContext, null, 2),
+        prompt: text,
+      });
+
+      return responseText || "I'm sorry, I couldn't process that. Please try again.";
+    } catch (error) {
+      console.error("[CareerRouting] Response generation failed:", error);
+      return "The career advisor service encountered an error. Please try again later.";
+    }
+  }
+}

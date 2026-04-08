@@ -3,8 +3,8 @@ import "server-only";
 import { db } from "@/firebase/admin";
 
 export const GEMINI_MODELS = {
-  fast: "googleai/gemini-1.5-flash",
-  reasoning: "googleai/gemini-1.5-pro",
+  fast: "googleai/gemini-2.5-flash",
+  reasoning: "googleai/gemini-2.5-pro",
 } as const;
 
 export type AiTaskCategory =

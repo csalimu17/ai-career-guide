@@ -1,0 +1,25 @@
+   ▲ Next.js 15.5.14 (Turbopack)
+   - Local:        http://localhost:3002
+   - Network:      http://192.168.1.77:3002
+   - Experiments (use with caution):
+     · serverActions
+
+ ✓ Starting...
+Creating turbopack project {
+  dir: 'C:\\Users\\csali\\.gemini\\antigravity\\scratch\\aicareerguide',
+  testMode: true
+}
+ ○ Compiling middleware ...
+ ✓ Compiled middleware in 700ms
+ ✓ Ready in 4.9s
+ ○ Compiling /qa/resume-templates ...
+ ✓ Compiled /qa/resume-templates in 15.4s
+ GET /qa/resume-templates 200 in 21848ms
+ GET /qa/resume-templates?template=executive&mode=print 200 in 1094ms
+ ✓ Compiled in 706ms
+ ✓ Compiled /qa/resume-templates in 199ms
+ GET /qa/resume-templates 200 in 4740ms
+ GET /qa/resume-templates?template=executive&mode=print 200 in 1511ms
+ GET /qa/resume-templates 200 in 4566ms
+ GET /qa/resume-templates?template=executive&mode=print 200 in 1396ms
+[?25h

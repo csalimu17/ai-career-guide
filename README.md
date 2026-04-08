@@ -1,74 +1,42 @@
-# Welcome to Antigravity!
+# AI Career Guide
 
-Welcome to your new developer home! Your Firebase Studio project has been successfully migrated to Antigravity.
+AI Career Guide is a Next.js application for CV building, ATS optimization, cover-letter generation, job tracking, and admin-managed subscription workflows.
 
-Antigravity is our next-generation, agent-first IDE designed for high-velocity, autonomous development. Because Antigravity runs locally on your machine, you now have access to powerful local workflows and fully integrated AI editing capabilities that go beyond a cloud-based web IDE.
+## Stack
 
-## Getting Started
-- **Run Locally**: Use the **Run and Debug** menu on the left sidebar to start your local development server.
-  - Or in a terminal run `npm run dev` and visit `http://localhost:9002`.
-- **Deploy**: You can deploy your changes to Firebase App Hosting by using the integrated terminal and standard Firebase CLI commands, just as you did in Firebase Studio.
-- **Cleanup**: Cleanup unused artifacts with the @cleanup workflow.
+- Next.js 15 with React 19
+- Firebase Authentication, Firestore, Storage, and App Hosting
+- Genkit-based AI flows for extraction, ATS scoring, summaries, and career assistance
+- Stripe billing for paid plans
 
-Enjoy the next era of AI-driven development!
+## Local Development
 
-File any bugs at https://github.com/firebase/firebase-tools/issues
+1. Use Node `22.x`.
+2. Install dependencies with `npm install`.
+3. Start the app with `npm run dev`.
+4. Open `http://localhost:3000`.
 
-**Firebase Studio Export Date:** 2026-04-01
+## Quality Checks
 
+- `npm run lint`
+- `npm run typecheck`
+- `npm run build`
 
----
+## Important Areas
 
-## Previous README.md contents:
+- `src/app`: routes, layouts, server actions, and API endpoints
+- `src/components`: editor, dashboard, marketing, admin, and shared UI
+- `src/ai/flows`: Genkit flows for extraction, ATS scoring, cover letters, and chat
+- `src/lib`: extraction pipeline, PDF/document handling, templates, plans, and utilities
+- `src/firebase`: client/admin Firebase wiring
 
-# Welcome to Antigravity!
+## Deployment Notes
 
-Welcome to your new developer home! Your Firebase Studio project has been successfully migrated to Antigravity.
+- The current deployment workflow is manual.
+- `scripts/deploy.ps1` is a helper script for local verification and Firebase rules deployment.
+- If the project is running inside a real git checkout, the script can also trigger a git-based rollout. Otherwise it will skip the git step safely.
 
-Antigravity is our next-generation, agent-first IDE designed for high-velocity, autonomous development. Because Antigravity runs locally on your machine, you now have access to powerful local workflows and fully integrated AI editing capabilities that go beyond a cloud-based web IDE.
+## Useful Test Helpers
 
-## Getting Started
-- **Run Locally**: Use the **Run and Debug** menu on the left sidebar to start your local development server.
-  - Or in a terminal run `npm run dev` and visit `http://localhost:9002`.
-- **Deploy**: You can deploy your changes to Firebase App Hosting by using the integrated terminal and standard Firebase CLI commands, just as you did in Firebase Studio.
-- **Cleanup**: Cleanup unused artifacts with the @cleanup workflow.
-
-Enjoy the next era of AI-driven development!
-
-File any bugs at https://github.com/firebase/firebase-tools/issues
-
-**Firebase Studio Export Date:** 2026-04-01
-
-
----
-
-## Previous README.md contents:
-
-# Welcome to Antigravity!
-
-Welcome to your new developer home! Your Firebase Studio project has been successfully migrated to Antigravity.
-
-Antigravity is our next-generation, agent-first IDE designed for high-velocity, autonomous development. Because Antigravity runs locally on your machine, you now have access to powerful local workflows and fully integrated AI editing capabilities that go beyond a cloud-based web IDE.
-
-## Getting Started
-- **Run Locally**: Use the **Run and Debug** menu on the left sidebar to start your local development server.
-  - Or in a terminal run `npm run dev` and visit `http://localhost:9002`.
-- **Deploy**: You can deploy your changes to Firebase App Hosting by using the integrated terminal and standard Firebase CLI commands, just as you did in Firebase Studio.
-- **Cleanup**: Cleanup unused artifacts with the @cleanup workflow.
-
-Enjoy the next era of AI-driven development!
-
-File any bugs at https://github.com/firebase/firebase-tools/issues
-
-**Firebase Studio Export Date:** 2026-03-21
-
-
----
-
-## Previous README.md contents:
-
-# Firebase Studio
-
-This is a NextJS starter in Firebase Studio.
-
-To get started, take a look at src/app/page.tsx.
+- `test-cv-extraction.ts`: run a local CV extraction against a file path you provide
+- `test-validation.ts`: quick validation sanity checks for CV field heuristics
