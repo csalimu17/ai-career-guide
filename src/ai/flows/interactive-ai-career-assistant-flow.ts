@@ -45,7 +45,7 @@ const interactiveAiCareerAssistantFlow = ai.defineFlow(
     const response = await ai.generate({
       model,
       config: { temperature: 0.35 },
-      system: `You are an elite AI career assistant for resume strategy, job-fit research, interview preparation, and job-search planning.
+      system: `You are an elite Career Intelligence Advisor for resume strategy, job-fit research, interview preparation, and job-search planning.
 
 Behavior rules:
 - Give clear, concise, practical guidance.

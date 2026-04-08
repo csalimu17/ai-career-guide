@@ -18,14 +18,14 @@ export function TemplateThumbnail({ template, className }: TemplateThumbnailProp
   return (
     <div
       className={cn(
-        "relative h-full w-full overflow-hidden bg-[linear-gradient(135deg,rgba(103,58,183,0.10),rgba(33,150,243,0.08)_55%,rgba(255,152,0,0.10))]",
+        "relative h-full w-full overflow-hidden bg-slate-50",
         className
       )}
     >
-      <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_left,rgba(103,58,183,0.16),transparent_30%),radial-gradient(circle_at_bottom_right,rgba(33,150,243,0.14),transparent_32%),linear-gradient(180deg,rgba(255,255,255,0.45),rgba(255,255,255,0.08))]" />
+      <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_right,rgba(99,102,241,0.08),transparent_40%),radial-gradient(circle_at_bottom_left,rgba(99,102,241,0.05),transparent_40%)]" />
 
-      <div className="absolute inset-[10px] overflow-hidden rounded-[1.1rem] border border-white/90 bg-white shadow-[0_22px_48px_-30px_rgba(15,23,42,0.35)]">
-        <div className="flex justify-center pt-2">
+      <div className="absolute inset-[12px] overflow-hidden rounded-xl border border-white bg-white shadow-[0_15px_35px_-20px_rgba(15,23,42,0.2)]">
+        <div className="flex justify-center">
           <div
             className="shrink-0 origin-top"
             style={{

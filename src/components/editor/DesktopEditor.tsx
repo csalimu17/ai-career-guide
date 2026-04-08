@@ -74,6 +74,10 @@ export function DesktopEditor({ editor }: DesktopEditorProps) {
     isGeneratingSummarySuggestions,
     summarySuggestions,
     runSummarySuggestions,
+    isSuggestingSkills,
+    skillSuggestions,
+    runSkillSuggestions,
+    setSkillSuggestions,
     applyTemplate,
     updateStyle,
     resetTemplateStyles,
@@ -154,6 +158,10 @@ export function DesktopEditor({ editor }: DesktopEditorProps) {
                 </div>
               </DialogContent>
             </Dialog>
+            <Button onClick={() => setIsChatOpen(true)} className="hidden xl:flex h-9 rounded-full bg-slate-900 border-slate-800 text-white gap-2 px-4 hover:bg-slate-800 shadow-lg">
+              <Sparkles className="h-3.5 w-3.5" />
+              Career Intelligence Advisor
+            </Button>
           </div>
 
           <div className="flex items-center gap-4">
@@ -535,13 +543,249 @@ export function DesktopEditor({ editor }: DesktopEditorProps) {
                                       </Badge>
                                     ))}
                                   </div>
+
+                                  <Button 
+                                    variant="outline" 
+                                    onClick={runSkillSuggestions}
+                                    className="w-full gap-2 rounded-xl mt-4 font-semibold text-indigo-600 border-indigo-100/60 bg-indigo-50/30 hover:bg-indigo-50 hover:border-indigo-200 transition-colors h-11"
+                                  >
+                                    {isSuggestingSkills ? <Loader2 className="h-4 w-4 animate-spin" /> : <Sparkles className="h-4 w-4" />}
+                                    Ai Suggestions
+                                  </Button>
+
+                                  {skillSuggestions.length > 0 && (
+                                    <div className="pt-4 space-y-3">
+                                      <p className="text-[10px] font-black uppercase tracking-widest text-slate-400 px-1">Suggested for you</p>
+                                      <div className="flex flex-wrap gap-2">
+                                        {skillSuggestions.map((skill: string, idx: number) => (
+                                          <Badge 
+                                            key={idx} 
+                                            variant="outline" 
+                                            className="px-3 py-1.5 rounded-lg border-indigo-100 bg-white text-indigo-600 hover:bg-indigo-50 cursor-pointer font-bold text-[10px] shadow-sm transition-all hover:scale-105 active:scale-95"
+                                            onClick={() => {
+                                              if (!resume.content.skills.includes(skill)) {
+                                                handleUpdate("content.skills", [...resume.content.skills, skill])
+                                              }
+                                              setSkillSuggestions((prev: string[]) => prev.filter((s: string) => s !== skill))
+                                            }}
+                                          >
+                                            <Plus className="h-2.5 w-2.5 mr-1 text-indigo-400" />
+                                            {skill}
+                                          </Badge>
+                                        ))}
+                                      </div>
+                                    </div>
+                                  )}
                                </div>
                              </motion.div>
                           )}
                         </AnimatePresence>
                      </Card>
 
-                     {/* Summary Card */}
+                      {/* Projects Card */}
+                      <Card className={cn("overflow-hidden rounded-2xl border transition-all duration-300 shadow-[0_4px_16px_-8px_rgba(15,23,42,0.05)]", activeSection === "projects" ? "border-slate-200" : "border-[#edf1f8] opacity-70")}>
+                         <div className="flex items-center justify-between px-5 py-4 cursor-pointer bg-white" onClick={() => toggleSection('projects')}>
+                            <h3 className="text-[14px] font-semibold text-slate-800">Projects</h3>
+                            {activeSection === "projects" ? <ChevronUp className="h-4 w-4 text-slate-400" /> : <ChevronDown className="h-4 w-4 text-slate-400" />}
+                         </div>
+                         <AnimatePresence initial={false}>
+                           {activeSection === 'projects' && (
+                              <motion.div initial={{ height: 0 }} animate={{ height: 'auto' }} exit={{ height: 0 }} className="overflow-hidden">
+                                <div className="p-5 pt-1 space-y-4 bg-white">
+                                   <Button 
+                                     onClick={() => {
+                                       const next = [...(resume.content.projects || []), { id: Date.now(), title: "", link: "", period: "", description: "" }]
+                                       handleUpdate("content.projects", next)
+                                     }}
+                                     className="w-full h-11 rounded-xl bg-gradient-to-r from-indigo-500 via-[#8a68e8] to-[#ff8c6b] text-white font-semibold text-sm hover:opacity-95 shadow-md shadow-indigo-500/20"
+                                   >
+                                     <Plus className="h-4 w-4 mr-2 opacity-80" /> Add Project
+                                   </Button>
+                                   
+                                   <div className="space-y-4 mt-4">
+                                     {resume.content.projects?.map((proj: any, idx: number) => (
+                                       <div key={proj.id || idx} className="p-4 border rounded-xl border-[#edf1f8] bg-[#fcfdff] relative group">
+                                          <div className="absolute right-3 top-3 opacity-0 group-hover:opacity-100 transition-opacity flex gap-1">
+                                             <Button variant="ghost" size="icon" 
+                                                disabled={isEnhancing}
+                                                onClick={() => runEnhanceContent("projects", idx)}
+                                                className="h-7 w-7 text-indigo-400 hover:bg-slate-100"
+                                                title="Enhance existing content"
+                                             >
+                                                <Sparkles className="h-3 w-3" />
+                                             </Button>
+                                             <Button variant="ghost" size="icon" 
+                                                onClick={() => {
+                                                  const next = resume.content.projects.filter((_: any, i: number) => i !== idx)
+                                                  handleUpdate("content.projects", next)
+                                                }}
+                                                className="h-7 w-7 text-slate-300 hover:text-red-500 hover:bg-slate-100"
+                                             >
+                                                <Trash2 className="h-3 w-3" />
+                                             </Button>
+                                          </div>
+                                          <Input 
+                                             value={proj.title} 
+                                             onChange={(e) => {
+                                               const next = [...resume.content.projects]
+                                               next[idx] = { ...next[idx], title: e.target.value }
+                                               handleUpdate("content.projects", next)
+                                             }}
+                                             className="font-bold text-[14px] border-none bg-transparent h-8 px-1 mb-1 focus-visible:ring-0 placeholder:text-slate-300 outline-none"
+                                             placeholder="Project Title"
+                                          />
+                                           <Input 
+                                             value={proj.link} 
+                                             onChange={(e) => {
+                                               const next = [...resume.content.projects]
+                                               next[idx] = { ...next[idx], link: e.target.value }
+                                               handleUpdate("content.projects", next)
+                                             }}
+                                             className="text-[13px] border-none bg-transparent h-7 px-1 mb-2 text-slate-500 focus-visible:ring-0 placeholder:text-slate-300 outline-none"
+                                             placeholder="Project Link (Optional)"
+                                          />
+                                          <RichTextField
+                                             value={proj.description}
+                                             onChange={(val) => {
+                                               const next = [...resume.content.projects]
+                                               next[idx] = { ...next[idx], description: val }
+                                               handleUpdate("content.projects", next)
+                                             }}
+                                             placeholder="Describe what you built..."
+                                             minHeightClassName="min-h-[100px]"
+                                          />
+                                       </div>
+                                     ))}
+                                   </div>
+                                </div>
+                              </motion.div>
+                           )}
+                         </AnimatePresence>
+                      </Card>
+
+                      {/* Certifications Card */}
+                      <Card className={cn("overflow-hidden rounded-2xl border transition-all duration-300 shadow-[0_4px_16px_-8px_rgba(15,23,42,0.05)]", activeSection === "certifications" ? "border-slate-200" : "border-[#edf1f8] opacity-70")}>
+                         <div className="flex items-center justify-between px-5 py-4 cursor-pointer bg-white" onClick={() => toggleSection('certifications')}>
+                            <h3 className="text-[14px] font-semibold text-slate-800">Certifications</h3>
+                            {activeSection === "certifications" ? <ChevronUp className="h-4 w-4 text-slate-400" /> : <ChevronDown className="h-4 w-4 text-slate-400" />}
+                         </div>
+                         <AnimatePresence initial={false}>
+                           {activeSection === 'certifications' && (
+                              <motion.div initial={{ height: 0 }} animate={{ height: 'auto' }} exit={{ height: 0 }} className="overflow-hidden">
+                                <div className="p-5 pt-1 space-y-4 bg-white">
+                                   <Button 
+                                     onClick={() => {
+                                       const next = [...(resume.content.certifications || []), { id: Date.now(), name: "", issuer: "", date: "" }]
+                                       handleUpdate("content.certifications", next)
+                                     }}
+                                     variant="outline"
+                                     className="w-full h-11 rounded-xl text-slate-500 font-semibold text-sm hover:bg-slate-50 hover:text-slate-800 border-dashed border-[#dce2ee]"
+                                   >
+                                     <Plus className="h-4 w-4 mr-2" /> Add Certification
+                                   </Button>
+                                   <div className="space-y-3 mt-4">
+                                     {resume.content.certifications?.map((cert: any, idx: number) => (
+                                        <div key={cert.id || idx} className="p-4 border rounded-xl border-[#edf1f8] bg-[#fcfdff] relative group">
+                                           <button 
+                                             onClick={() => {
+                                               const next = resume.content.certifications.filter((_: any, i: number) => i !== idx)
+                                               handleUpdate("content.certifications", next)
+                                             }}
+                                             className="absolute right-3 top-3 opacity-0 group-hover:opacity-100 text-slate-300 hover:text-red-500 transition-all shadow-sm bg-white p-1 rounded-md border border-slate-100"
+                                           >
+                                             <Trash2 className="h-3 w-3" />
+                                           </button>
+                                           <Input 
+                                              value={cert.name} 
+                                              onChange={(e) => {
+                                                const next = [...resume.content.certifications]
+                                                next[idx] = { ...next[idx], name: e.target.value }
+                                                handleUpdate("content.certifications", next)
+                                              }}
+                                              className="font-bold text-[13px] border-none bg-transparent h-7 px-1 focus-visible:ring-0 placeholder:text-slate-300 outline-none"
+                                              placeholder="Certification Name"
+                                           />
+                                           <Input 
+                                              value={cert.issuer} 
+                                              onChange={(e) => {
+                                                const next = [...resume.content.certifications]
+                                                next[idx] = { ...next[idx], issuer: e.target.value }
+                                                handleUpdate("content.certifications", next)
+                                              }}
+                                              className="text-[12px] border-none bg-transparent h-6 px-1 text-slate-500 focus-visible:ring-0 placeholder:text-slate-300 outline-none"
+                                              placeholder="Issuer (e.g., Google, Amazon)"
+                                           />
+                                        </div>
+                                     ))}
+                                   </div>
+                                </div>
+                              </motion.div>
+                           )}
+                         </AnimatePresence>
+                      </Card>
+
+                      {/* Languages Card */}
+                      <Card className={cn("overflow-hidden rounded-2xl border transition-all duration-300 shadow-[0_4px_16px_-8px_rgba(15,23,42,0.05)]", activeSection === "languages" ? "border-slate-200" : "border-[#edf1f8] opacity-70")}>
+                         <div className="flex items-center justify-between px-5 py-4 cursor-pointer bg-white" onClick={() => toggleSection('languages')}>
+                            <h3 className="text-[14px] font-semibold text-slate-800">Languages</h3>
+                            {activeSection === "languages" ? <ChevronUp className="h-4 w-4 text-slate-400" /> : <ChevronDown className="h-4 w-4 text-slate-400" />}
+                         </div>
+                         <AnimatePresence initial={false}>
+                           {activeSection === 'languages' && (
+                              <motion.div initial={{ height: 0 }} animate={{ height: 'auto' }} exit={{ height: 0 }} className="overflow-hidden">
+                                <div className="p-5 pt-1 space-y-4 bg-white">
+                                   <Button 
+                                     onClick={() => {
+                                       const next = [...(resume.content.languages || []), { name: "", level: "" }]
+                                       handleUpdate("content.languages", next)
+                                     }}
+                                     variant="outline"
+                                     className="w-full h-11 rounded-xl text-slate-500 font-semibold text-sm hover:bg-slate-50 hover:text-slate-800 border-dashed border-[#dce2ee]"
+                                   >
+                                     <Plus className="h-4 w-4 mr-2" /> Add Language
+                                   </Button>
+                                   <div className="grid grid-cols-2 gap-3 pb-2 mt-4">
+                                     {resume.content.languages?.map((lang: any, idx: number) => (
+                                        <div key={idx} className="p-3 border rounded-xl border-[#edf1f8] bg-[#fcfdff] relative group flex flex-col gap-1">
+                                           <button 
+                                             onClick={() => {
+                                               const next = resume.content.languages.filter((_: any, i: number) => i !== idx)
+                                               handleUpdate("content.languages", next)
+                                             }}
+                                             className="absolute -right-1 -top-1 opacity-0 group-hover:opacity-100 text-slate-300 hover:text-red-500 transition-all shadow-sm bg-white p-1 rounded-full border border-slate-100"
+                                           >
+                                             <Trash2 className="h-2.5 w-2.5" />
+                                           </button>
+                                           <Input 
+                                              value={lang.name} 
+                                              onChange={(e) => {
+                                                const next = [...resume.content.languages]
+                                                next[idx] = { ...next[idx], name: e.target.value }
+                                                handleUpdate("content.languages", next)
+                                              }}
+                                              className="font-bold text-[12px] border-none bg-transparent h-6 px-1 focus-visible:ring-0 placeholder:text-slate-300 outline-none"
+                                              placeholder="Language"
+                                           />
+                                           <Input 
+                                              value={lang.level} 
+                                              onChange={(e) => {
+                                                const next = [...resume.content.languages]
+                                                next[idx] = { ...next[idx], level: e.target.value }
+                                                handleUpdate("content.languages", next)
+                                              }}
+                                              className="text-[11px] border-none bg-transparent h-5 px-1 text-slate-400 focus-visible:ring-0 placeholder:text-slate-300 outline-none"
+                                              placeholder="Level (e.g., Native)"
+                                           />
+                                        </div>
+                                     ))}
+                                   </div>
+                                </div>
+                              </motion.div>
+                           )}
+                         </AnimatePresence>
+                      </Card>
+
+                      {/* Summary Card */}
                      <Card className={cn("overflow-hidden rounded-2xl border transition-all duration-300 shadow-[0_4px_16px_-8px_rgba(15,23,42,0.05)]", activeSection === "summary" ? "border-slate-200" : "border-[#edf1f8] opacity-70")}>
                         <div className="flex items-center justify-between px-5 py-4 cursor-pointer bg-white" onClick={() => toggleSection('summary')}>
                            <h3 className="text-[14px] font-semibold text-slate-800">Summary</h3>
@@ -695,7 +939,7 @@ export function DesktopEditor({ editor }: DesktopEditorProps) {
                       <Sparkles className="h-5 w-5" />
                    </div>
                    <div>
-                      <h3 className="text-xs font-black uppercase tracking-widest text-slate-900">AI Advisor</h3>
+                      <h3 className="text-xs font-black uppercase tracking-widest text-slate-900">Career Intelligence Advisor</h3>
                       <p className="text-[9px] font-bold text-slate-400 uppercase tracking-[0.2em] mt-0.5">Gemini 2.5 Intelligence</p>
                    </div>
                 </div>
@@ -740,7 +984,7 @@ export function DesktopEditor({ editor }: DesktopEditorProps) {
                   value={chatInput}
                   onChange={(e) => setChatInput(e.target.value)}
                   onKeyDown={(e) => e.key === "Enter" && handleChatSend()}
-                  placeholder="Ask about your brand, ATS, or ROI..."
+                  placeholder="Ask about your career intelligence..."
                   className="h-12 pl-5 pr-12 rounded-[1.2rem] bg-slate-50 border-slate-100 focus-visible:ring-indigo-100 transition-all font-medium text-sm placeholder:text-slate-400"
                 />
                 <Button 

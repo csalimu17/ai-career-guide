@@ -155,7 +155,7 @@ ${researchBrief || '(none available)'}`,
         const response = await ai.generate({
           model: writingModel,
           config: { temperature: 0.1 },
-          system: `You are an AI career guide.
+          system: `You are a Career Intelligence Advisor.
 
 Identify the most valuable skills that are missing, under-emphasized, or worth surfacing more clearly for the target role.
 

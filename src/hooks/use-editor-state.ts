@@ -36,6 +36,8 @@ export function useEditorState() {
   const [isSuggestingRoleBullets, setIsSuggestingRoleBullets] = useState<number | null>(null)
   const [isGeneratingSummarySuggestions, setIsGeneratingSummarySuggestions] = useState(false)
   const [summarySuggestions, setSummarySuggestions] = useState<string[]>([])
+  const [isSuggestingSkills, setIsSuggestingSkills] = useState(false)
+  const [skillSuggestions, setSkillSuggestions] = useState<string[]>([])
   const [jobDescription, setJobDescription] = useState("")
   const [atsResult, setAtsResult] = useState<AtsOptimizationScoringOutput | null>(null)
   
@@ -480,6 +482,35 @@ export function useEditorState() {
     }
   }
 
+  const runSkillSuggestions = async () => {
+    if (!resume || !checkLimit("aiGenerations")) return
+    setIsSuggestingSkills(true)
+    try {
+      setRoutingLogs(prev => [...prev, { 
+        role: "MANAGER", 
+        reason: "User requested skill suggestions. Routed to Hiring Manager for domain expertise optimization." 
+      }])
+
+      const result = await enhanceCvContent({
+        action: "suggest_skills",
+        currentCvContent: buildResumePlainText(resume),
+        jobDescription: jobDescription
+      })
+      
+      if (result.suggestions) {
+        setSkillSuggestions(result.suggestions)
+      }
+      
+      await incrementUsage("aiGenerations")
+      toast({ title: "Skills Suggested", description: "AI identified relevant skills for your profile." })
+    } catch (err) {
+      console.error("Skill suggestions failed:", err)
+      toast({ variant: "destructive", title: "Suggestions Failed" })
+    } finally {
+      setIsSuggestingSkills(false)
+    }
+  }
+
   return {
     resume,
     isLoading,
@@ -498,6 +529,10 @@ export function useEditorState() {
     isGeneratingSummarySuggestions,
     summarySuggestions,
     runSummarySuggestions,
+    isSuggestingSkills,
+    skillSuggestions,
+    runSkillSuggestions,
+    setSkillSuggestions,
     applyTemplate,
     updateStyle,
     resetTemplateStyles,

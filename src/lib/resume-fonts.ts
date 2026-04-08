@@ -24,6 +24,9 @@ export type ResumeFontKey =
   | "montserrat"
   | "manrope"
   | "space-grotesk"
+  | "outfit"
+  | "lexend"
+  | "cormorant-garamond"
 
 export interface ResumeFontOption {
   value: ResumeFontKey
@@ -171,6 +174,24 @@ export const RESUME_FONT_OPTIONS: ResumeFontOption[] = [
     category: "Modern Premium",
     stack: 'var(--font-space-grotesk), "Segoe UI", Arial, sans-serif',
   },
+  {
+    value: "outfit",
+    label: "Outfit",
+    category: "Modern Premium",
+    stack: 'var(--font-outfit), "Segoe UI", Arial, sans-serif',
+  },
+  {
+    value: "lexend",
+    label: "Lexend",
+    category: "Modern Premium",
+    stack: 'var(--font-lexend), "Segoe UI", Arial, sans-serif',
+  },
+  {
+    value: "cormorant-garamond",
+    label: "Cormorant Garamond",
+    category: "Modern Premium",
+    stack: 'var(--font-cormorant-garamond), Georgia, "Times New Roman", serif',
+  },
 ]
 
 export const RESUME_FONT_GROUPS = RESUME_FONT_OPTIONS.reduce<Record<ResumeFontCategory, ResumeFontOption[]>>(
@@ -203,6 +224,9 @@ export const ATS_SAFE_RESUME_FONT_KEYS: ResumeFontKey[] = [
   "verdana",
   "tahoma",
   "trebuchet",
+  "outfit",
+  "lexend",
+  "cormorant-garamond",
 ]
 
 const ATS_SAFE_FONT_SET = new Set<ResumeFontKey>(ATS_SAFE_RESUME_FONT_KEYS)

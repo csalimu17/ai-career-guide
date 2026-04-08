@@ -1,5 +1,5 @@
 export const siteConfig = {
-  name: "AI Career Guide",
+  name: "Career Intelligence Advisor",
   shortName: "Career Guide",
   description:
     "Build stronger resumes, improve ATS match rates, generate tailored cover letters, and manage your job search in one AI-powered workspace.",

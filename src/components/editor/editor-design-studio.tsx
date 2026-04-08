@@ -51,6 +51,10 @@ const COLOR_SWATCHES = [
   { label: "Executive Navy", value: "#1f3a5f" },
   { label: "Modern Teal", value: "#0f766e" },
   { label: "Forest Grid", value: "#14532d" },
+  { label: "Slate Graphite", value: "#334155" },
+  { label: "Nordic Charcoal", value: "#1e293b" },
+  { label: "Terracotta Creative", value: "#ea580c" },
+  { label: "Bordeaux Elegant", value: "#431407" },
 ] as const
 
 function getTemplateTraits(template: TemplateConfig) {
@@ -168,11 +172,11 @@ export function EditorDesignStudio({
             </div>
 
             <div className="flex flex-wrap items-center gap-2">
-              <Badge className="rounded-full bg-slate-900 px-3 py-1 text-[0.68rem] font-bold uppercase tracking-[0.18em] text-white">
+              <Badge className="rounded-full bg-slate-950 px-3.5 py-1.5 text-[0.62rem] font-black uppercase tracking-[0.2em] text-white border-none shadow-sm">
                 {currentPlan} plan
               </Badge>
-              <Badge variant="outline" className="rounded-full border-emerald-200 bg-emerald-50 px-3 py-1 text-[0.68rem] font-bold uppercase tracking-[0.18em] text-emerald-700">
-                <ShieldCheck className="mr-1 h-3.5 w-3.5" />
+              <Badge variant="outline" className="rounded-full border-emerald-500/20 bg-emerald-500/10 px-3.5 py-1.5 text-[0.62rem] font-black uppercase tracking-[0.2em] text-emerald-600">
+                <ShieldCheck className="mr-1.5 h-3.5 w-3.5" />
                 ATS-safe system
               </Badge>
             </div>
@@ -185,10 +189,10 @@ export function EditorDesignStudio({
                 type="button"
                 onClick={() => setActiveCategory(category)}
                 className={cn(
-                  "rounded-full px-4 py-2 text-[0.72rem] font-bold uppercase tracking-[0.14em] transition-all",
+                  "rounded-full px-5 py-2.5 text-[0.72rem] font-black uppercase tracking-[0.18em] transition-all duration-300",
                   activeCategory === category
-                    ? "bg-slate-900 text-white shadow-lg"
-                    : "bg-white/75 text-slate-500 hover:bg-white hover:text-slate-900"
+                    ? "bg-slate-950 text-white shadow-[0_10px_20px_-10px_rgba(15,23,42,0.4)]"
+                    : "bg-slate-100/80 text-slate-500 hover:bg-slate-200 hover:text-slate-800"
                 )}
               >
                 {category}
@@ -197,7 +201,7 @@ export function EditorDesignStudio({
           </div>
         </div>
 
-        <div className={cn("grid gap-4 p-5", compact ? "grid-cols-1" : "grid-cols-2")}>
+        <div className={cn("grid gap-6 p-6", compact ? "grid-cols-1" : "grid-cols-2")}>
           {visibleTemplates.map((template) => {
             const locked = !canAccessTemplate(template, plan)
             const selected = template.id === activeTemplate.id
@@ -208,74 +212,67 @@ export function EditorDesignStudio({
                 type="button"
                 onClick={() => onSelectTemplate(template.id)}
                 className={cn(
-                  "group overflow-hidden rounded-[1.6rem] border bg-white text-left transition-all duration-300",
+                  "group relative flex flex-col overflow-hidden rounded-[1.8rem] border-2 bg-white text-left transition-all duration-300",
                   selected
-                    ? "border-primary shadow-[0_28px_55px_-35px_rgba(103,58,183,0.45)]"
-                    : "border-slate-200/80 hover:-translate-y-1 hover:border-slate-300 hover:shadow-[0_28px_55px_-35px_rgba(15,23,42,0.35)]"
+                    ? "border-indigo-500 shadow-[0_20px_50px_-15px_rgba(99,102,241,0.25)] ring-4 ring-indigo-50"
+                    : "border-transparent bg-slate-50/50 hover:border-slate-200 hover:bg-white hover:shadow-[0_20px_50px_-15px_rgba(15,23,42,0.12)]"
                 )}
               >
-                <div className="relative aspect-[0.82] overflow-hidden">
-                  <TemplateThumbnail template={template} className="h-full w-full" />
-                  <div className="pointer-events-none absolute inset-x-0 top-0 flex items-start justify-between p-3">
-                    <div className="flex flex-wrap gap-2">
-                      <Badge className="rounded-full bg-white/90 px-2.5 py-1 text-[0.62rem] font-bold uppercase tracking-[0.18em] text-slate-700 shadow-sm">
-                        {template.category}
-                      </Badge>
-                      {template.isAtsSafe && (
-                        <Badge className="rounded-full bg-emerald-50/95 px-2.5 py-1 text-[0.62rem] font-bold uppercase tracking-[0.18em] text-emerald-700 shadow-sm">
-                          ATS
+                <div className="relative p-3 pb-0">
+                  <div className="relative aspect-[0.78] overflow-hidden rounded-2xl border border-slate-200/60 shadow-sm">
+                    <TemplateThumbnail template={template} className="h-full w-full" />
+                    
+                    {/* Badge Overlay */}
+                    <div className="absolute inset-x-0 top-0 flex items-start justify-between p-3">
+                      <div className="flex flex-wrap gap-1.5">
+                        <Badge className="rounded-lg bg-white/95 px-2.5 py-1 text-[0.62rem] font-black uppercase tracking-[0.12em] text-slate-800 shadow-sm border-none backdrop-blur-sm">
+                          {template.category}
                         </Badge>
-                      )}
-                    </div>
+                        {template.isAtsSafe && (
+                          <Badge className="rounded-lg bg-emerald-500 px-2 py-0.5 text-[0.62rem] font-black uppercase tracking-[0.12em] text-white shadow-sm border-none">
+                            ATS
+                          </Badge>
+                        )}
+                      </div>
 
-                    {locked ? (
-                      <Badge className="rounded-full bg-slate-900/92 px-2.5 py-1 text-[0.62rem] font-bold uppercase tracking-[0.18em] text-white shadow-sm">
-                        <Lock className="mr-1 h-3.5 w-3.5" />
-                        {getTemplateTierLabel(template.accessTier)}
-                      </Badge>
-                    ) : selected ? (
-                      <Badge className="rounded-full bg-primary px-2.5 py-1 text-[0.62rem] font-bold uppercase tracking-[0.18em] text-white shadow-sm">
-                        <Check className="mr-1 h-3.5 w-3.5" />
-                        Active
-                      </Badge>
-                    ) : null}
+                      <div className="flex flex-wrap gap-1.5">
+                        {selected && (
+                          <Badge className="rounded-lg bg-indigo-600 px-2.5 py-1 text-[0.62rem] font-black uppercase tracking-[0.12em] text-white shadow-sm border-none backdrop-blur-sm animate-in fade-in zoom-in duration-300">
+                            <Check className="mr-1 h-3 w-3" />
+                            ACTIVE
+                          </Badge>
+                        )}
+                        {locked && (
+                          <Badge className="rounded-lg bg-slate-900/95 px-2.5 py-1 text-[0.62rem] font-black uppercase tracking-[0.12em] text-white shadow-sm border-none backdrop-blur-sm">
+                            <Lock className="mr-1 h-3 w-3" />
+                            {getTemplateTierLabel(template.accessTier)}
+                          </Badge>
+                        )}
+                      </div>
+                    </div>
                   </div>
                 </div>
 
-                <div className="space-y-3 p-4">
-                  <div className="flex items-start justify-between gap-3">
-                    <div>
-                      <div className="flex items-center gap-2">
-                        <h4 className="text-base font-black tracking-tight text-slate-950">{template.name}</h4>
-                        {template.accessTier !== "free" && <Crown className="h-4 w-4 text-amber-500" />}
-                      </div>
-                      <p className="mt-1 text-sm leading-relaxed text-slate-600">{template.description}</p>
+                <div className="flex flex-1 flex-col justify-between p-5 pt-4">
+                  <div className="space-y-3">
+                    <div className="flex items-center justify-between gap-2">
+                       <h4 className="text-[17px] font-black tracking-tight text-slate-950 line-clamp-1">{template.name}</h4>
+                       {template.accessTier !== "free" && <Crown className="h-4 w-4 fill-amber-400 text-amber-400" />}
                     </div>
-                  </div>
-
-                  <div className="flex flex-wrap gap-2">
-                    {getTemplateTraits(template).map((trait) => (
-                      <span
-                        key={trait}
-                        className="rounded-full border border-slate-200 bg-slate-50 px-2.5 py-1 text-[0.65rem] font-bold uppercase tracking-[0.14em] text-slate-500"
-                      >
-                        {trait}
-                      </span>
-                    ))}
-                  </div>
-
-                  <div className="flex items-center justify-between pt-1">
-                    <span className="text-[0.7rem] font-bold uppercase tracking-[0.18em] text-slate-400">
-                      {locked ? `Unlock on ${getTemplateTierLabel(template.accessTier)}` : "Ready to apply"}
-                    </span>
-                    <span
-                      className={cn(
-                        "text-sm font-black transition-colors",
-                        selected ? "text-primary" : locked ? "text-slate-400" : "text-slate-900 group-hover:text-primary"
-                      )}
-                    >
-                      {selected ? "Selected" : locked ? "Preview only" : "Use template"}
-                    </span>
+                    <p className="text-[14px] leading-relaxed text-slate-500 line-clamp-2 font-medium">
+                      {template.description}
+                    </p>
+                    
+                    <div className="flex flex-wrap gap-2 pt-1">
+                      {getTemplateTraits(template).map((trait) => (
+                        <span
+                          key={trait}
+                          className="rounded-full border border-slate-200 bg-white px-3 py-1 text-[0.6rem] font-black uppercase tracking-[0.14em] text-slate-400 group-hover:border-slate-300 group-hover:text-slate-600 transition-colors"
+                        >
+                          {trait}
+                        </span>
+                      ))}
+                    </div>
                   </div>
                 </div>
               </button>

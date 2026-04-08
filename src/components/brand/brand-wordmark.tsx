@@ -11,17 +11,17 @@ export function BrandWordmark({ className }: BrandWordmarkProps) {
     <div className={cn("flex items-center gap-1", className)}>
       <Image
         src={logoBase64}
-        alt="Ai Career Guide Mascot"
+        alt="Career Intelligence Advisor Mascot"
         width={96}
         height={96}
         priority
         className="h-10 w-10 object-contain brightness-[1.15] contrast-[1.1] saturate-[1.2] transition-transform hover:scale-105 active:scale-95"
       />
       <span
-        aria-label="Ai Career Guide."
+        aria-label="Career Intelligence Advisor."
         className="logo-gradient font-black text-xl leading-none tracking-tighter font-sans"
       >
-        Ai Career Guide.
+        Career Intelligence Advisor.
       </span>
     </div>
   );

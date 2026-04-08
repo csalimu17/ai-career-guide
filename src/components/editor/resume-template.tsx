@@ -196,12 +196,14 @@ function ResumeSectionHeading({
       </div>
       <div
         className={cn(
-          "h-px flex-1",
+          "flex-1",
+          template.design.sectionDividers === "bold" ? "h-[2px]" : "h-px",
           template.design.headingVariant === "serif" ? "opacity-80" : "opacity-100"
         )}
         style={{
           backgroundColor:
             template.design.headingVariant === "serif" ? hexToRgba(accent, 0.28) : hexToRgba(accent, 0.22),
+          height: template.design.sectionDividers === "bold" ? "2px" : undefined,
         }}
       />
     </div>
@@ -633,6 +635,9 @@ export function ResumeTemplate({
     ),
   }
 
+  const sidebarSections = new Set(template.sidebarSections ?? ["skills", "languages", "certifications", "education"])
+  const isTwoColumn = template.layout === "two-column" && renderMode !== "mobile"
+
   return (
     <div
       className={cn("resume-preview-sheet resume-document relative", className)}
@@ -649,18 +654,75 @@ export function ResumeTemplate({
           spacing={spacing}
         />
 
-        <main className="flex flex-col" style={sectionGapStyle}>
-          {sectionOrder.map((sectionId, index) => {
-            const renderedSection = sectionRenderers[sectionId]?.()
-            if (!renderedSection) return null
+        {isTwoColumn ? (
+          <div
+            className={cn(
+              "grid w-full gap-8",
+              template.sidebarPosition === "right" ? "grid-cols-[1fr_260px]" : "grid-cols-[260px_1fr]"
+            )}
+          >
+            <div className={cn("flex flex-col", template.sidebarPosition === "right" ? "order-1" : "order-2")} style={sectionGapStyle}>
+              {sectionOrder
+                .filter((id) => !sidebarSections.has(id))
+                .map((sectionId, index) => {
+                  const renderedSection = sectionRenderers[sectionId]?.()
+                  if (!renderedSection) return null
+                  return (
+                    <div key={`${sectionId}-${index}`} className="contents">
+                      {renderedSection}
+                      {template.design.sectionDividers === "thin" && (
+                        <div className="h-px w-full bg-slate-100" />
+                      )}
+                      {template.design.sectionDividers === "bold" && (
+                        <div className="h-0.5 w-full" style={{ backgroundColor: hexToRgba(accent, 0.1) }} />
+                      )}
+                    </div>
+                  )
+                })}
+            </div>
+            <div
+              className={cn(
+                "flex flex-col gap-6 rounded-[1rem] p-5",
+                template.sidebarPosition === "right" ? "order-2" : "order-1"
+              )}
+              style={{
+                backgroundColor: template.design.subtleFill ? hexToRgba(accent, 0.04) : "transparent",
+                border: template.design.subtleFill ? `1px solid ${hexToRgba(accent, 0.1)}` : "none",
+              }}
+            >
+              {sectionOrder
+                .filter((id) => sidebarSections.has(id))
+                .map((sectionId, index) => {
+                  const renderedSection = sectionRenderers[sectionId]?.()
+                  if (!renderedSection) return null
+                  return (
+                    <div key={`${sectionId}-${index}`} className="contents">
+                      {renderedSection}
+                    </div>
+                  )
+                })}
+            </div>
+          </div>
+        ) : (
+          <main className="flex flex-col" style={sectionGapStyle}>
+            {sectionOrder.map((sectionId, index) => {
+              const renderedSection = sectionRenderers[sectionId]?.()
+              if (!renderedSection) return null
 
-            return (
-              <div key={`${sectionId}-${index}`} className="contents">
-                {renderedSection}
-              </div>
-            )
-          })}
-        </main>
+              return (
+                <div key={`${sectionId}-${index}`} className="contents">
+                  {renderedSection}
+                  {template.design.sectionDividers === "thin" && (
+                    <div className="h-px w-full bg-slate-100" />
+                  )}
+                  {template.design.sectionDividers === "bold" && (
+                    <div className="h-0.5 w-full" style={{ backgroundColor: hexToRgba(accent, 0.1) }} />
+                  )}
+                </div>
+              )
+            })}
+          </main>
+        )}
       </div>
     </div>
   )

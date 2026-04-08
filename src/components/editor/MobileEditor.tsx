@@ -62,6 +62,10 @@ export function MobileEditor({ editor }: MobileEditorProps) {
     isGeneratingSummarySuggestions,
     summarySuggestions,
     runSummarySuggestions,
+    isSuggestingSkills,
+    skillSuggestions,
+    runSkillSuggestions,
+    setSkillSuggestions,
     applyTemplate,
     updateStyle,
     resetTemplateStyles,
@@ -107,7 +111,7 @@ export function MobileEditor({ editor }: MobileEditorProps) {
     <nav className="fixed bottom-0 left-0 right-0 z-50 bg-white/90 backdrop-blur-2xl border-t border-slate-100 flex items-center justify-around px-4 pb-[max(1.2rem,env(safe-area-inset-bottom))] pt-3 shadow-[0_-10px_40px_rgba(0,0,0,0.05)]">
       {[
         { id: "content", icon: Layout, label: "Content" },
-        { id: "ai", icon: Cpu, label: "AI Advisor" },
+        { id: "ai", icon: Cpu, label: "Career Intelligence Advisor" },
         { id: "design", icon: Palette, label: "Design" },
       ].map((tab) => (
         <button
@@ -499,7 +503,53 @@ export function MobileEditor({ editor }: MobileEditorProps) {
 
                   {activeSection === "skills" && (
                     <div className="space-y-4">
-                      <p className="text-[10px] font-black tracking-[0.15em] uppercase text-slate-400">Technical Arsenal</p>
+                      <div className="flex items-center justify-between px-1">
+                        <p className="text-[10px] font-black tracking-[0.15em] uppercase text-slate-400">Technical Arsenal</p>
+                        <Button 
+                          variant="ghost" 
+                          size="sm" 
+                          disabled={isSuggestingSkills}
+                          onClick={runSkillSuggestions}
+                          className="h-8 text-primary font-bold text-[10px] gap-1.5 uppercase hover:bg-primary/5"
+                        >
+                          {isSuggestingSkills ? <Loader2 className="h-3 w-3 animate-spin" /> : <Sparkles className="h-3 w-3" />}
+                          AI Suggestions
+                        </Button>
+                      </div>
+
+                      {skillSuggestions.length > 0 && (
+                        <div className="p-4 rounded-2xl bg-primary/5 border border-primary/10 space-y-3 animate-in fade-in slide-in-from-top-2">
+                          <div className="flex items-center justify-between">
+                            <span className="text-[9px] font-black uppercase tracking-widest text-primary/60">AI Recommendations</span>
+                            <Button 
+                              variant="ghost" 
+                              size="sm" 
+                              className="h-4 p-0 text-[8px] font-black uppercase text-slate-400"
+                              onClick={() => setSkillSuggestions([])}
+                            >
+                              Dismiss
+                            </Button>
+                          </div>
+                          <div className="flex flex-wrap gap-2">
+                            {skillSuggestions.map((suggestion: string, i: number) => (
+                              <Badge 
+                                key={i} 
+                                variant="outline"
+                                onClick={() => {
+                                  if (!resume.content.skills.includes(suggestion)) {
+                                    handleUpdate("content.skills", [...resume.content.skills, suggestion])
+                                  }
+                                  setSkillSuggestions(skillSuggestions.filter((s: string) => s !== suggestion))
+                                }}
+                                className="cursor-pointer bg-white hover:bg-primary hover:text-white border-primary/20 text-primary font-bold text-[9px] px-3 py-1 transition-all active:scale-95"
+                              >
+                                + {suggestion}
+                              </Badge>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+
                       <Input 
                         placeholder="Add a skill..."
                         onKeyDown={(e) => {
@@ -517,7 +567,7 @@ export function MobileEditor({ editor }: MobileEditorProps) {
                         {resume.content.skills?.map((skill: string, i: number) => (
                           <Badge key={i} variant="secondary" className="px-3 py-1.5 rounded-full bg-white border border-slate-100 font-bold text-[10px] gap-2">
                             {skill}
-                            <Trash2 className="h-3 w-3 text-slate-300" onClick={() => {
+                            <Trash2 className="h-3 w-3 text-slate-300 cursor-pointer" onClick={() => {
                                const next = resume.content.skills.filter((_: any, idx: number) => idx !== i)
                                handleUpdate("content.skills", next)
                             }} />
