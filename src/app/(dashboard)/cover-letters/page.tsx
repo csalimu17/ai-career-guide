@@ -264,12 +264,7 @@ export default function CoverLettersPage() {
         <div className="absolute -top-24 -right-24 w-96 h-96 bg-indigo-500/10 blur-[100px] rounded-full pointer-events-none" />
         <div className="absolute -bottom-24 -left-24 w-72 h-72 bg-emerald-500/10 blur-[80px] rounded-full pointer-events-none" />
         
-        <div className="relative space-y-6">
-          <div className="eyebrow-chip">
-            <Sparkles className="h-3.5 w-3.5 text-indigo-500" />
-            Cover letter studio
-          </div>
-          
+        <div className="relative space-y-4">
           <div className="flex flex-col gap-8 xl:flex-row xl:items-end xl:justify-between">
             <div className="max-w-4xl space-y-4">
               <h1 className="headline-gradient-vivid text-[2.5rem] font-black leading-[1.05] tracking-[-0.05em] sm:text-5xl lg:text-6xl">

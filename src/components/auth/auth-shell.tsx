@@ -4,7 +4,7 @@ import { BrandWordmark } from "@/components/brand/brand-wordmark";
 import { HistoryButtons } from "@/components/navigation/history-buttons";
 
 type AuthShellProps = {
-  eyebrow: string;
+  eyebrow?: string;
   title: string;
   description: string;
   supportingTitle: string;
@@ -53,10 +53,12 @@ export function AuthShell({
           <section className="surface-card relative hidden overflow-hidden px-8 py-10 lg:flex lg:flex-col lg:justify-between">
             <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_left,rgba(8,145,178,0.12),transparent_35%),radial-gradient(circle_at_bottom_right,rgba(249,115,22,0.12),transparent_26%)]" />
             <div className="relative space-y-8">
-              <div className="eyebrow-chip">
-              <Bot className="h-4 w-4" />
-                {eyebrow}
-              </div>
+              {eyebrow && (
+                <div className="eyebrow-chip">
+                  <Bot className="h-4 w-4" />
+                  {eyebrow}
+                </div>
+              )}
               <div className="space-y-5">
                 <p className="max-w-lg text-5xl font-black leading-[0.95] text-primary">
                   {supportingTitle}
@@ -88,10 +90,12 @@ export function AuthShell({
           <section className="surface-card flex flex-col justify-between overflow-hidden px-4 py-5 sm:px-8 sm:py-10">
             <div className="space-y-5 sm:space-y-8">
               <div className="space-y-3 sm:space-y-4">
-                <div className="eyebrow-chip">
-                  <Bot className="h-4 w-4" />
-                  {eyebrow}
-                </div>
+                {eyebrow && (
+                  <div className="eyebrow-chip">
+                    <Bot className="h-4 w-4" />
+                    {eyebrow}
+                  </div>
+                )}
                 <div className="space-y-3">
                   <Link href="/" className="inline-flex items-center gap-2">
                     <BrandWordmark className="text-[1.35rem] sm:text-2xl" />
@@ -116,10 +120,12 @@ export function AuthShell({
 
         <section className="surface-card overflow-hidden px-4 py-4 sm:px-6 sm:py-6 lg:hidden">
           <div className="space-y-3.5">
-            <div className="eyebrow-chip">
-              <Bot className="h-4 w-4" />
-              {eyebrow}
-            </div>
+            {eyebrow && (
+              <div className="eyebrow-chip">
+                <Bot className="h-4 w-4" />
+                {eyebrow}
+              </div>
+            )}
             <div className="space-y-2.5">
               <p className="text-[1.65rem] font-black leading-tight text-primary">{supportingTitle}</p>
               <p className="text-[0.92rem] leading-6 text-muted-foreground">{supportingCopy}</p>

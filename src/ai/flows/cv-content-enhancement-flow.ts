@@ -13,6 +13,8 @@ import { ai } from '@/ai/genkit';
 import { generateWithFallback } from '@/ai/generate-helper';
 import { buildJobResearchContext, formatJobResearchContext } from '@/ai/job-research';
 import { getGeminiModel, getFallbackGeminiModel } from '@/ai/model-router';
+import { jobFetcher } from '@/lib/jobs/job-fetcher';
+import { buildRolePlaybookContext } from '@/lib/career-role-playbooks';
 import { z } from 'genkit';
 
 const CvContentEnhancementInputSchema = z.object({
@@ -35,6 +37,14 @@ const CvContentEnhancementInputSchema = z.object({
     .string()
     .optional()
     .describe('Any additional specific context for content generation.'),
+  jobTitle: z
+    .string()
+    .optional()
+    .describe('The job title that should anchor role-specific tailoring.'),
+  preferredOutputFormat: z
+    .enum(['paragraph', 'bullets'])
+    .optional()
+    .describe('Preferred output shape for the generated content.'),
 });
 export type CvContentEnhancementInput = z.infer<typeof CvContentEnhancementInputSchema>;
 
@@ -63,12 +73,43 @@ async function getResearchBrief(input: CvContentEnhancementInput) {
   }
 
   const context = await buildJobResearchContext({
-    jobTitle: input.action === 'suggest_role_bullets' ? input.targetContent : undefined,
+    jobTitle: input.jobTitle || (input.action === 'suggest_role_bullets' ? input.targetContent : undefined),
     jobDescription: input.jobDescription || input.additionalContext,
     message: input.additionalContext,
   });
 
   return formatJobResearchContext(context);
+}
+
+async function getLiveRoleSignals(jobTitle?: string) {
+  if (!jobTitle) {
+    return '';
+  }
+
+  try {
+    const { listings } = await jobFetcher.fetchJobs({
+      keywords: jobTitle,
+      location: 'United Kingdom',
+      workplace: 'all',
+      page: 1,
+    });
+
+    const samples = listings.slice(0, 4).map((listing) => {
+      const tags = listing.tags?.length ? `Tags: ${listing.tags.slice(0, 5).join(', ')}` : '';
+      return [
+        `${listing.role} at ${listing.company} (${listing.location})`,
+        listing.shortDescription,
+        tags,
+      ]
+        .filter(Boolean)
+        .join(' | ');
+    });
+
+    return samples.length ? `Live market signals from current job listings:\n- ${samples.join('\n- ')}` : '';
+  } catch (error) {
+    console.warn('[CvContentEnhancement] Live role lookup failed, using offline role playbook only.', error);
+    return '';
+  }
 }
 
 const cvContentEnhancementFlow = ai.defineFlow(
@@ -81,6 +122,10 @@ const cvContentEnhancementFlow = ai.defineFlow(
     let enhancedContent: string | undefined;
     let suggestions: string[] | undefined;
     const researchBrief = await getResearchBrief(input);
+    const activeJobTitle =
+      input.jobTitle || (input.action === 'suggest_role_bullets' ? input.targetContent : undefined);
+    const rolePlaybook = buildRolePlaybookContext(activeJobTitle, input.jobDescription || input.additionalContext);
+    const liveRoleSignals = await getLiveRoleSignals(activeJobTitle);
     const writingModel = await getGeminiModel('cvWriting');
     const researchModel = await getGeminiModel('jobResearch');
     const fallbackWritingModel = getFallbackGeminiModel('cvWriting');
@@ -101,6 +146,7 @@ Rules:
 - Prefer concrete achievements, domain language, and credible phrasing.
 - Explicitly avoid AI cliches like "spearheaded", "orchestrated", "synergized", "delved", "testament", etc.
 - Do not add conversational filler.
+- If the prompt asks for bullets, return bullet lines with one idea per bullet and no leading commentary.
 - Return JSON only.`,
           prompt: `Current CV context:
 ${input.currentCvContent || '(not provided)'}
@@ -109,7 +155,13 @@ Specific generation request and context:
 ${input.additionalContext || '(not provided)'}
 
 Job research brief:
-${researchBrief || '(none available)'}`,
+${researchBrief || '(none available)'}
+
+Role playbook:
+${rolePlaybook || '(none available)'}
+
+Live market signals:
+${liveRoleSignals || '(none available)'}`,
           output: { schema: GeneratedContentSchema },
         }, fallbackWritingModel || undefined);
         enhancedContent = response.output?.generatedContent;
@@ -125,7 +177,7 @@ ${researchBrief || '(none available)'}`,
           config: { temperature: 0.2 },
           system: `You are an expert CV writer.
 
-Rewrite bullets to be sharper, achievement-oriented, and ATS-aware.
+Rewrite resume content to be sharper, achievement-oriented, and ATS-aware.
 
 Rules:
 - Start with a strong action verb (but avoid AI cliches like "spearheaded" or "orchestrated").
@@ -133,6 +185,8 @@ Rules:
 - Keep claims credible and grounded in the source content.
 - If job requirements are available, align the bullet to those requirements.
 - Add measurable framing only when it can be expressed as a placeholder.
+- If the requested output is bullets, rewrite the whole section into 4-6 concise bullet points rather than a single paragraph.
+- When rewriting into bullets, keep each line focused on one action/result and avoid repeating the same sentence shape.
 - Return JSON only.`,
           prompt: `Original bullet point:
 ${input.targetContent}
@@ -144,7 +198,16 @@ Job description:
 ${input.jobDescription || '(not provided)'}
 
 Job research brief:
-${researchBrief || '(none available)'}`,
+${researchBrief || '(none available)'}
+
+Role playbook:
+${rolePlaybook || '(none available)'}
+
+Live market signals:
+${liveRoleSignals || '(none available)'}
+
+Preferred output format:
+${input.preferredOutputFormat || 'paragraph'}`,
           output: { schema: RewrittenBulletSchema },
         }, fallbackWritingModel || undefined);
         enhancedContent = response.output?.rewrittenBullet;
@@ -174,7 +237,10 @@ Job description:
 ${input.jobDescription || '(not provided)'}
 
 Job research brief:
-${researchBrief || '(none available)'}`,
+${researchBrief || '(none available)'}
+
+Role playbook:
+${rolePlaybook || '(none available)'}`,
           output: { schema: SuggestedSkillsSchema },
         }, fallbackWritingModel || undefined);
         suggestions = response.output?.suggestedSkills;
@@ -209,7 +275,10 @@ Job description:
 ${input.jobDescription || '(not provided)'}
 
 Job research brief:
-${researchBrief || '(none available)'}`,
+${researchBrief || '(none available)'}
+
+Role playbook:
+${rolePlaybook || '(none available)'}`,
           output: { schema: ProfessionalSummarySchema },
         }, fallbackWritingModel || undefined);
         enhancedContent = response.output?.professionalSummary;
@@ -245,7 +314,10 @@ Job description:
 ${input.jobDescription || '(not provided)'}
 
 Job research brief:
-${researchBrief || '(none available)'}`,
+${researchBrief || '(none available)'}
+
+Role playbook:
+${rolePlaybook || '(none available)'}`,
           output: { schema: SummaryVariantsSchema },
         }, fallbackWritingModel || undefined);
         suggestions = response.output?.summaryVariants;
@@ -273,6 +345,8 @@ Rules:
 - Include placeholders for measurable scope or impact such as [X]%, [Y], or [Z].
 - Avoid generic filler that could apply to any job. 
 - Do not sound like a generic robotic list; make them specific.
+- Use the role playbook and live market signals to keep the bullets aligned to current market expectations.
+- Vary the bullets so they cover delivery, collaboration, process, and impact rather than repeating the same angle.
 - Return 4-6 bullets as JSON only.`,
             prompt: `Target role title:
 ${input.targetContent}
@@ -281,7 +355,13 @@ Job description or requirements:
 ${input.jobDescription || input.additionalContext || '(not provided)'}
 
 Job research brief:
-${researchBrief || '(none available)'}`,
+${researchBrief || '(none available)'}
+
+Role playbook:
+${rolePlaybook || '(none available)'}
+
+Live market signals:
+${liveRoleSignals || '(none available)'}`,
             output: { schema: RoleBulletsSchema },
           }, fallbackResearchModel || undefined);
 

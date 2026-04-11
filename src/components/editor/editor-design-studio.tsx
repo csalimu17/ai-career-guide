@@ -6,6 +6,7 @@ import { Check, Crown, Gauge, LayoutTemplate, Lock, Paintbrush2, RefreshCcw, Shi
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Card } from "@/components/ui/card"
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion"
 import {
   Select,
   SelectContent,
@@ -31,6 +32,7 @@ import { TemplateThumbnail } from "./template-thumbnail"
 
 type ResumeStyleKey = "primaryColor" | "fontFamily" | "fontSize" | "lineHeight" | "margins"
 type StudioSection = "templates" | "styles"
+type TemplateCategory = "Professional" | "Modern" | "Classic"
 
 type EditorDesignStudioProps = {
   resume: any
@@ -44,6 +46,40 @@ type EditorDesignStudioProps = {
 
 const TEMPLATE_CATEGORIES = ["All", "Professional", "Modern", "Classic"] as const
 
+const TEMPLATE_CATEGORY_THEMES: Record<TemplateCategory, {
+  label: string
+  family: string
+  pill: string
+  overlay: string
+  selectedRing: string
+  accent: string
+}> = {
+  Professional: {
+    label: "Boardroom polish",
+    family: "Executive-led layouts",
+    pill: "bg-slate-950 text-white shadow-[0_10px_20px_-10px_rgba(15,23,42,0.45)]",
+    overlay: "from-slate-950/12 via-indigo-500/10 to-transparent",
+    selectedRing: "ring-slate-900/10",
+    accent: "bg-slate-950",
+  },
+  Modern: {
+    label: "Contemporary flow",
+    family: "Fresh, structured systems",
+    pill: "bg-blue-600 text-white shadow-[0_10px_20px_-10px_rgba(37,99,235,0.45)]",
+    overlay: "from-blue-500/14 via-cyan-500/10 to-transparent",
+    selectedRing: "ring-blue-500/10",
+    accent: "bg-blue-600",
+  },
+  Classic: {
+    label: "Timeless clarity",
+    family: "Traditional, formal hierarchy",
+    pill: "bg-amber-700 text-white shadow-[0_10px_20px_-10px_rgba(180,83,9,0.45)]",
+    overlay: "from-amber-500/12 via-orange-500/10 to-transparent",
+    selectedRing: "ring-amber-700/10",
+    accent: "bg-amber-700",
+  },
+}
+
 const COLOR_SWATCHES = [
   { label: "Royal Plum", value: "#673AB7" },
   { label: "Signal Blue", value: "#2196F3" },
@@ -56,6 +92,16 @@ const COLOR_SWATCHES = [
   { label: "Terracotta Creative", value: "#ea580c" },
   { label: "Bordeaux Elegant", value: "#431407" },
 ] as const
+
+const FONT_OPTIONS = Object.values(ATS_SAFE_RESUME_FONT_GROUPS).flatMap((fonts) => fonts)
+
+function getColorLabel(value: string) {
+  return COLOR_SWATCHES.find((swatch) => swatch.value.toLowerCase() === value.toLowerCase())?.label ?? "Custom accent"
+}
+
+function getFontLabel(value: ResumeFontKey) {
+  return FONT_OPTIONS.find((font) => font.value === value)?.label ?? value
+}
 
 function getTemplateTraits(template: TemplateConfig) {
   const headerLabel =
@@ -84,6 +130,10 @@ function getTemplateTraits(template: TemplateConfig) {
         : "Stacked skills"
 
   return [headerLabel, densityLabel, skillLabel]
+}
+
+function getTemplateCategoryTheme(category: TemplateCategory) {
+  return TEMPLATE_CATEGORY_THEMES[category]
 }
 
 function MetricCard({
@@ -146,6 +196,8 @@ export function EditorDesignStudio({
 
   const selectedFont = (currentStyles.fontFamily || activeTemplate.defaults.fontFamily) as ResumeFontKey
   const selectedColor = String(currentStyles.primaryColor || activeTemplate.defaults.primaryColor)
+  const selectedColorLabel = getColorLabel(selectedColor)
+  const selectedFontLabel = getFontLabel(selectedFont)
   const fontSize = Number(currentStyles.fontSize ?? activeTemplate.defaults.fontSize)
   const lineHeight = Number(currentStyles.lineHeight ?? activeTemplate.defaults.lineHeight)
   const margins = Number(currentStyles.margins ?? activeTemplate.defaults.margins)
@@ -167,7 +219,7 @@ export function EditorDesignStudio({
                 Every layout stays ATS-safe and single-column, but each one changes the rhythm, tone, and hierarchy.
               </p>
             </div>
-          </div>
+            </div>
 
           <div className="flex flex-wrap items-center gap-2">
             <Badge className="rounded-full bg-slate-950 px-3.5 py-1.5 text-[0.62rem] font-black uppercase tracking-[0.2em] text-white border-none shadow-sm">
@@ -203,27 +255,36 @@ export function EditorDesignStudio({
         {visibleTemplates.map((template) => {
           const locked = !canAccessTemplate(template, plan)
           const selected = template.id === activeTemplate.id
+          const theme = getTemplateCategoryTheme(template.category as TemplateCategory)
 
           return (
-            <button
+            <div
               key={template.id}
-              type="button"
+              role="button"
+              tabIndex={0}
               onClick={() => onSelectTemplate(template.id)}
+              onKeyDown={(event) => {
+                if (event.key === "Enter" || event.key === " ") {
+                  event.preventDefault()
+                  onSelectTemplate(template.id)
+                }
+              }}
               className={cn(
-                "group relative flex flex-col overflow-hidden rounded-[1.8rem] border-2 bg-white text-left transition-all duration-300",
+                "group relative flex cursor-pointer flex-col overflow-hidden rounded-[1.8rem] border-2 bg-white text-left transition-all duration-300 focus-visible:outline-none focus-visible:ring-4",
                 selected
-                  ? "border-indigo-500 shadow-[0_20px_50px_-15px_rgba(99,102,241,0.25)] ring-4 ring-indigo-50"
+                  ? cn("border-white shadow-[0_22px_52px_-18px_rgba(15,23,42,0.24)] ring-4", theme.selectedRing)
                   : "border-transparent bg-slate-50/50 hover:border-slate-200 hover:bg-white hover:shadow-[0_20px_50px_-15px_rgba(15,23,42,0.12)]"
               )}
             >
+              <div className={cn("h-1.5 w-full bg-gradient-to-r", theme.overlay)} />
               <div className="relative p-3 pb-0">
-                <div className="relative aspect-[0.78] overflow-hidden rounded-2xl border border-slate-200/60 shadow-sm">
+                <div className="relative aspect-[210/297] overflow-hidden rounded-2xl border border-slate-200/60 shadow-sm">
                   <TemplateThumbnail template={template} className="h-full w-full" />
                   
                   {/* Badge Overlay */}
                   <div className="absolute inset-x-0 top-0 flex items-start justify-between p-3">
                     <div className="flex flex-wrap gap-1.5">
-                      <Badge className="rounded-lg bg-white/95 px-2.5 py-1 text-[0.62rem] font-black uppercase tracking-[0.12em] text-slate-800 shadow-sm border-none backdrop-blur-sm">
+                      <Badge className={cn("rounded-lg px-2.5 py-1 text-[0.62rem] font-black uppercase tracking-[0.12em] shadow-sm border-none backdrop-blur-sm", theme.pill)}>
                         {template.category}
                       </Badge>
                       {template.isAtsSafe && (
@@ -258,19 +319,42 @@ export function EditorDesignStudio({
                       <div className="px-2">
                         <p className="text-[10px] font-black uppercase tracking-wider text-slate-800 truncate">{template.name}</p>
                       </div>
-                      <Button size="sm" className={cn("h-8 rounded-lg px-3 text-[10px] font-bold shadow-sm", selected ? "bg-indigo-600 text-white" : "bg-slate-900 text-white")}>
+                      <span
+                        className={cn(
+                          "inline-flex h-8 items-center justify-center rounded-lg px-3 text-[10px] font-bold shadow-sm",
+                          selected ? "bg-indigo-600 text-white" : "bg-slate-900 text-white"
+                        )}
+                      >
                         {selected ? "Active" : locked ? "Upgrade" : "Select"}
-                      </Button>
+                      </span>
                     </div>
                   </div>
                 </div>
               </div>
               <div className="px-5 py-4">
+                <div className="mb-2 flex flex-wrap items-center gap-2">
+                  <span className={cn("inline-flex items-center rounded-full px-2.5 py-1 text-[0.6rem] font-black uppercase tracking-[0.18em] text-white", theme.accent)}>
+                    {theme.label}
+                  </span>
+                  <span className="text-[0.62rem] font-bold uppercase tracking-[0.16em] text-slate-400">
+                    {theme.family}
+                  </span>
+                </div>
                 <p className="text-[11px] font-bold tracking-wide text-slate-500 leading-relaxed line-clamp-2">
                   {template.description}
                 </p>
+                <div className="mt-3 flex flex-wrap gap-1.5">
+                  {getTemplateTraits(template).slice(0, compact ? 2 : 3).map((trait) => (
+                    <span
+                      key={trait}
+                      className="inline-flex items-center rounded-full border border-slate-200 bg-slate-50 px-2.5 py-1 text-[0.62rem] font-black uppercase tracking-[0.14em] text-slate-600"
+                    >
+                      {trait}
+                    </span>
+                  ))}
+                </div>
               </div>
-            </button>
+            </div>
           )
         })}
       </div>
@@ -312,6 +396,201 @@ export function EditorDesignStudio({
         </div>
       </div>
 
+      {compact ? (
+        <div className="space-y-4 p-4">
+          <div className="rounded-[1.5rem] border border-slate-200/80 bg-slate-50/80 p-4">
+            <div className="flex flex-wrap items-center gap-2">
+              <Badge variant="outline" className="rounded-full border-slate-200 bg-white px-3 py-1 text-[0.62rem] font-black uppercase tracking-[0.18em] text-slate-700">
+                {activeTemplate.name}
+              </Badge>
+              <Badge variant="outline" className="rounded-full border-slate-200 bg-white px-3 py-1 text-[0.62rem] font-black uppercase tracking-[0.18em] text-slate-700">
+                {selectedColorLabel}
+              </Badge>
+              <Badge variant="outline" className="rounded-full border-slate-200 bg-white px-3 py-1 text-[0.62rem] font-black uppercase tracking-[0.18em] text-slate-700">
+                {selectedFontLabel}
+              </Badge>
+            </div>
+            <p className="mt-3 text-xs leading-relaxed text-slate-500">
+              Open only the controls you need. This keeps mobile editing lighter while preserving the same output quality.
+            </p>
+          </div>
+
+          <Accordion type="single" collapsible className="space-y-3">
+            <AccordionItem value="accent" className="overflow-hidden rounded-[1.5rem] border border-slate-200/80 bg-slate-50/70 px-4">
+              <AccordionTrigger className="py-4 text-left hover:no-underline">
+                <div className="min-w-0">
+                  <p className="text-[0.68rem] font-black uppercase tracking-[0.18em] text-slate-400">Accent color</p>
+                  <div className="mt-1 flex items-center gap-2">
+                    <span className="h-3.5 w-3.5 shrink-0 rounded-full border border-black/10" style={{ backgroundColor: selectedColor }} />
+                    <span className="truncate text-sm font-black tracking-tight text-slate-900">{selectedColorLabel}</span>
+                    <span className="rounded-full bg-white px-2 py-0.5 text-[0.62rem] font-bold uppercase tracking-[0.14em] text-slate-500">
+                      {selectedColor.toUpperCase()}
+                    </span>
+                  </div>
+                </div>
+              </AccordionTrigger>
+              <AccordionContent className="pb-4 pt-1">
+                <div className="grid grid-cols-1 gap-2">
+                  {COLOR_SWATCHES.map((swatch) => {
+                    const active = selectedColor.toLowerCase() === swatch.value.toLowerCase()
+                    return (
+                      <button
+                        key={swatch.value}
+                        type="button"
+                        onClick={() => onUpdateStyle("primaryColor", swatch.value)}
+                        className={cn(
+                          "flex items-center gap-3 rounded-xl border p-3 text-left transition-all",
+                          active ? "border-slate-300 bg-white shadow-sm ring-1 ring-slate-100" : "border-slate-100 bg-slate-50/50 hover:bg-white hover:border-slate-200"
+                        )}
+                      >
+                        <span className="h-4 w-4 shrink-0 rounded-full border border-black/10 shadow-sm" style={{ backgroundColor: swatch.value }} />
+                        <span className="text-xs font-bold leading-tight text-slate-700">{swatch.label}</span>
+                      </button>
+                    )
+                  })}
+                </div>
+
+                <label className="mt-3 flex cursor-pointer items-center gap-3 rounded-xl border border-dashed border-slate-200 bg-slate-50/50 p-3 transition-colors hover:bg-white">
+                  <div className="relative shrink-0">
+                    <input
+                      type="color"
+                      value={selectedColor}
+                      onChange={(event) => onUpdateStyle("primaryColor", event.target.value)}
+                      className="peer absolute inset-0 h-full w-full cursor-pointer opacity-0"
+                      aria-label="Custom accent color"
+                    />
+                    <div className="flex h-10 w-10 items-center justify-center rounded-lg border border-slate-200 bg-white shadow-sm peer-focus:ring-2 peer-focus:ring-primary/20">
+                      <div className="h-5 w-5 rounded-md border border-black/10" style={{ backgroundColor: selectedColor }} />
+                    </div>
+                  </div>
+                  <div>
+                    <p className="text-[0.68rem] font-black uppercase tracking-[0.14em] text-slate-400">Custom accent</p>
+                    <p className="mt-0.5 text-xs text-slate-600">Pick any color from the spectrum.</p>
+                  </div>
+                </label>
+              </AccordionContent>
+            </AccordionItem>
+
+            <AccordionItem value="type" className="overflow-hidden rounded-[1.5rem] border border-slate-200/80 bg-slate-50/70 px-4">
+              <AccordionTrigger className="py-4 text-left hover:no-underline">
+                <div className="min-w-0">
+                  <p className="text-[0.68rem] font-black uppercase tracking-[0.18em] text-slate-400">Typography</p>
+                  <p className="mt-1 truncate text-sm font-black tracking-tight text-slate-900">
+                    {selectedFontLabel} • {fontSize.toFixed(1)}pt • {lineHeight.toFixed(2)} line height
+                  </p>
+                </div>
+              </AccordionTrigger>
+              <AccordionContent className="space-y-4 pb-4 pt-1">
+                <div className="rounded-[1.2rem] border border-slate-200/80 bg-white p-3">
+                  <p className="mb-2 text-[0.68rem] font-black uppercase tracking-[0.14em] text-slate-400">Font family</p>
+                  <Select value={selectedFont} onValueChange={(value) => onUpdateStyle("fontFamily", value)}>
+                    <SelectTrigger className="h-11 rounded-2xl border-slate-200 bg-white text-sm font-semibold">
+                      <SelectValue placeholder="Choose a font" />
+                    </SelectTrigger>
+                    <SelectContent className="rounded-2xl border-slate-200">
+                      {Object.entries(ATS_SAFE_RESUME_FONT_GROUPS).map(([group, fonts]) =>
+                        fonts.length ? (
+                          <SelectGroup key={group}>
+                            <SelectLabel>{group}</SelectLabel>
+                            {fonts.map((font) => (
+                              <SelectItem key={font.value} value={font.value}>
+                                {font.label}
+                              </SelectItem>
+                            ))}
+                          </SelectGroup>
+                        ) : null
+                      )}
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div className="rounded-[1.2rem] border border-slate-200/80 bg-white p-3">
+                  <div className="mb-3 flex items-center justify-between gap-3">
+                    <p className="text-[0.68rem] font-black uppercase tracking-[0.14em] text-slate-400">Font size</p>
+                    <Badge variant="secondary" className="rounded-full bg-slate-50 px-2.5 py-1 text-[0.68rem] font-bold text-slate-700">
+                      {fontSize.toFixed(1)} pt
+                    </Badge>
+                  </div>
+                  <Slider
+                    min={10}
+                    max={13}
+                    step={0.25}
+                    value={[fontSize]}
+                    onValueChange={([value]) => onUpdateStyle("fontSize", Number(value.toFixed(2)))}
+                  />
+                </div>
+
+                <div className="rounded-[1.2rem] border border-slate-200/80 bg-white p-3">
+                  <div className="mb-3 flex items-center justify-between gap-3">
+                    <p className="text-[0.68rem] font-black uppercase tracking-[0.14em] text-slate-400">Line height</p>
+                    <Badge variant="secondary" className="rounded-full bg-slate-50 px-2.5 py-1 text-[0.68rem] font-bold text-slate-700">
+                      {lineHeight.toFixed(2)}
+                    </Badge>
+                  </div>
+                  <Slider
+                    min={1.35}
+                    max={1.8}
+                    step={0.01}
+                    value={[lineHeight]}
+                    onValueChange={([value]) => onUpdateStyle("lineHeight", Number(value.toFixed(2)))}
+                  />
+                </div>
+              </AccordionContent>
+            </AccordionItem>
+
+            <AccordionItem value="spacing" className="overflow-hidden rounded-[1.5rem] border border-slate-200/80 bg-slate-50/70 px-4">
+              <AccordionTrigger className="py-4 text-left hover:no-underline">
+                <div className="min-w-0">
+                  <p className="text-[0.68rem] font-black uppercase tracking-[0.18em] text-slate-400">Spacing</p>
+                  <p className="mt-1 truncate text-sm font-black tracking-tight text-slate-900">
+                    {Math.round(margins)}px margins • {activeTemplate.design.density} density
+                  </p>
+                </div>
+              </AccordionTrigger>
+              <AccordionContent className="space-y-4 pb-4 pt-1">
+                <div className="rounded-[1.2rem] border border-slate-200/80 bg-white p-3">
+                  <div className="mb-3 flex items-center justify-between gap-3">
+                    <p className="text-[0.68rem] font-black uppercase tracking-[0.14em] text-slate-400">Page margins</p>
+                    <Badge variant="secondary" className="rounded-full bg-slate-50 px-2.5 py-1 text-[0.68rem] font-bold text-slate-700">
+                      {Math.round(margins)} px
+                    </Badge>
+                  </div>
+                  <Slider
+                    min={32}
+                    max={56}
+                    step={1}
+                    value={[margins]}
+                    onValueChange={([value]) => onUpdateStyle("margins", Math.round(value))}
+                  />
+                </div>
+
+                <div className="rounded-[1.2rem] border border-slate-200/80 bg-[linear-gradient(135deg,rgba(103,58,183,0.08),rgba(33,150,243,0.08)_52%,rgba(255,152,0,0.08))] p-3">
+                  <div className="flex items-start justify-between gap-3">
+                    <div>
+                      <p className="text-[0.68rem] font-black uppercase tracking-[0.14em] text-slate-500">Layout notes</p>
+                      <p className="mt-1 text-xs leading-relaxed text-slate-600">
+                        Keep the story clean for ATS while tuning density and visual breathing room.
+                      </p>
+                    </div>
+                    <Gauge className="mt-0.5 h-4.5 w-4.5 shrink-0 text-primary" />
+                  </div>
+                  <div className="mt-3 flex flex-wrap gap-2">
+                    <Badge className="rounded-full bg-white/85 px-3 py-1 text-[0.62rem] font-bold uppercase tracking-[0.14em] text-slate-700">
+                      {activeTemplate.category}
+                    </Badge>
+                    <Badge className="rounded-full bg-white/85 px-3 py-1 text-[0.62rem] font-bold uppercase tracking-[0.14em] text-slate-700">
+                      {activeTemplate.design.density}
+                    </Badge>
+                    <Badge className="rounded-full bg-white/85 px-3 py-1 text-[0.62rem] font-bold uppercase tracking-[0.14em] text-slate-700">
+                      {activeTemplate.design.skillVariant}
+                    </Badge>
+                  </div>
+                </div>
+              </AccordionContent>
+            </AccordionItem>
+          </Accordion>
+        </div>
+      ) : (
       <div className={cn("grid gap-4 p-5", compact ? "grid-cols-1" : "grid-cols-2")}>
         <MetricCard label="Accent color" value={selectedColor.toUpperCase()} hint="Use our brand tones or pick your own accent.">
           <div className="grid grid-cols-2 gap-2">
@@ -435,6 +714,7 @@ export function EditorDesignStudio({
           </div>
         </div>
       </div>
+      )}
     </Card>
   ) : null
 

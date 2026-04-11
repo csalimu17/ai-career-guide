@@ -105,7 +105,6 @@ export default function LoginPageClient() {
 
   return (
     <AuthShell
-      eyebrow="AI-Powered Career Workspace"
       title="Welcome back"
       description="Resume edits, ATS insights, job tracking, and billing stay in sync here, so you can pick up where you left off."
       supportingTitle="Step back into a sharper job search flow."

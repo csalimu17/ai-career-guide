@@ -41,6 +41,11 @@ const categoryLabels: Array<{ key: keyof AtsOptimizationScoringOutput["categorie
 const scoreTone = (score?: number) =>
   !score ? "text-muted-foreground" : score >= 85 ? "text-emerald-600" : score >= 70 ? "text-sky-600" : score >= 55 ? "text-amber-600" : "text-rose-600"
 
+const heroActionButtonBase =
+  "group h-14 rounded-[1.4rem] px-5 text-[0.92rem] font-black tracking-tight transition-all duration-300"
+const atsCardSurfaceBase = "rounded-[1.85rem] border border-slate-100/80 bg-white shadow-[0_18px_44px_-32px_rgba(15,23,42,0.22)]"
+const atsSectionCardBase = "rounded-[1.65rem] border border-slate-100 bg-[#FAFBFD]/70 p-6 transition-all duration-300 hover:-translate-y-0.5 hover:bg-white hover:shadow-md"
+
 const formatDate = (value: AtsReportDoc["createdAt"]) => {
   const date = value instanceof Date ? value : value?.toDate?.()
   return date ? date.toLocaleDateString(undefined, { month: "short", day: "numeric", year: "numeric" }) : "Just now"
@@ -192,18 +197,7 @@ export default function AtsOptimizerPage() {
         <div className="absolute -top-24 -right-24 h-96 w-96 bg-blue-500/10 blur-[100px] pointer-events-none" />
         <div className="absolute -bottom-24 -left-24 h-96 w-96 bg-purple-500/10 blur-[100px] pointer-events-none" />
 
-        <div className="relative z-10 space-y-6">
-          <div className="flex items-center gap-3">
-            <div className="eyebrow-chip px-4 py-1.5 shadow-sm border-primary/20">
-              <Target className="h-4 w-4" /> 
-              ATS Optimizer
-            </div>
-            <div className="hidden sm:flex items-center gap-2 text-[10px] font-bold text-muted-foreground uppercase tracking-widest bg-slate-100/50 px-3 py-1.5 rounded-full border border-slate-200/50">
-              <Sparkles className="w-3 h-3 text-amber-500" />
-              AI-Powered Match
-            </div>
-          </div>
-
+        <div className="relative z-10 space-y-4">
           <div className="flex flex-col gap-8 xl:flex-row xl:items-end xl:justify-between">
             <div className="min-w-0 space-y-4 xl:flex-1">
               <h1 className="text-4xl sm:text-5xl lg:text-6xl font-black leading-[0.95] tracking-tighter headline-gradient-vivid max-w-4xl">
@@ -232,20 +226,40 @@ export default function AtsOptimizerPage() {
             <div className="flex flex-col sm:flex-row gap-3 xl:shrink-0">
               <Button 
                 variant="outline" 
-                className="tap-bounce h-14 px-8 rounded-2xl font-black text-sm uppercase tracking-widest border-2 border-slate-100 hover:bg-slate-50 hover:border-slate-200 bg-white" 
+                className={cn(
+                  heroActionButtonBase,
+                  "tap-bounce border-2 border-slate-100 bg-white px-8 text-slate-900 shadow-[0_18px_44px_-30px_rgba(15,23,42,0.3)] hover:-translate-y-0.5 hover:border-slate-200 hover:bg-white hover:shadow-[0_24px_56px_-34px_rgba(15,23,42,0.34)]"
+                )} 
                 onClick={() => latestResume && loadResumeIntoWorkspace(latestResume)} 
                 disabled={!latestResume}
               >
-                <FileText className="mr-2 h-5 w-5 text-slate-400" />
-                {latestResume ? "Use latest" : "No resume"}
+                <span className="flex h-9 w-9 items-center justify-center rounded-full bg-slate-100 text-slate-600 ring-1 ring-slate-200/80 transition-transform duration-300 group-hover:scale-110">
+                  <FileText className="h-4.5 w-4.5" />
+                </span>
+                <span className="flex flex-col items-start leading-none">
+                  <span>{latestResume ? "Use latest" : "No resume"}</span>
+                  <span className="mt-1 text-[0.62rem] font-bold uppercase tracking-[0.16em] text-slate-400">
+                    Load workspace CV
+                  </span>
+                </span>
               </Button>
               <Button 
-                className="tap-bounce h-14 px-8 rounded-2xl font-black text-sm uppercase tracking-widest btn-premium border-none text-white shadow-xl shadow-blue-500/20" 
+                className={cn(
+                  heroActionButtonBase,
+                  "tap-bounce btn-premium border-none px-8 text-white shadow-xl shadow-blue-500/20 hover:-translate-y-0.5 hover:shadow-[0_26px_60px_-30px_rgba(37,99,235,0.35)]"
+                )} 
                 asChild
               >
                 <Link href={builderHref}>
-                  Open builder
-                  <ArrowRight className="ml-2 h-5 w-5" />
+                  <span className="flex h-9 w-9 items-center justify-center rounded-full bg-white/15 ring-1 ring-white/20 transition-transform duration-300 group-hover:scale-110">
+                    <ArrowRight className="h-4.5 w-4.5" />
+                  </span>
+                  <span className="flex flex-col items-start leading-none">
+                    <span>Open builder</span>
+                    <span className="mt-1 text-[0.62rem] font-bold uppercase tracking-[0.16em] text-white/70">
+                      Jump to editor
+                    </span>
+                  </span>
                 </Link>
               </Button>
             </div>
@@ -254,7 +268,7 @@ export default function AtsOptimizerPage() {
       </section>
 
       <div className="grid gap-4 xl:grid-cols-[1.08fr_0.92fr] xl:gap-6">
-        <Card className="surface-card border-none overflow-hidden">
+        <Card className={atsCardSurfaceBase}>
           <CardHeader className="space-y-2 p-6 md:p-10 pb-4">
             <CardTitle className="flex items-center gap-4 text-xl font-black md:text-3xl tracking-tight">
               <div className="flex h-12 w-12 items-center justify-center rounded-[1.25rem] bg-indigo-50 text-indigo-600 shadow-sm border border-indigo-100/50">
@@ -272,13 +286,13 @@ export default function AtsOptimizerPage() {
                   type="button" 
                   onClick={() => loadResumeIntoWorkspace(resume)} 
                   className={cn(
-                    "tap-bounce group relative rounded-[1.25rem] border p-4 text-left transition-all duration-300",
+                    "tap-bounce group relative rounded-[1.35rem] border p-4 text-left transition-all duration-300",
                     selectedResumeId === resume.id 
-                      ? "border-indigo-500/30 bg-indigo-50/50 shadow-inner ring-1 ring-indigo-500/20" 
-                      : "border-slate-100 bg-slate-50/50 hover:bg-white hover:border-slate-200 hover:shadow-md"
+                      ? "border-indigo-500/30 bg-gradient-to-br from-indigo-50/80 to-white shadow-inner ring-1 ring-indigo-500/20" 
+                      : "border-slate-100 bg-slate-50/50 hover:-translate-y-0.5 hover:bg-white hover:border-slate-200 hover:shadow-lg"
                   )}
                 >
-                  <p className="truncate text-xs font-black uppercase tracking-wider text-slate-400 group-hover:text-indigo-400 transition-colors">Saved Resume</p>
+                  <p className="truncate text-[0.66rem] font-black uppercase tracking-[0.18em] text-slate-400 group-hover:text-indigo-400 transition-colors">Saved Resume</p>
                   <p className={cn("mt-1 truncate text-sm font-black", selectedResumeId === resume.id ? "text-indigo-700" : "text-slate-700")}>{resume.name}</p>
                   <div className="mt-3 flex items-center justify-between">
                     <p className="text-[10px] font-bold text-slate-400">{formatDate(resume.updatedAt)}</p>
@@ -324,25 +338,33 @@ export default function AtsOptimizerPage() {
                   <p className="text-lg font-black tracking-tight text-slate-900">Configure Analysis Depth</p>
                   <p className="text-sm font-medium text-slate-500 max-w-md leading-relaxed">Runs a full diagnostic on role requirements, keyword density, and structural integrity.</p>
                 </div>
-                <Button 
-                  className={cn(
-                    "tap-bounce h-14 md:h-16 px-10 rounded-2xl font-black text-xs md:text-sm uppercase tracking-widest shadow-xl transition-all",
-                    isRunning 
-                      ? "bg-slate-100 text-slate-400" 
-                      : "bg-slate-900 text-white hover:bg-slate-800 hover:translate-y-[-2px] active:translate-y-[0px] shadow-slate-200"
-                  )} 
-                  onClick={runScan} 
-                  disabled={isRunning}
-                >
-                  {isRunning ? <Loader2 className="mr-2 h-5 w-5 animate-spin" /> : <Search className="mr-2 h-5 w-5" />}
-                  {visibleReport ? "Refresh Diagnostic" : "Initialize Scan"}
+                  <Button 
+                    className={cn(
+                      heroActionButtonBase,
+                      "tap-bounce px-10 text-xs md:text-sm uppercase tracking-widest shadow-xl transition-all",
+                      isRunning 
+                        ? "bg-slate-100 text-slate-400" 
+                        : "bg-slate-900 text-white hover:bg-slate-800 hover:-translate-y-0.5 shadow-slate-200"
+                    )} 
+                    onClick={runScan} 
+                    disabled={isRunning}
+                  >
+                  <span className="flex h-8 w-8 items-center justify-center rounded-full bg-white/10 ring-1 ring-white/15">
+                    {isRunning ? <Loader2 className="h-4.5 w-4.5 animate-spin" /> : <Search className="h-4.5 w-4.5" />}
+                  </span>
+                  <span className="flex flex-col items-start leading-none">
+                    <span>{visibleReport ? "Refresh Diagnostic" : "Initialize Scan"}</span>
+                    <span className="mt-1 text-[0.62rem] font-bold uppercase tracking-[0.16em] text-white/70">
+                      ATS role check
+                    </span>
+                  </span>
                 </Button>
               </div>
             </div>
           </CardContent>
         </Card>
 
-        <Card className="surface-card border-none overflow-hidden">
+        <Card className={atsCardSurfaceBase}>
           <CardHeader className="space-y-4 p-6 md:p-10 pb-0">
             <div className="flex items-center justify-between">
               <CardTitle className="flex items-center gap-4 text-xl font-black md:text-3xl tracking-tight">
@@ -481,7 +503,7 @@ export default function AtsOptimizerPage() {
       </div>
 
       {visibleReport && <div className="grid gap-4 xl:grid-cols-[1.1fr_0.9fr] xl:gap-6 mt-8">
-        <Card className="surface-card border-none overflow-hidden">
+        <Card className={atsCardSurfaceBase}>
           <CardHeader className="space-y-2 p-6 md:p-10 pb-4">
             <CardTitle className="text-xl font-black md:text-3xl tracking-tight">Keywords and strengths</CardTitle>
             <CardDescription className="text-slate-500 font-medium">Use these to decide what to preserve and what to add before you apply.</CardDescription>
@@ -521,15 +543,15 @@ export default function AtsOptimizerPage() {
           </CardContent>
         </Card>
 
-        <Card className="surface-card border-none overflow-hidden">
+        <Card className={atsCardSurfaceBase}>
           <CardHeader className="space-y-2 p-6 md:p-10 pb-4">
             <CardTitle className="text-xl font-black md:text-3xl tracking-tight">Section feedback</CardTitle>
             <CardDescription className="text-slate-500 font-medium">Fix the weakest sections first for the fastest ATS lift.</CardDescription>
           </CardHeader>
           <CardContent className="space-y-4 p-6 md:p-10 pt-0">
             {visibleReport.sectionFeedback?.length ? visibleReport.sectionFeedback.map((section) => (
-              <div key={section.section} className="rounded-[1.75rem] border border-slate-100 bg-[#FAFBFD]/50 p-6 space-y-4">
-                <div className="flex flex-wrap items-center justify-between gap-2">
+                <div key={section.section} className={atsSectionCardBase}>
+                  <div className="flex flex-wrap items-center justify-between gap-2">
                   <p className="text-sm font-black text-slate-900 uppercase tracking-tight">{section.section}</p>
                   <Badge 
                     variant="outline" 
@@ -558,19 +580,19 @@ export default function AtsOptimizerPage() {
         </Card>
       </div>}
 
-      {visibleReport?.recommendations?.length ? <Card className="surface-card border-none overflow-hidden mt-8">
+      {visibleReport?.recommendations?.length ? <Card className={cn(atsCardSurfaceBase, "mt-8")}>
         <CardHeader className="space-y-2 p-6 md:p-10 pb-4">
           <CardTitle className="text-xl font-black md:text-3xl tracking-tight text-gradient from-slate-900 to-slate-600">Priority recommendations</CardTitle>
           <CardDescription className="text-slate-500 font-medium">A cleaner checklist for what to change next, in order.</CardDescription>
         </CardHeader>
         <CardContent className="grid gap-4 p-6 md:p-10 pt-0 sm:grid-cols-2">
           {visibleReport.recommendations.map((item) => (
-            <div key={`${item.priority}-${item.title}`} className="rounded-[1.75rem] border border-slate-100 bg-[#FAFBFD]/50 p-6 flex flex-col justify-between">
-              <div className="space-y-2">
-                <div className="flex items-center gap-3 mb-2">
+            <div key={`${item.priority}-${item.title}`} className={cn(atsSectionCardBase, "flex flex-col justify-between")}>
+              <div className="space-y-3">
+                <div className="flex items-center gap-3 mb-1">
                   <Badge 
                     className={cn(
-                      "rounded-lg px-2 py-0.5 text-[8px] font-black uppercase tracking-widest",
+                      "rounded-full px-2.5 py-1 text-[8px] font-black uppercase tracking-widest",
                       item.priority === "high" ? "bg-rose-500 text-white" : item.priority === "medium" ? "bg-amber-500 text-white" : "bg-blue-500 text-white"
                     )}
                   >
@@ -579,13 +601,17 @@ export default function AtsOptimizerPage() {
                   <p className="text-sm font-black text-slate-900 leading-tight">{item.title}</p>
                 </div>
                 <p className="text-xs font-medium text-slate-500 leading-relaxed">{item.description}</p>
+                <div className="mt-4 inline-flex items-center gap-2 rounded-full bg-white px-3 py-1.5 text-[0.62rem] font-black uppercase tracking-[0.14em] text-slate-500 ring-1 ring-slate-100">
+                  Prioritize next
+                  <ArrowRight className="h-3.5 w-3.5" />
+                </div>
               </div>
             </div>
           ))}
         </CardContent>
       </Card> : null}
 
-      <Card className="surface-card border-none overflow-hidden mt-8">
+      <Card className={cn(atsCardSurfaceBase, "mt-8")}>
         <CardHeader className="flex flex-col gap-6 p-6 md:flex-row md:items-center md:justify-between md:p-10">
           <div className="space-y-1">
             <CardTitle className="flex items-center gap-4 text-xl font-black md:text-3xl tracking-tight">
@@ -596,10 +622,17 @@ export default function AtsOptimizerPage() {
             </CardTitle>
             <CardDescription className="text-slate-500 font-medium font-medium">Revisit past scans and track your improvement over time.</CardDescription>
           </div>
-          <Button variant="outline" className="tap-bounce h-12 px-6 rounded-2xl font-black text-xs uppercase tracking-widest border-2 border-slate-100 bg-white" asChild>
+          <Button variant="outline" className={cn(heroActionButtonBase, "tap-bounce border-2 border-slate-100 bg-white px-6 text-slate-900 shadow-[0_18px_42px_-30px_rgba(15,23,42,0.28)] hover:-translate-y-0.5 hover:border-slate-200") } asChild>
             <Link href={builderHref}>
-              Improve in builder
-              <ArrowRight className="ml-2 h-4 w-4" />
+              <span className="flex h-8 w-8 items-center justify-center rounded-full bg-slate-100 text-slate-600 ring-1 ring-slate-200/80">
+                <ArrowRight className="h-4 w-4" />
+              </span>
+              <span className="flex flex-col items-start leading-none">
+                <span>Improve in builder</span>
+                <span className="mt-1 text-[0.62rem] font-bold uppercase tracking-[0.16em] text-slate-400">
+                  Open the editor
+                </span>
+              </span>
             </Link>
           </Button>
         </CardHeader>
@@ -612,8 +645,8 @@ export default function AtsOptimizerPage() {
               className={cn(
                 "w-full rounded-[2rem] border p-6 text-left transition-all duration-300",
                 activeReport?.id === report.id 
-                  ? "border-indigo-500/30 bg-indigo-50/30 shadow-inner" 
-                  : "border-slate-50 bg-[#FAFBFD]/50 hover:bg-white hover:border-slate-200 hover:shadow-md"
+                  ? "border-indigo-500/30 bg-gradient-to-br from-indigo-50/40 to-white shadow-inner" 
+                  : "border-slate-50 bg-[#FAFBFD]/50 hover:-translate-y-0.5 hover:bg-white hover:border-slate-200 hover:shadow-md"
               )}
             >
               <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
@@ -628,7 +661,8 @@ export default function AtsOptimizerPage() {
                     </p>
                   </div>
                 </div>
-                <div className="hidden sm:block shrink-0 px-4 py-2 rounded-xl bg-white border border-slate-100 text-[10px] font-black uppercase text-slate-400 tracking-widest group-hover:text-indigo-500 transition-colors">
+                <div className="hidden sm:inline-flex shrink-0 items-center gap-2 rounded-full bg-white px-4 py-2 text-[10px] font-black uppercase tracking-widest text-slate-400 ring-1 ring-slate-100 transition-colors group-hover:text-indigo-500">
+                  <span className="h-2 w-2 rounded-full bg-indigo-500/60" />
                   Reopen Report
                 </div>
               </div>

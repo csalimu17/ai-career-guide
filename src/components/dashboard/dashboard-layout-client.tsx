@@ -55,6 +55,7 @@ export default function DashboardLayoutClient({
 
     const targetPath = getPostAuthDestination(profile, Boolean(resumes?.length));
     const isCurrentlyOnboarding = pathname.startsWith("/onboarding");
+    const isSpecialOnboardingFlow = pathname === "/onboarding/upload" || pathname === "/onboarding/review";
 
     // Rule 1: Should be in onboarding but isn't
     if (targetPath === "/onboarding" && !isCurrentlyOnboarding) {
@@ -64,16 +65,15 @@ export default function DashboardLayoutClient({
 
     // Rule 2: Should NOT be in onboarding but is
     // This handles returning members landing on /onboarding
-    if (targetPath === "/dashboard" && isCurrentlyOnboarding) {
+    if (targetPath === "/dashboard" && isCurrentlyOnboarding && !isSpecialOnboardingFlow) {
       // Small exception: if they are strictly in /onboarding/upload or /onboarding/review, 
       // they might have a resume but still want to finish the flow.
-      // But for a general "login then flash", we want to send them to dashboard if they are returning.
       router.replace("/dashboard");
       return;
     }
 
     // Rule 3: authoritative completion check
-    if (isCurrentlyOnboarding && profile?.onboardingComplete) {
+    if (isCurrentlyOnboarding && profile?.onboardingComplete && !isSpecialOnboardingFlow) {
       router.replace("/dashboard");
     }
   }, [profile, resumes, isProfileLoading, isResumesLoading, isUserLoading, user, pathname, router, impersonatedUid]);

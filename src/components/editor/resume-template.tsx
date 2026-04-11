@@ -1,6 +1,7 @@
 "use client"
 
 import type { CSSProperties, ReactNode } from "react"
+import Image from "next/image"
 
 import { RichTextRenderer } from "@/components/editor/rich-text-renderer"
 import { DEFAULT_SECTION_ORDER, getTemplateConfig, type ResumeSectionId, type TemplateConfig } from "@/lib/templates-config"
@@ -8,6 +9,7 @@ import { coerceResumeFontKey, getResumeFontStack } from "@/lib/resume-fonts"
 import { cn } from "@/lib/utils"
 
 type ResumeRenderMode = "screen" | "mobile" | "print" | "thumbnail"
+type ResumeTemplateFamily = TemplateConfig["category"]
 
 interface ResumeTemplateProps {
   data: any
@@ -99,10 +101,10 @@ function getDensityMetrics(template: TemplateConfig, mode: ResumeRenderMode) {
 
   if (mode === "thumbnail") {
     return {
-      headerGap: map.headerGap - 4,
-      sectionGap: map.sectionGap - 6,
-      entryGap: map.entryGap - 2,
-      headingGap: map.headingGap - 2,
+      headerGap: Math.max(16, map.headerGap - 6),
+      sectionGap: Math.max(18, map.sectionGap - 8),
+      entryGap: Math.max(10, map.entryGap - 3),
+      headingGap: Math.max(8, map.headingGap - 3),
     }
   }
 
@@ -147,16 +149,58 @@ function getEntryShellStyle(template: TemplateConfig, accent: string) {
   return undefined
 }
 
+function getTemplateFamilyTone(category: ResumeTemplateFamily, mode: ResumeRenderMode) {
+  switch (category) {
+    case "Professional":
+      return {
+        headerSurfaceClass:
+          mode === "thumbnail"
+            ? "shadow-[0_16px_34px_-28px_rgba(15,23,42,0.28)]"
+            : "shadow-[0_18px_42px_-30px_rgba(15,23,42,0.26)]",
+        headerSurfaceStyle: undefined as CSSProperties | undefined,
+        sectionLabelClass: "uppercase tracking-[0.22em]",
+        sectionDividerClass: "h-[2px] opacity-95",
+        sectionSpacingClass: "space-y-4",
+      }
+    case "Modern":
+      return {
+        headerSurfaceClass: "rounded-[1.45rem] border px-6 py-5 shadow-[0_18px_40px_-32px_rgba(37,99,235,0.16)]",
+        headerSurfaceStyle: {
+          backgroundImage: "linear-gradient(135deg, rgba(37,99,235,0.04), rgba(14,165,233,0.03) 58%, rgba(255,255,255,0.92))",
+        } as CSSProperties,
+        sectionLabelClass: "rounded-full border border-blue-200/70 bg-blue-50/70 px-3 py-1 uppercase tracking-[0.18em]",
+        sectionDividerClass: "h-px",
+        sectionSpacingClass: "space-y-3.5",
+      }
+    case "Classic":
+    default:
+      return {
+        headerSurfaceClass:
+          mode === "thumbnail"
+            ? "shadow-[0_12px_26px_-24px_rgba(180,83,9,0.18)]"
+            : "shadow-[0_16px_34px_-28px_rgba(180,83,9,0.16)]",
+        headerSurfaceStyle: {
+          backgroundImage: "linear-gradient(180deg, rgba(255,255,255,0.98), rgba(255,248,239,0.95))",
+        } as CSSProperties,
+        sectionLabelClass: "uppercase tracking-[0.26em]",
+        sectionDividerClass: "h-px [opacity:0.85]",
+        sectionSpacingClass: "space-y-[1.125rem]",
+      }
+  }
+}
+
 function ResumeSectionHeading({
   title,
   template,
   accent,
   mode,
+  familyTone,
 }: {
   title: string
   template: TemplateConfig
   accent: string
   mode: ResumeRenderMode
+  familyTone: ReturnType<typeof getTemplateFamilyTone>
 }) {
   const isUppercase = template.design.headingCase === "uppercase"
   const label = isUppercase ? title.toUpperCase() : title
@@ -173,7 +217,8 @@ function ResumeSectionHeading({
     >
       <div
         className={cn(
-          "shrink-0 font-bold tracking-[0.22em] text-slate-900",
+          "shrink-0 font-bold text-slate-900",
+          familyTone.sectionLabelClass,
           headingSize,
           isUppercase ? "uppercase" : "tracking-[0.08em]",
           template.design.headingVariant === "serif" && "font-semibold tracking-[0.18em]"
@@ -201,6 +246,7 @@ function ResumeSectionHeading({
       <div
         className={cn(
           "flex-1",
+          familyTone.sectionDividerClass,
           template.design.sectionDividers === "bold" ? "h-[2px]" : "h-px",
           template.design.headingVariant === "serif" ? "opacity-80" : "opacity-100"
         )}
@@ -214,24 +260,67 @@ function ResumeSectionHeading({
   )
 }
 
+function ResumeHeaderPhoto({
+  photoUrl,
+  name,
+  accent,
+  mode,
+}: {
+  photoUrl: string
+  name?: string
+  accent: string
+  mode: ResumeRenderMode
+}) {
+  const size = mode === "mobile" ? 72 : mode === "thumbnail" ? 48 : 88
+
+  return (
+    <div
+      className="shrink-0 overflow-hidden rounded-[1.35rem] border bg-white"
+      style={{
+        width: `${size}px`,
+        height: `${size}px`,
+        borderColor: hexToRgba(accent, 0.2),
+        boxShadow: `0 12px 24px -18px ${hexToRgba(accent, 0.5)}`,
+      }}
+    >
+      <Image
+        src={photoUrl}
+        alt={name ? `${name} profile photo` : "Profile photo"}
+        width={size}
+        height={size}
+        sizes={`${size}px`}
+        unoptimized
+        className="h-full w-full object-cover"
+      />
+    </div>
+  )
+}
+
 function ResumeTemplateHeader({
   content,
   template,
   accent,
   mode,
+  familyTone,
   spacing,
 }: {
   content: any
   template: TemplateConfig
   accent: string
   mode: ResumeRenderMode
+  familyTone: ReturnType<typeof getTemplateFamilyTone>
   spacing: ReturnType<typeof getDensityMetrics>
 }) {
   const contactItems = getContactItems(content)
   const splitLayout = template.design.contactLayout === "split" && mode !== "mobile"
+  const photoUrl =
+    typeof content?.personal?.photoUrl === "string" && content.personal.photoUrl.trim().length > 0
+      ? content.personal.photoUrl
+      : null
 
   const headerClassName = cn(
     "resume-header relative flex w-full gap-6",
+    familyTone.headerSurfaceClass,
     template.design.headerAlignment === "center" && !splitLayout ? "flex-col items-center text-center" : "flex-col",
     splitLayout && "flex-row items-start justify-between",
     template.design.headerVariant === "classic" && "border-b pb-6",
@@ -243,6 +332,7 @@ function ResumeTemplateHeader({
 
   const headerStyle: CSSProperties = {
     gap: `${spacing.headerGap}px`,
+    ...(familyTone.headerSurfaceStyle ?? {}),
     borderColor:
       template.design.headerVariant === "classic" || template.design.headerVariant === "minimal"
         ? hexToRgba(accent, 0.24)
@@ -261,6 +351,7 @@ function ResumeTemplateHeader({
   const nameClassName = cn(
     "font-black tracking-tight text-slate-900",
     mode === "mobile" ? "text-[2.05em]" : "text-[2.45em]",
+    mode === "thumbnail" && "text-[2.0em]",
     template.design.headerVariant === "minimal" && "font-semibold",
     template.design.headerVariant === "executive" && "text-[2.6em]"
   )
@@ -275,6 +366,11 @@ function ResumeTemplateHeader({
     template.design.headerAlignment === "center" && !splitLayout && "items-center justify-center text-center"
   )
 
+  const headerIntroClassName = cn(
+    "flex min-w-0 gap-4",
+    template.design.headerAlignment === "center" && !splitLayout ? "flex-col items-center text-center" : "items-start"
+  )
+
   return (
     <header className={headerClassName} style={{ ...headerStyle, breakAfter: "avoid" }}>
       {template.design.headerBand && (
@@ -286,37 +382,51 @@ function ResumeTemplateHeader({
         />
       )}
 
-      <div className={cn("min-w-0 space-y-3", splitLayout && "flex-1")}>
-        <div className={cn(template.design.headerAlignment === "center" && !splitLayout && "text-center")}>
-          <h1 className={nameClassName} style={{ color: accent }}>
-            {content?.personal?.name || "Your Name"}
-          </h1>
-          {content?.personal?.title ? (
-            <p
-              className={cn(
-                "mt-2 text-[0.95em] font-semibold uppercase tracking-[0.18em] text-slate-500",
-                mode === "mobile" && "text-[0.92em]"
-              )}
-            >
-              {content.personal.title}
-            </p>
+      <div className={cn("min-w-0", splitLayout && "flex-1")}>
+        <div className={headerIntroClassName}>
+          {photoUrl ? (
+            <ResumeHeaderPhoto
+              photoUrl={photoUrl}
+              name={content?.personal?.name}
+              accent={accent}
+              mode={mode}
+            />
           ) : null}
-        </div>
 
-        {!splitLayout && contactItems.length > 0 && (
-          <div className={contactClassName}>
-            {contactItems.map((item: string, index: number) => (
-              <div key={`${item}-${index}`} className="flex items-center gap-2">
-                {template.design.contactLayout === "inline" && index > 0 && mode !== "mobile" && (
-                  <span className="h-1 w-1 rounded-full bg-slate-300" />
-                )}
-                <span className={cn(item.includes("@") && "break-all", item === content?.personal?.phone && "whitespace-nowrap")}>
-                  {item}
-                </span>
+          <div className="min-w-0 space-y-3">
+            <div className={cn(template.design.headerAlignment === "center" && !splitLayout && "text-center")}>
+              <h1 className={nameClassName} style={{ color: accent }}>
+                {content?.personal?.name || "Your Name"}
+              </h1>
+              {content?.personal?.title ? (
+                <p
+                  className={cn(
+                    "mt-2 text-[0.95em] font-semibold uppercase tracking-[0.18em] text-slate-500",
+                    mode === "mobile" && "text-[0.92em]",
+                    mode === "thumbnail" && "text-[0.85em]"
+                  )}
+                >
+                  {content.personal.title}
+                </p>
+              ) : null}
+            </div>
+
+            {!splitLayout && contactItems.length > 0 && (
+              <div className={contactClassName}>
+                {contactItems.map((item: string, index: number) => (
+                  <div key={`${item}-${index}`} className="flex items-center gap-2">
+                    {template.design.contactLayout === "inline" && index > 0 && mode !== "mobile" && (
+                      <span className="h-1 w-1 rounded-full bg-slate-300" />
+                    )}
+                    <span className={cn(item.includes("@") && "break-all", item === content?.personal?.phone && "whitespace-nowrap")}>
+                      {item}
+                    </span>
+                  </div>
+                ))}
               </div>
-            ))}
+            )}
           </div>
-        )}
+        </div>
       </div>
 
       {splitLayout && contactItems.length > 0 && (
@@ -345,19 +455,21 @@ function ResumeSection({
   template,
   accent,
   mode,
+  familyTone,
   children,
 }: {
   title: string
   template: TemplateConfig
   accent: string
   mode: ResumeRenderMode
+  familyTone: ReturnType<typeof getTemplateFamilyTone>
   children: ReactNode
 }) {
   return (
     <section 
-      className="resume-section space-y-3"
+      className={cn("resume-section", familyTone.sectionSpacingClass)}
     >
-      <ResumeSectionHeading title={title} template={template} accent={accent} mode={mode} />
+      <ResumeSectionHeading title={title} template={template} accent={accent} mode={mode} familyTone={familyTone} />
       {children}
     </section>
   )
@@ -379,7 +491,8 @@ function Description({
       className={cn(
         "text-[0.94em] leading-relaxed text-slate-700",
         "[&_p]:mb-2 [&_ul]:mb-2 [&_ol]:mb-2",
-        mode === "mobile" && "text-[0.98em]"
+        mode === "mobile" && "text-[0.98em]",
+        mode === "thumbnail" && "text-[0.9em] leading-[1.45] [&_p]:mb-1.5 [&_ul]:mb-1.5 [&_ol]:mb-1.5"
       )}
     />
   )
@@ -401,6 +514,7 @@ export function ResumeTemplate({
   const activeFontKey = coerceResumeFontKey(styles.fontFamily, template.defaults.fontFamily)
   const fontStack = getResumeFontStack(activeFontKey)
   const spacing = getDensityMetrics(template, renderMode)
+  const familyTone = getTemplateFamilyTone(template.category, renderMode)
   const sectionOrder = normalizeSectionOrder(data?.sectionOrder)
   const content = data?.content ?? {}
 
@@ -409,6 +523,7 @@ export function ResumeTemplate({
   const baseMargins = Number(styles.margins ?? template.defaults.margins)
   const screenPadding = 48 // 48px padding - 24px mask start = 24px visible top margin
   const mobilePadding = Math.max(28, Math.round(baseMargins * 0.8))
+  const thumbnailPadding = Math.max(24, Math.round(baseMargins * 0.6))
   const printPadding = Math.max(8, Math.min(14, pxToMm(baseMargins) * 0.88))
 
   const rootStyle: CSSProperties & { WebkitPrintColorAdjust?: "exact"; printColorAdjust?: "exact" } = {
@@ -421,8 +536,8 @@ export function ResumeTemplate({
     maskImage: undefined,
     WebkitMaskImage: undefined,
     fontFamily: fontStack,
-    fontSize: `${renderMode === "mobile" ? Math.max(10.5, baseFontSize - 0.3) : baseFontSize}pt`,
-    lineHeight: renderMode === "mobile" ? Math.max(1.55, baseLineHeight) : baseLineHeight,
+    fontSize: `${renderMode === "mobile" ? Math.max(10.5, baseFontSize - 0.3) : renderMode === "thumbnail" ? Math.max(9.25, baseFontSize - 0.8) : baseFontSize}pt`,
+    lineHeight: renderMode === "mobile" ? Math.max(1.55, baseLineHeight) : renderMode === "thumbnail" ? Math.max(1.42, baseLineHeight - 0.05) : baseLineHeight,
     border: template.design.pageBorder ? `1px solid ${hexToRgba(accent, 0.16)}` : undefined,
     borderRadius: renderMode === "mobile" ? "28px" : renderMode === "print" ? "0" : "8px",
     boxSizing: "border-box",
@@ -443,7 +558,7 @@ export function ResumeTemplate({
     if (!items.length) return null
 
     return (
-      <ResumeSection title={SECTION_LABELS.experience} template={template} accent={accent} mode={renderMode}>
+      <ResumeSection title={SECTION_LABELS.experience} template={template} accent={accent} mode={renderMode} familyTone={familyTone}>
         <div className="space-y-4">
           {items.map((experience: any) => (
             <article
@@ -477,7 +592,7 @@ export function ResumeTemplate({
     if (!items.length) return null
 
     return (
-      <ResumeSection title={SECTION_LABELS.projects} template={template} accent={accent} mode={renderMode}>
+      <ResumeSection title={SECTION_LABELS.projects} template={template} accent={accent} mode={renderMode} familyTone={familyTone}>
         <div className="space-y-4">
           {items.map((project: any) => (
             <article
@@ -506,7 +621,7 @@ export function ResumeTemplate({
     if (!items.length) return null
 
     return (
-      <ResumeSection title={SECTION_LABELS.education} template={template} accent={accent} mode={renderMode}>
+      <ResumeSection title={SECTION_LABELS.education} template={template} accent={accent} mode={renderMode} familyTone={familyTone}>
         <div className="space-y-4">
           {items.map((education: any) => (
             <article
@@ -538,7 +653,7 @@ export function ResumeTemplate({
 
     if (template.design.skillVariant === "inline") {
       return (
-        <ResumeSection title={SECTION_LABELS.skills} template={template} accent={accent} mode={renderMode}>
+        <ResumeSection title={SECTION_LABELS.skills} template={template} accent={accent} mode={renderMode} familyTone={familyTone}>
           <p className="text-[0.95em] leading-relaxed text-slate-700">{items.join(" | ")}</p>
         </ResumeSection>
       )
@@ -546,7 +661,7 @@ export function ResumeTemplate({
 
     if (template.design.skillVariant === "compact") {
       return (
-        <ResumeSection title={SECTION_LABELS.skills} template={template} accent={accent} mode={renderMode}>
+        <ResumeSection title={SECTION_LABELS.skills} template={template} accent={accent} mode={renderMode} familyTone={familyTone}>
           <div className="flex flex-wrap gap-x-3 gap-y-2 text-[0.9em] text-slate-700">
             {items.map((skill: string, index: number) => (
               <span key={`${skill}-${index}`} className="font-medium">
@@ -559,7 +674,7 @@ export function ResumeTemplate({
     }
 
     return (
-      <ResumeSection title={SECTION_LABELS.skills} template={template} accent={accent} mode={renderMode}>
+      <ResumeSection title={SECTION_LABELS.skills} template={template} accent={accent} mode={renderMode} familyTone={familyTone}>
         <ul className="space-y-1.5 pl-5 text-[0.94em] leading-relaxed text-slate-700">
           {items.map((skill: string, index: number) => (
             <li key={`${skill}-${index}`}>{skill}</li>
@@ -574,7 +689,7 @@ export function ResumeTemplate({
     if (!items.length) return null
 
     return (
-      <ResumeSection title={SECTION_LABELS.certifications} template={template} accent={accent} mode={renderMode}>
+      <ResumeSection title={SECTION_LABELS.certifications} template={template} accent={accent} mode={renderMode} familyTone={familyTone}>
         <div className="space-y-3">
           {items.map((certification: any) => (
             <article
@@ -600,7 +715,7 @@ export function ResumeTemplate({
     if (!items.length) return null
 
     return (
-      <ResumeSection title={SECTION_LABELS.languages} template={template} accent={accent} mode={renderMode}>
+      <ResumeSection title={SECTION_LABELS.languages} template={template} accent={accent} mode={renderMode} familyTone={familyTone}>
         <div className="space-y-2 text-[0.94em] text-slate-700">
           {items.map((language: any, index: number) => (
             <p key={`${language.language || language.name}-${index}`}>
@@ -617,7 +732,7 @@ export function ResumeTemplate({
     if (!content?.summary) return null
 
     return (
-      <ResumeSection title={SECTION_LABELS.summary} template={template} accent={accent} mode={renderMode}>
+      <ResumeSection title={SECTION_LABELS.summary} template={template} accent={accent} mode={renderMode} familyTone={familyTone}>
         <Description value={content.summary} mode={renderMode} />
       </ResumeSection>
     )
@@ -702,6 +817,7 @@ export function ResumeTemplate({
             noPadding ? "0" : 
             renderMode === "print" ? `${printPadding}mm` : 
             renderMode === "mobile" ? `${mobilePadding}px` : 
+            renderMode === "thumbnail" ? `${thumbnailPadding}px` :
             `${screenPadding}px`,
           maskImage: renderMode === "screen" ? 
             "repeating-linear-gradient(to bottom, transparent 0, transparent 24px, black 24px, black calc(297mm - 24px), transparent calc(297mm - 24px), transparent calc(297mm + 40px))" : undefined,
@@ -714,6 +830,7 @@ export function ResumeTemplate({
           template={template}
           accent={accent}
           mode={renderMode}
+          familyTone={familyTone}
           spacing={spacing}
         />
 

@@ -66,6 +66,9 @@ export default function SettingsPage() {
   const [isLaunchingPortal, setIsLaunchingPortal] = useState(false);
   const [isSigningOut, setIsSigningOut] = useState(false);
 
+  const settingsActionButtonBase =
+    "group h-11 rounded-[1.15rem] px-4 text-[0.82rem] font-black tracking-tight transition-all duration-300"
+
   useEffect(() => {
     if (!profile) return;
     setFormData({
@@ -245,10 +248,10 @@ export default function SettingsPage() {
       </div>
 
       <Tabs defaultValue="profile" className="w-full">
-        <TabsList className="mb-8 h-14 w-full justify-start gap-8 overflow-x-auto overflow-y-hidden whitespace-nowrap rounded-none border-b bg-transparent p-0 no-scrollbar scroll-smooth">
-          <TabsTrigger value="profile" className="rounded-none border-b-2 border-transparent bg-transparent px-2 pb-3 text-[10px] font-black uppercase tracking-widest data-[state=active]:border-primary">Profile</TabsTrigger>
-          <TabsTrigger value="billing" className="rounded-none border-b-2 border-transparent bg-transparent px-2 pb-3 text-[10px] font-black uppercase tracking-widest data-[state=active]:border-primary">Billing & Plans</TabsTrigger>
-          <TabsTrigger value="security" className="rounded-none border-b-2 border-transparent bg-transparent px-2 pb-3 text-[10px] font-black uppercase tracking-widest data-[state=active]:border-primary">Security</TabsTrigger>
+        <TabsList className="mb-8 flex h-auto w-full justify-start gap-2 overflow-x-auto overflow-y-hidden whitespace-nowrap rounded-[1.2rem] border border-white/80 bg-white/70 p-1.5 shadow-[0_18px_44px_-30px_rgba(15,23,42,0.24)] backdrop-blur-sm no-scrollbar scroll-smooth">
+          <TabsTrigger value="profile" className="rounded-[0.95rem] border border-transparent bg-transparent px-4 py-2.5 text-[10px] font-black uppercase tracking-widest text-muted-foreground data-[state=active]:border-primary/10 data-[state=active]:bg-primary data-[state=active]:text-white data-[state=active]:shadow-sm">Profile</TabsTrigger>
+          <TabsTrigger value="billing" className="rounded-[0.95rem] border border-transparent bg-transparent px-4 py-2.5 text-[10px] font-black uppercase tracking-widest text-muted-foreground data-[state=active]:border-primary/10 data-[state=active]:bg-primary data-[state=active]:text-white data-[state=active]:shadow-sm">Billing & Plans</TabsTrigger>
+          <TabsTrigger value="security" className="rounded-[0.95rem] border border-transparent bg-transparent px-4 py-2.5 text-[10px] font-black uppercase tracking-widest text-muted-foreground data-[state=active]:border-primary/10 data-[state=active]:bg-primary data-[state=active]:text-white data-[state=active]:shadow-sm">Security</TabsTrigger>
         </TabsList>
 
         <TabsContent value="profile" className="mt-0 space-y-6">
@@ -293,9 +296,14 @@ export default function SettingsPage() {
                   <p className="text-[10px] text-muted-foreground">Authenticated email cannot be changed here.</p>
                 </div>
                 <div className="flex justify-end">
-                  <Button type="submit" className="h-12 rounded-xl bg-primary px-10 font-bold shadow-lg hover:bg-primary/90" disabled={isSaving}>
-                    {isSaving ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />}
-                    Save Changes
+                  <Button type="submit" className={cn(settingsActionButtonBase, "bg-primary px-10 text-white shadow-lg shadow-primary/15 hover:-translate-y-0.5 hover:bg-primary/90")} disabled={isSaving}>
+                    <span className="flex h-8 w-8 items-center justify-center rounded-full bg-white/15 ring-1 ring-white/20">
+                      {isSaving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
+                    </span>
+                    <span className="flex flex-col items-start leading-none">
+                      <span>Save Changes</span>
+                      <span className="mt-1 text-[0.62rem] font-bold uppercase tracking-[0.16em] text-white/70">Update profile</span>
+                    </span>
                   </Button>
                 </div>
               </form>
@@ -339,15 +347,24 @@ export default function SettingsPage() {
                 <CardFooter className="p-5 pt-0 md:p-8 md:pt-0">
                   <Button
                     className={cn(
-                      "h-12 w-full rounded-xl font-bold shadow-sm",
+                      settingsActionButtonBase,
+                      "w-full shadow-sm",
                       plan.isCurrent ? "pointer-events-none bg-primary/20 text-white" :
-                      plan.highlight ? "bg-accent hover:bg-accent/90" : "bg-primary hover:bg-primary/90"
+                      plan.highlight ? "bg-gradient-to-r from-violet-600 via-fuchsia-500 to-orange-400 text-white shadow-[0_22px_48px_-28px_rgba(124,58,237,0.45)] hover:-translate-y-0.5" : "bg-primary text-white hover:-translate-y-0.5 hover:bg-primary/90"
                     )}
                     onClick={() => handleUpgrade(plan.id)}
                     disabled={plan.isCurrent || plan.id === "free" || isUpgrading !== null}
                   >
-                    {isUpgrading === plan.id ? <Loader2 className="h-4 w-4 animate-spin" /> :
-                      plan.isCurrent ? "Current Plan" : plan.id === "free" ? "Included by default" : `Upgrade to ${plan.name}`}
+                    <span className="flex h-8 w-8 items-center justify-center rounded-full bg-white/15 ring-1 ring-white/20">
+                      {isUpgrading === plan.id ? <Loader2 className="h-4 w-4 animate-spin" /> :
+                        plan.isCurrent ? <Check className="h-4 w-4" /> : plan.id === "free" ? <ShieldCheck className="h-4 w-4" /> : <ArrowRight className="h-4 w-4" />}
+                    </span>
+                    <span className="flex flex-col items-start leading-none">
+                      <span>{isUpgrading === plan.id ? "Processing..." : plan.isCurrent ? "Current Plan" : plan.id === "free" ? "Included by default" : `Upgrade to ${plan.name}`}</span>
+                      <span className="mt-1 text-[0.62rem] font-bold uppercase tracking-[0.16em] text-white/70">
+                        {plan.isCurrent ? "No change needed" : "Unlock workspace limits"}
+                      </span>
+                    </span>
                   </Button>
                 </CardFooter>
               </Card>
@@ -370,12 +387,19 @@ export default function SettingsPage() {
                 </div>
                 <Button
                   variant="outline"
-                  className="h-11 gap-2 rounded-xl border-2 px-8 font-bold"
+                  className={cn(settingsActionButtonBase, "gap-2 border-2 border-slate-200 bg-white px-5 text-slate-900 shadow-[0_18px_40px_-28px_rgba(15,23,42,0.25)] hover:-translate-y-0.5 hover:border-slate-300 hover:bg-white")}
                   onClick={handleLaunchPortal}
                   disabled={isLaunchingPortal}
                 >
-                  {isLaunchingPortal ? <Loader2 className="h-4 w-4 animate-spin" /> : "Launch Portal"}
-                  {!isLaunchingPortal && <ArrowRight className="h-4 w-4" />}
+                  <span className="flex h-8 w-8 items-center justify-center rounded-full bg-slate-100 text-slate-600 ring-1 ring-slate-200/80">
+                    {isLaunchingPortal ? <Loader2 className="h-4 w-4 animate-spin" /> : <ArrowRight className="h-4 w-4" />}
+                  </span>
+                  <span className="flex flex-col items-start leading-none">
+                    <span>Launch Portal</span>
+                    <span className="mt-1 text-[0.62rem] font-bold uppercase tracking-[0.16em] text-slate-400">
+                      Open Stripe customer portal
+                    </span>
+                  </span>
                 </Button>
               </div>
             </CardContent>
@@ -397,7 +421,7 @@ export default function SettingsPage() {
                   <p className="text-sm font-bold">Password Recovery</p>
                   <p className="text-xs text-muted-foreground">Reset your password if you lose access or want to rotate credentials.</p>
                 </div>
-                <Button variant="outline" className="h-10 rounded-xl border-2 font-bold" asChild>
+                <Button variant="outline" className={cn(settingsActionButtonBase, "border-2 border-slate-200 bg-white px-4 text-slate-900 hover:-translate-y-0.5 hover:bg-white")} asChild>
                   <Link href="/forgot-password">
                     <KeyRound className="mr-2 h-4 w-4" />
                     Reset Password
@@ -411,7 +435,7 @@ export default function SettingsPage() {
                 </div>
                 <Button
                   variant="outline"
-                  className="h-10 rounded-xl border-2 font-bold"
+                  className={cn(settingsActionButtonBase, "border-2 border-slate-200 bg-white px-4 text-slate-900 hover:-translate-y-0.5 hover:bg-white")}
                   onClick={handleSignOutCurrentDevice}
                   disabled={isSigningOut}
                 >
@@ -587,12 +611,23 @@ function MobileSettingsExperience({
             </Card>
           ))}
 
-          <div className="rounded-[1.2rem] border border-border/70 bg-muted/20 p-4">
-            <p className="text-sm font-black text-primary">Stripe customer portal</p>
-            <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
-              Manage payment methods, invoices, and subscription changes in one secure place.
-            </p>
-            <Button variant="outline" className="mt-4 h-10 w-full rounded-2xl border-2 font-bold" onClick={handleLaunchPortal} disabled={isLaunchingPortal}>
+          <div className="rounded-[1.35rem] border border-white/80 bg-[linear-gradient(180deg,rgba(255,255,255,0.98),rgba(248,250,255,0.95))] p-4 shadow-[0_18px_42px_-32px_rgba(15,23,42,0.24)]">
+            <div className="flex items-start justify-between gap-3">
+              <div>
+                <p className="text-[0.72rem] font-black uppercase tracking-[0.2em] text-slate-400">Stripe customer portal</p>
+                <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
+                  Manage payment methods, invoices, and subscription changes in one secure place.
+                </p>
+              </div>
+              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-primary/5 text-primary ring-1 ring-primary/10">
+                <CreditCard className="h-4 w-4" />
+              </div>
+            </div>
+            <Button
+              className="mt-4 h-11 w-full rounded-2xl bg-gradient-to-r from-violet-600 via-fuchsia-500 to-orange-400 font-bold text-white shadow-[0_18px_36px_-24px_rgba(124,58,237,0.55)] hover:opacity-95"
+              onClick={handleLaunchPortal}
+              disabled={isLaunchingPortal}
+            >
               {isLaunchingPortal ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <ArrowRight className="mr-2 h-4 w-4" />}
               Launch portal
             </Button>
@@ -609,13 +644,13 @@ function MobileSettingsExperience({
           <CardDescription>Reset access, sign out securely, or contact support for account-level help.</CardDescription>
         </CardHeader>
         <CardContent className="space-y-3 p-4 pt-0">
-          <Button variant="outline" className="h-11 w-full justify-start rounded-2xl border-2 font-bold" asChild>
+          <Button variant="outline" className="h-11 w-full justify-start rounded-2xl border-2 border-slate-200 bg-white font-bold shadow-sm hover:-translate-y-0.5 hover:border-slate-300" asChild>
             <Link href="/forgot-password">
               <KeyRound className="mr-3 h-4 w-4" />
               Reset password
             </Link>
           </Button>
-          <Button variant="outline" className="h-11 w-full justify-start rounded-2xl border-2 font-bold" onClick={handleSignOutCurrentDevice} disabled={isSigningOut}>
+          <Button variant="outline" className="h-11 w-full justify-start rounded-2xl border-2 border-slate-200 bg-white font-bold shadow-sm hover:-translate-y-0.5 hover:border-slate-300" onClick={handleSignOutCurrentDevice} disabled={isSigningOut}>
             {isSigningOut ? <Loader2 className="mr-3 h-4 w-4 animate-spin" /> : <LogOut className="mr-3 h-4 w-4" />}
             Sign out on this device
           </Button>

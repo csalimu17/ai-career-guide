@@ -19,7 +19,7 @@ export function BrandWordmark({ className }: BrandWordmarkProps) {
       />
       <span
         aria-label="Ai Career guide."
-        className="logo-gradient font-black text-xl leading-normal tracking-tighter font-sans pb-0.5"
+        className="logo-gradient font-medium text-xl leading-normal tracking-tighter font-sans pb-0.5"
       >
         Ai Career guide.
       </span>

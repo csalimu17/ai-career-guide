@@ -481,10 +481,20 @@ export default function TrackerPage() {
                 </CardContent>
 
                 <CardFooter className="grid grid-cols-2 gap-3 p-8 pt-0">
-                  <Button variant="outline" size="sm" className="tap-bounce h-11 rounded-xl border-2 border-slate-100 font-black text-[10px] uppercase tracking-widest text-slate-900 hover:border-slate-300" onClick={() => openEditDialog(job)}>
+                  <Button
+                    size="sm"
+                    className="tap-bounce h-11 rounded-xl bg-slate-900 px-4 text-[10px] font-black uppercase tracking-widest text-white shadow-lg shadow-slate-900/10 transition-all hover:bg-slate-800"
+                    onClick={() => openEditDialog(job)}
+                  >
+                    <Edit2 className="mr-2 h-3.5 w-3.5" />
                     Open details
                   </Button>
-                  <Button variant="outline" size="sm" className="tap-bounce h-11 rounded-xl border-2 border-slate-100 font-black text-[10px] uppercase tracking-widest text-slate-900 hover:border-slate-300" asChild>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="tap-bounce h-11 rounded-xl border-2 border-slate-100 bg-white px-4 text-[10px] font-black uppercase tracking-widest text-slate-900 transition-all hover:border-slate-300 hover:bg-slate-50"
+                    asChild
+                  >
                     <a href={job.sourceUrl || JOB_SOURCE_DEFAULT_URLS[resolvedSource]} target="_blank" rel="noreferrer">
                       Go to Source
                       <ExternalLink className="ml-2 h-3.5 w-3.5" />

@@ -186,10 +186,7 @@ export default function Home() {
           <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_left,rgba(8,145,178,0.08),transparent_34%),radial-gradient(circle_at_right_center,rgba(249,115,22,0.08),transparent_28%)]" />
           <div className="app-shell relative grid items-center gap-8 lg:grid-cols-[1.05fr_0.95fr]">
             <div className="space-y-6">
-              <Badge className="eyebrow-chip border-primary/10 bg-primary/5 text-primary hover:bg-primary/5">
-                <Sparkles className="h-3.5 w-3.5" />
-                AI-powered career workspace
-              </Badge>
+
 
               <div className="space-y-4">
                 <h1 className="headline-gradient-vivid max-w-4xl pb-[0.08em] text-[2.5rem] font-black leading-[0.94] tracking-[-0.06em] sm:pb-[0.1em] sm:text-6xl sm:leading-[0.95] lg:text-7xl">

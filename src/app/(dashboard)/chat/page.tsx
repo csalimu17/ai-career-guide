@@ -70,12 +70,7 @@ export default function ChatPage() {
       <div className="absolute bottom-0 left-0 -z-10 h-[400px] w-[400px] bg-blue-500/5 blur-[100px] rounded-full pointer-events-none" />
 
       <section className="section-shell relative overflow-hidden p-6 md:p-12">
-        <div className="relative space-y-6">
-          <div className="eyebrow-chip px-4 py-1.5 w-fit">
-            <Sparkles className="h-3.5 w-3.5 text-indigo-500" />
-            <span className="text-[10px] font-black uppercase tracking-[0.2em]">Career Intelligence</span>
-          </div>
-
+        <div className="relative space-y-4">
           <div className="flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">
             <div className="max-w-3xl space-y-4">
               <h1 className="headline-gradient-vivid text-[2.5rem] font-black leading-[0.95] tracking-tight sm:text-[3.5rem] lg:text-5xl">
@@ -85,11 +80,6 @@ export default function ChatPage() {
                 Ask about your CV strategy, research target markets, or prepare for high-stakes interviews with grounded career intelligence.
               </p>
             </div>
-            
-            <Badge variant="secondary" className="h-fit rounded-xl border-none bg-indigo-50 px-4 py-2 text-[10px] font-black uppercase tracking-widest text-indigo-600 shadow-sm transition-all hover:bg-indigo-100 lg:shrink-0">
-              <CheckCircle2 className="mr-2 h-3.5 w-3.5" />
-              Gemini Pro Active
-            </Badge>
           </div>
         </div>
       </section>

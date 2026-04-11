@@ -34,6 +34,7 @@ export function useEditorState() {
   const [isUploading, setIsUploading] = useState(false)
   const [isEnhancing, setIsEnhancing] = useState(false)
   const [isSuggestingRoleBullets, setIsSuggestingRoleBullets] = useState<number | null>(null)
+  const [roleBulletSuggestions, setRoleBulletSuggestions] = useState<{ index: number; title: string; bullets: string[] } | null>(null)
   const [isGeneratingSummarySuggestions, setIsGeneratingSummarySuggestions] = useState(false)
   const [summarySuggestions, setSummarySuggestions] = useState<string[]>([])
   const [isSuggestingSkills, setIsSuggestingSkills] = useState(false)
@@ -402,11 +403,23 @@ export function useEditorState() {
       } else if (section === "education" && typeof index === "number") {
         currentContent = richTextToPlainText(resume.content.education[index].description)
       }
+
+      const targetTitle =
+        section === "experience" && typeof index === "number"
+          ? resume.content.experience[index]?.title
+          : undefined
       
       const result = await enhanceCvContent({ 
         action: "rewrite_bullet", 
-        targetContent: currentContent,
-        currentCvContent: buildResumePlainText(resume)
+        targetContent: currentContent || targetTitle || section,
+        currentCvContent: buildResumePlainText(resume),
+        jobDescription,
+        jobTitle: section === "experience" ? targetTitle : undefined,
+        preferredOutputFormat: section === "experience" ? "bullets" : "paragraph",
+        additionalContext:
+          section === "experience" && typeof index === "number"
+            ? `${resume.content.experience[index]?.title || "Experience"} at ${resume.content.experience[index]?.company || "current role"}`
+            : undefined,
       })
 
       if (!result.enhancedContent) throw new Error("No content generated")
@@ -430,7 +443,12 @@ export function useEditorState() {
       }
       
       await incrementUsage("aiGenerations")
-      toast({ title: "Content Enhanced", description: "AI has refined your descriptions." })
+      toast({
+        title: section === "experience" ? "Bullets Rewritten" : "Content Enhanced",
+        description: section === "experience"
+          ? "AI turned the role into stronger bullet points."
+          : "AI has refined your descriptions.",
+      })
     } catch (err) {
       console.error("Enhancement failed:", err)
       toast({ variant: "destructive", title: "Enhancement Failed" })
@@ -477,22 +495,23 @@ export function useEditorState() {
       const result = await enhanceCvContent({
         action: "suggest_role_bullets",
         targetContent: title,
-        currentCvContent: buildResumePlainText(resume)
+        currentCvContent: buildResumePlainText(resume),
+        jobDescription,
+        jobTitle: title,
       })
       
-      if (result.enhancedContent) {
-        const enhancedHtml = plainTextToRichTextHtml(result.enhancedContent)
-        const next = [...resume.content.experience]
-        // Prepend or append depending on current description. If it's just <p></p>, replace it.
-        const currentDesc = next[index].description || ""
-        next[index] = { 
-          ...next[index], 
-          description: currentDesc.trim().length > 0 && currentDesc !== "<p></p>"
-            ? currentDesc + "<br/>" + enhancedHtml 
-            : enhancedHtml 
-        }
-        handleUpdate("content.experience", next)
-        toast({ title: "Bullets Suggested", description: "Added AI generated bullet points." })
+      const bullets = (result.suggestions && result.suggestions.length > 0)
+        ? result.suggestions
+        : result.enhancedContent
+          ? result.enhancedContent
+              .split(/\r?\n+/)
+              .map((line) => line.replace(/^[-•*\d.)\s]+/, "").trim())
+              .filter(Boolean)
+          : []
+
+      if (bullets.length > 0) {
+        setRoleBulletSuggestions({ index, title, bullets })
+        toast({ title: "Bullets Ready", description: "Review the AI bullets before applying them." })
       }
       
       await incrementUsage("aiGenerations")
@@ -502,6 +521,23 @@ export function useEditorState() {
     } finally {
       setIsSuggestingRoleBullets(null)
     }
+  }
+
+  const applyRoleBulletSuggestions = async () => {
+    if (!resume || !roleBulletSuggestions) return
+    const { index, bullets } = roleBulletSuggestions
+    const next = [...resume.content.experience]
+    next[index] = {
+      ...next[index],
+      description: plainTextToRichTextHtml(bullets.map((bullet) => `- ${bullet}`).join("\n")),
+    }
+    handleUpdate("content.experience", next)
+    setRoleBulletSuggestions(null)
+    toast({ title: "Bullets Applied", description: "The experience block now uses AI bullet points." })
+  }
+
+  const dismissRoleBulletSuggestions = () => {
+    setRoleBulletSuggestions(null)
   }
 
   const runSkillSuggestions = async () => {
@@ -548,6 +584,9 @@ export function useEditorState() {
     isEnhancing,
     isSuggestingRoleBullets,
     runSuggestRoleBullets,
+    roleBulletSuggestions,
+    applyRoleBulletSuggestions,
+    dismissRoleBulletSuggestions,
     isGeneratingSummarySuggestions,
     summarySuggestions,
     runSummarySuggestions,

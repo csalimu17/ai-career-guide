@@ -9,6 +9,8 @@ import { ArrowLeft, Loader2, Printer, ShieldCheck } from "lucide-react"
 import { ResumeTemplate } from "@/components/editor/resume-template"
 import { Button } from "@/components/ui/button"
 import { useDoc, useFirestore, useMemoFirebase, useUser } from "@/firebase"
+import { getTemplateConfig } from "@/lib/templates-config"
+import { cn } from "@/lib/utils"
 
 function waitForAnimationFrame() {
   return new Promise((resolve) => window.requestAnimationFrame(() => resolve(null)))
@@ -62,6 +64,13 @@ export default function ResumePrintPage() {
   )
   const { data: storedResume, isLoading } = useDoc(resumeRef)
   const resume = localResume ?? storedResume
+  const templateCategory = getTemplateConfig(resume?.templateId).category
+  const templateName = getTemplateConfig(resume?.templateId).name
+  const pageTone = {
+    Professional: "bg-[#f4f7fa] before:absolute before:inset-0 before:content-[''] before:bg-[radial-gradient(circle_at_top_right,rgba(99,102,241,0.06),transparent_35%),radial-gradient(circle_at_bottom_left,rgba(15,23,42,0.06),transparent_40%)]",
+    Modern: "bg-[#f1f7ff] before:absolute before:inset-0 before:content-[''] before:bg-[radial-gradient(circle_at_top_right,rgba(59,130,246,0.08),transparent_35%),radial-gradient(circle_at_bottom_left,rgba(14,165,233,0.06),transparent_40%)]",
+    Classic: "bg-[#f8f2e8] before:absolute before:inset-0 before:content-[''] before:bg-[radial-gradient(circle_at_top_right,rgba(180,83,9,0.08),transparent_35%),radial-gradient(circle_at_bottom_left,rgba(120,53,15,0.06),transparent_40%)]",
+  }[templateCategory]
 
   useEffect(() => {
     if (typeof window === "undefined" || !exportKey) return
@@ -368,58 +377,70 @@ export default function ResumePrintPage() {
   }
 
   return (
-    <div className="min-h-screen bg-[#f4f7fa] text-primary">
-      <header className="no-print sticky top-0 z-20 border-b border-white/80 bg-white/96 backdrop-blur">
-        <div className="mx-auto flex w-full max-w-5xl flex-col gap-3 px-4 py-3">
-          <div className="flex items-center justify-between gap-3">
-            <div className="min-w-0">
+    <div className={cn("relative min-h-screen text-primary", pageTone)}>
+      <header className="no-print sticky top-0 z-20 border-b border-white/80 bg-white/90 backdrop-blur-xl">
+        <div className="mx-auto w-full max-w-5xl px-4 py-3 md:px-6">
+          <div className="rounded-[1.4rem] border border-white/80 bg-[linear-gradient(135deg,rgba(255,255,255,0.98),rgba(244,247,250,0.94))] px-4 py-4 shadow-[0_18px_48px_-34px_rgba(15,23,42,0.28)] md:px-5">
+            <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+              <div className="min-w-0 space-y-2">
+                <div className="flex flex-wrap items-center gap-2">
+                  <span className="inline-flex items-center rounded-full border border-primary/10 bg-primary/5 px-3 py-1 text-[0.62rem] font-black uppercase tracking-[0.22em] text-primary">
+                    {templateCategory} preview
+                  </span>
+                  <span className="inline-flex items-center rounded-full border border-slate-200 bg-white px-3 py-1 text-[0.62rem] font-bold uppercase tracking-[0.18em] text-slate-500">
+                    {templateName}
+                  </span>
+                </div>
+                <h1 className="truncate text-[1.15rem] font-black tracking-tight text-primary md:text-[1.35rem]">{resume.name || "Resume"}</h1>
+                <p className="text-[0.72rem] leading-relaxed text-muted-foreground">
+                  Review the page breaks below, then save or print when the layout looks right.
+                </p>
+              </div>
+
+              <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-center">
+                <Button variant="outline" asChild className="h-11 rounded-full border-2 border-slate-200 bg-white px-4 font-bold shadow-sm hover:-translate-y-0.5 hover:border-slate-300">
+                  <Link href="/editor">
+                    <ArrowLeft className="mr-2 h-4 w-4" />
+                    Back
+                  </Link>
+                </Button>
+                <Button
+                  type="button"
+                  variant="outline"
+                  className="hidden h-11 rounded-full border-2 border-slate-200 bg-white px-4 font-bold shadow-sm hover:-translate-y-0.5 hover:border-slate-300 md:flex"
+                  onClick={() => void handlePrint()}
+                  disabled={!isPrintReady || isPrinting}
+                >
+                  {isPrinting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Printer className="mr-2 h-4 w-4" />}
+                  {isPrinting ? "Preparing..." : "Print"}
+                </Button>
+                <Button
+                  type="button"
+                  className="h-11 rounded-full bg-gradient-to-r from-slate-950 via-slate-800 to-indigo-700 px-5 font-bold text-white shadow-[0_18px_34px_-22px_rgba(15,23,42,0.55)] hover:-translate-y-0.5 hover:from-slate-900 hover:to-indigo-800"
+                  onClick={() => void handlePrint()}
+                  disabled={!isPrintReady || isPrinting}
+                >
+                  {isPrinting ? (
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin text-white" />
+                  ) : (
+                    <Printer className="mr-2 h-4 w-4 text-white" />
+                  )}
+                  {isPrinting ? "Preparing..." : "Save as PDF"}
+                </Button>
+              </div>
+            </div>
+
+            <div className="mt-4 flex flex-col gap-2 border-t border-slate-100 pt-4">
               <p className="text-[0.62rem] font-semibold uppercase tracking-[0.22em] text-muted-foreground">
-                Mobile Print View
+                Use your browser&apos;s print dialog and choose Save as PDF for the cleanest page breaks.
               </p>
-              <h1 className="mt-1 truncate text-base font-black tracking-tight text-primary">{resume.name || "Resume"}</h1>
+              {printStatus ? (
+                <p className="flex items-center gap-2 text-xs font-bold text-emerald-600">
+                  <ShieldCheck className="h-3.5 w-3.5" />
+                  {printStatus}
+                </p>
+              ) : null}
             </div>
-            <div className="flex shrink-0 items-center gap-2">
-              <Button variant="outline" asChild className="rounded-2xl px-4 font-bold">
-                <Link href="/editor">
-                  <ArrowLeft className="mr-2 h-4 w-4" />
-                  Back
-                </Link>
-              </Button>
-              <Button
-                type="button"
-                variant="outline"
-                className="hidden rounded-2xl px-4 font-bold md:flex"
-                onClick={() => void handlePrint()}
-                disabled={!isPrintReady || isPrinting}
-              >
-                {isPrinting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Printer className="mr-2 h-4 w-4" />}
-                {isPrinting ? "Preparing..." : "Print"}
-              </Button>
-              <Button
-                type="button"
-                className="rounded-2xl bg-gradient-to-r from-blue-600 to-indigo-600 px-4 font-bold hover:from-blue-700 hover:to-indigo-700 sm:px-6"
-                onClick={() => void handlePrint()}
-                disabled={!isPrintReady || isPrinting}
-              >
-                {isPrinting ? (
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin text-white" />
-                ) : (
-                  <Printer className="mr-2 h-4 w-4 text-white" />
-                )}
-                {isPrinting ? "Preparing..." : "Save as PDF"}
-              </Button>
-            </div>
-          </div>
-          <div className="space-y-1">
-            <p className="text-[0.62rem] font-semibold uppercase tracking-[0.22em] text-muted-foreground">
-              Use your browser&apos;s print dialog and choose Save as PDF for the cleanest page breaks.
-            </p>
-            {printStatus ? (
-              <p className="flex items-center gap-2 text-xs font-bold text-green-600">
-                <ShieldCheck className="h-3.5 w-3.5" />
-                {printStatus}
-              </p>
-            ) : null}
           </div>
         </div>
       </header>

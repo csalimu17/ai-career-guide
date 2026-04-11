@@ -21,11 +21,31 @@
     sessionId: `acg_${Date.now()}_${Math.random().toString(36).slice(2, 10)}`,
   };
 
+  const MOBILE_BREAKPOINT = 768;
+  const hidePaths = [
+    "/signup",
+    "/login",
+    "/forgot-password",
+    "/reset-password",
+    "/qa",
+    "/workspace",
+    "/dashboard",
+    "/editor",
+    "/resumes",
+    "/jobs",
+    "/ats",
+    "/tracker",
+    "/cover-letters",
+    "/chat",
+    "/onboarding",
+    "/settings",
+  ];
+
   const styles = `
     .acg-bot-root { 
       position: fixed; 
       right: 20px; 
-      bottom: 20px; 
+      bottom: max(20px, calc(env(safe-area-inset-bottom) + 20px)); 
       z-index: 9999; 
       font-family: 'Plus Jakarta Sans', Inter, sans-serif; 
       display: flex;
@@ -137,6 +157,37 @@
     .acg-bot-input:disabled, .acg-bot-send:disabled, .acg-bot-chip:disabled { opacity: .6; cursor: not-allowed; }
     .acg-bot-hidden { display: none !important; }
 
+    @media (max-width: 767px) {
+      .acg-bot-root {
+        right: 12px;
+        left: auto;
+        bottom: max(12px, calc(env(safe-area-inset-bottom) + 12px));
+        gap: 10px;
+      }
+      .acg-bot-button {
+        align-self: flex-end;
+        width: 58px;
+        height: 58px;
+        padding: 0 !important;
+        border-radius: 999px;
+        box-shadow: 0 14px 32px rgba(101, 88, 245, 0.26);
+      }
+      .acg-bot-button span {
+        display: none;
+      }
+      .acg-bot-fab-avatar {
+        width: 42px;
+        height: 42px;
+        margin-right: 0;
+      }
+      .acg-bot-panel {
+        width: min(calc(100vw - 24px), 400px);
+        height: min(72vh, 620px);
+        max-height: calc(100vh - 96px);
+        border-radius: 24px;
+      }
+    }
+
     @media (max-width: 500px) {
       .acg-bot-root { right: 16px; bottom: 16px; left: 16px; align-items: stretch; }
       .acg-bot-panel { width: 100%; height: calc(100vh - 120px); max-height: none; }
@@ -157,6 +208,8 @@
   const button = document.createElement("button");
   button.className = "acg-bot-button";
   button.type = "button";
+  button.setAttribute("aria-label", "Ask Dan");
+  button.setAttribute("title", "Ask Dan");
   button.innerHTML = `
     <img src="/dan-avatar.png" class="acg-bot-fab-avatar" alt="Dan" />
     <span>Ask Dan</span>
@@ -184,11 +237,45 @@
   root.appendChild(button);
   document.body.appendChild(root);
 
+  function isMobileViewport() {
+    return window.innerWidth < MOBILE_BREAKPOINT;
+  }
+
+  function hasVisibleBottomDock() {
+    const selectors = [
+      "nav.fixed.bottom-0",
+      "nav.fixed.inset-x-0.bottom-0",
+      ".fixed.bottom-0",
+      "[data-mobile-bottom-nav]",
+      "[data-sticky-mobile-actions]",
+    ];
+
+    return selectors.some((selector) =>
+      Array.from(document.querySelectorAll(selector)).some((element) => {
+        if (!(element instanceof HTMLElement) || element === root || root.contains(element)) {
+          return false;
+        }
+
+        const styles = window.getComputedStyle(element);
+        if (styles.display === "none" || styles.visibility === "hidden" || styles.position !== "fixed") {
+          return false;
+        }
+
+        const rect = element.getBoundingClientRect();
+        return rect.height >= 48 && rect.bottom >= window.innerHeight - 4 && rect.top <= window.innerHeight - 32;
+      }),
+    );
+  }
+
+  function isHiddenPathname(pathname) {
+    return hidePaths.some((path) => pathname === path || pathname.startsWith(path + "/"));
+  }
+
   function updateVisibility() {
-    const hidePaths = ['/signup', '/login', '/forgot-password', '/reset-password', '/qa', '/editor', '/workspace', '/dashboard', '/resumes', '/jobs', '/ats', '/tracker', '/cover-letters', '/chat'];
-    const shouldHide = hidePaths.some(path => window.location.pathname === path || window.location.pathname.startsWith(path + '/'));
-    
-    if (shouldHide && window.innerWidth < 768) {
+    const shouldHide = isMobileViewport() && (isHiddenPathname(window.location.pathname) || hasVisibleBottomDock());
+
+    if (shouldHide) {
+      closePanel();
       root.classList.add("acg-bot-hidden");
     } else {
       root.classList.remove("acg-bot-hidden");
@@ -208,8 +295,23 @@
   });
   observer.observe(document.body, { childList: true, subtree: true });
 
+  const originalPushState = window.history.pushState;
+  const originalReplaceState = window.history.replaceState;
+  window.history.pushState = function (...args) {
+    const result = originalPushState.apply(this, args);
+    window.requestAnimationFrame(updateVisibility);
+    return result;
+  };
+  window.history.replaceState = function (...args) {
+    const result = originalReplaceState.apply(this, args);
+    window.requestAnimationFrame(updateVisibility);
+    return result;
+  };
+
   // Fallback for browser back/forward
   window.addEventListener('popstate', updateVisibility);
+  window.addEventListener("resize", updateVisibility);
+  window.addEventListener("orientationchange", updateVisibility);
 
   const messagesEl = panel.querySelector("#acg-bot-messages");
   const inputEl = panel.querySelector("#acg-bot-input");

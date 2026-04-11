@@ -67,6 +67,7 @@ import { Skeleton } from "@/components/ui/skeleton"
 import { toast } from "@/hooks/use-toast"
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
 import { useIsMobile } from "@/hooks/use-mobile"
+import { cn } from "@/lib/utils"
 
 function releaseDocumentInteractionLock() {
   if (typeof document === "undefined") return
@@ -77,6 +78,9 @@ function releaseDocumentInteractionLock() {
   document.body.style.removeProperty("margin-right")
   document.body.removeAttribute("data-scroll-locked")
 }
+
+const pageActionButtonBase =
+  "group h-12 rounded-[1.25rem] px-5 text-[0.84rem] font-black tracking-tight transition-all duration-300"
 
 export default function ResumesPage() {
   const { user, isUserLoading } = useUser()
@@ -116,6 +120,11 @@ export default function ResumesPage() {
     const resumeName = typeof resume?.name === "string" && resume.name.trim() ? resume.name : "Untitled CV"
     return resumeName.toLowerCase().includes(searchQuery.toLowerCase())
   })
+  const totalResumeCount = resumes?.length ?? 0
+  const visibleResumeCount = filteredResumes?.length ?? 0
+  const collectionSummary = searchQuery
+    ? `${visibleResumeCount} matching CV${visibleResumeCount === 1 ? "" : "s"}`
+    : `${totalResumeCount} CV${totalResumeCount === 1 ? "" : "s"} ready to tailor`
 
   const handleCreateNew = () => {
     setIsCreateDialogOpen(true)
@@ -286,54 +295,85 @@ export default function ResumesPage() {
       <div className="mobile-app-page md:container md:mx-auto md:space-y-8 md:px-8 md:py-8 animate-in fade-in slide-in-from-bottom-4 duration-700">
         
         {/* Header Section */}
-        <div className="flex flex-col justify-between gap-4 md:flex-row md:items-center md:gap-6">
-          <div className="space-y-1">
-            <h1 className="bg-gradient-to-r from-foreground to-foreground/70 bg-clip-text text-[1.75rem] font-bold tracking-tight text-transparent md:text-4xl">
-              My Resumes
-            </h1>
-            <p className="text-sm text-muted-foreground md:text-lg">
-              Manage your professional stories and optimize for ATS success.
-            </p>
+        <section className="section-shell relative overflow-hidden border-none p-5 sm:p-6 md:p-10">
+          <div className="absolute -top-24 -right-24 h-80 w-80 rounded-full bg-blue-500/10 blur-[100px] pointer-events-none" />
+          <div className="absolute -bottom-24 -left-24 h-72 w-72 rounded-full bg-indigo-500/10 blur-[90px] pointer-events-none" />
+
+          <div className="relative flex flex-col gap-6 md:flex-row md:items-end md:justify-between">
+            <div className="max-w-3xl space-y-3 pt-1">
+              <h1 className="headline-gradient-vivid pb-1 text-[2.2rem] font-black leading-[1.02] tracking-tight sm:text-[3rem] lg:text-5xl">
+                My Resumes
+              </h1>
+              <p className="max-w-2xl text-sm font-medium leading-relaxed text-slate-500 md:text-lg">
+                Manage your professional stories, keep your best versions organized, and optimize every CV for ATS success.
+              </p>
+            </div>
+
+            <Button
+              onClick={handleCreateNew}
+              className={cn(
+                pageActionButtonBase,
+                "bg-gradient-to-r from-violet-600 via-fuchsia-500 to-orange-400 px-5 text-white shadow-[0_22px_50px_-28px_rgba(124,58,237,0.52)] hover:-translate-y-0.5 hover:shadow-[0_30px_62px_-30px_rgba(124,58,237,0.6)]"
+              )}
+            >
+              <span className="flex h-8 w-8 items-center justify-center rounded-full bg-white/15 ring-1 ring-white/20 transition-transform duration-300 group-hover:scale-110">
+                <Plus className="h-4.5 w-4.5 transition-transform duration-300 group-hover:rotate-90" />
+              </span>
+              <span className="flex flex-col items-start leading-none">
+                <span>Create New CV</span>
+                <span className="mt-1 text-[0.62rem] font-bold uppercase tracking-[0.16em] text-white/72">
+                  Start a new draft
+                </span>
+              </span>
+            </Button>
           </div>
-          
-          <Button 
-            onClick={handleCreateNew}
-            className="group h-11 rounded-2xl bg-primary px-5 shadow-lg transition-all duration-300 hover:bg-primary/90 hover:shadow-primary/20 md:h-12 md:rounded-full md:px-6"
-          >
-            <Plus className="mr-2 h-5 w-5 group-hover:rotate-90 transition-transform duration-300" />
-            Create New CV
-          </Button>
-        </div>
+        </section>
 
         {/* Toolbar Section */}
-        <div className="flex flex-col items-stretch gap-3 rounded-[1.3rem] border bg-card/50 p-3 shadow-sm backdrop-blur-md sm:flex-row sm:items-center sm:gap-4 sm:p-4 sm:rounded-2xl">
-          <div className="relative flex-1 group">
+        <div className="rounded-[1.5rem] border border-white/70 bg-white/85 p-3 shadow-[0_24px_55px_-40px_rgba(15,23,42,0.28)] backdrop-blur-xl sm:rounded-[1.75rem] sm:p-4">
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:gap-4">
+            <div className="relative flex-1 group">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground group-focus-within:text-primary transition-colors" />
             <Input 
               placeholder="Search CVs by name..." 
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="h-11 rounded-xl border-muted/20 bg-background/50 pl-10 focus-visible:ring-primary/30"
+              className="h-12 rounded-2xl border-white/70 bg-slate-50/80 pl-10 shadow-inner shadow-slate-100/80 focus-visible:ring-primary/30"
             />
-          </div>
-          
-          <div className="flex items-center gap-2 rounded-xl border bg-muted/40 p-1 h-11">
-            <Button
-              variant={viewMode === "grid" ? "secondary" : "ghost"}
-              size="icon"
-              onClick={() => setViewMode("grid")}
-              className={`h-9 w-9 rounded-lg transition-all ${viewMode === "grid" ? "shadow-sm" : ""} ${isMobile ? "hidden" : ""}`}
-            >
-              <LayoutGrid className="h-4 w-4" />
-            </Button>
-            <Button
-              variant={viewMode === "list" ? "secondary" : "ghost"}
-              size="icon"
-              onClick={() => setViewMode("list")}
-              className={`rounded-lg h-9 w-9 transition-all ${viewMode === "list" ? "shadow-sm" : ""}`}
-            >
-              <List className="h-4 w-4" />
-            </Button>
+            </div>
+
+            {isMobile ? (
+              <div className="flex items-center justify-between rounded-[1.2rem] border border-slate-100 bg-slate-50/80 px-3.5 py-3 shadow-[inset_0_1px_0_rgba(255,255,255,0.9)]">
+                <div className="min-w-0">
+                  <p className="text-[10px] font-black uppercase tracking-[0.18em] text-slate-400">Collection</p>
+                  <p className="mt-1 truncate text-sm font-semibold text-slate-700">{collectionSummary}</p>
+                </div>
+                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-primary text-white shadow-[0_14px_28px_-18px_rgba(124,58,237,0.7)]">
+                  <List className="h-4 w-4" />
+                </div>
+              </div>
+            ) : (
+            <div className="flex items-center gap-2 rounded-[1.25rem] border border-slate-100 bg-white/85 p-1.5 h-12 shadow-[inset_0_1px_0_rgba(255,255,255,0.9)]">
+              <Button
+                variant={viewMode === "grid" ? "secondary" : "ghost"}
+                size="icon"
+                onClick={() => setViewMode("grid")}
+                aria-label="Grid view"
+                className={`h-10 w-10 rounded-[1rem] transition-all ${viewMode === "grid" ? "bg-primary text-white shadow-md shadow-primary/15 ring-1 ring-primary/10" : "border border-transparent text-slate-400 hover:border-slate-100 hover:bg-white hover:text-slate-700"}`}
+              >
+                <LayoutGrid className="h-4 w-4" />
+              </Button>
+              <Button
+                variant={viewMode === "list" ? "secondary" : "ghost"}
+                size="icon"
+                onClick={() => setViewMode("list")}
+                aria-label="List view"
+                className={`h-10 w-10 rounded-[1rem] transition-all ${viewMode === "list" ? "bg-primary text-white shadow-md shadow-primary/15 ring-1 ring-primary/10" : "border border-transparent text-slate-400 hover:border-slate-100 hover:bg-white hover:text-slate-700"}`}
+              >
+                <List className="h-4 w-4" />
+              </Button>
+            </div>
+            )}
           </div>
         </div>
 
@@ -353,7 +393,7 @@ export default function ResumesPage() {
               ))}
             </div>
           ) : (
-            <div className="flex flex-col gap-3 pb-20">
+            <div className="flex flex-col gap-4 pb-20">
               {filteredResumes.map((resume: any) => (
                 <ResumeListItem 
                   key={resume.id} 
@@ -367,8 +407,8 @@ export default function ResumesPage() {
             </div>
           )
         ) : (
-          <div className="flex flex-col items-center justify-center space-y-4 rounded-[1.6rem] border border-dashed border-muted-foreground/20 bg-muted/20 py-16 text-center animate-in zoom-in-95 duration-500 md:rounded-[2rem] md:py-24">
-            <div className="h-20 w-20 rounded-3xl bg-muted/50 flex items-center justify-center mb-2">
+          <div className="flex flex-col items-center justify-center space-y-4 rounded-[1.75rem] border border-white/80 bg-[linear-gradient(180deg,rgba(255,255,255,0.98),rgba(248,250,255,0.96))] py-16 text-center shadow-[0_24px_55px_-40px_rgba(15,23,42,0.2)] animate-in zoom-in-95 duration-500 md:rounded-[2rem] md:py-24">
+            <div className="mb-2 flex h-20 w-20 items-center justify-center rounded-3xl border border-white bg-gradient-to-br from-violet-500/10 via-fuchsia-500/10 to-orange-400/10 shadow-sm">
               <FileText className="h-10 w-10 text-muted-foreground/50" />
             </div>
             <div className="space-y-2">
@@ -381,10 +421,9 @@ export default function ResumesPage() {
               </p>
             </div>
             {!searchQuery && (
-              <Button 
+              <Button
                 onClick={handleCreateNew}
-                variant="outline"
-                className="mt-4 rounded-full h-12"
+                className="mt-4 h-12 rounded-full bg-gradient-to-r from-violet-600 via-fuchsia-500 to-orange-400 px-6 font-black text-white shadow-[0_18px_40px_-24px_rgba(124,58,237,0.55)] hover:-translate-y-0.5 hover:shadow-[0_24px_48px_-26px_rgba(124,58,237,0.65)]"
               >
                 <Plus className="mr-2 h-4 w-4" />
                 Create your first CV
@@ -414,10 +453,10 @@ export default function ResumesPage() {
             />
           </div>
           <DialogFooter>
-            <Button variant="ghost" onClick={() => setIsRenameDialogOpen(false)} className="rounded-full">
+            <Button variant="outline" onClick={() => setIsRenameDialogOpen(false)} className="rounded-full border-2 px-6">
               Cancel
             </Button>
-            <Button onClick={handleRename} disabled={isRenaming || !newName.trim()} className="rounded-full px-8">
+            <Button onClick={handleRename} disabled={isRenaming || !newName.trim()} className="rounded-full bg-primary px-8 font-bold shadow-lg shadow-primary/15 hover:bg-primary/90">
               {isRenaming ? "Saving..." : "Save Changes"}
             </Button>
           </DialogFooter>
@@ -481,7 +520,7 @@ export default function ResumesPage() {
             <Button variant="outline" onClick={() => setIsCreateDialogOpen(false)} className="rounded-xl border-2 px-6">
               Cancel
             </Button>
-            <Button onClick={confirmCreateNew} className="rounded-xl bg-primary px-8 font-bold shadow-lg shadow-primary/20 hover:bg-primary/90">
+            <Button onClick={confirmCreateNew} className="rounded-xl bg-gradient-to-r from-violet-600 via-fuchsia-500 to-orange-400 px-8 font-bold shadow-lg shadow-primary/20 hover:opacity-95">
               Create CV
             </Button>
           </DialogFooter>
@@ -596,7 +635,7 @@ function ResumeCard({
       </CardHeader>
 
       <CardFooter className="mt-auto p-4 pt-3 md:p-5 md:pt-4">
-        <div className="flex items-center justify-between w-full">
+        <div className="flex items-center justify-between w-full gap-3">
           <div className="flex -space-x-1.5 overflow-hidden">
              {/* Dynamic score visualization placeholder */}
              <div className="h-8 w-8 rounded-full ring-2 ring-background bg-emerald-100 flex items-center justify-center">
@@ -606,9 +645,12 @@ function ResumeCard({
                ATS READY
              </div>
           </div>
-          <Link href={`/editor?id=${resume.id}`} className="group/btn inline-flex items-center text-sm font-semibold text-primary/80 hover:text-primary transition-colors">
-            Edit
-            <ChevronRight className="ml-0.5 h-4 w-4 group-hover/btn:translate-x-0.5 transition-transform" />
+          <Link
+            href={`/editor?id=${resume.id}`}
+            className="group/btn inline-flex items-center gap-2 rounded-full border border-primary/10 bg-primary/[0.04] px-3 py-1.5 text-[0.72rem] font-black uppercase tracking-[0.16em] text-primary transition-all hover:-translate-y-0.5 hover:border-primary/20 hover:bg-primary/[0.08]"
+          >
+            Open
+            <ChevronRight className="h-3.5 w-3.5 transition-transform group-hover/btn:translate-x-0.5" />
           </Link>
         </div>
       </CardFooter>
@@ -635,70 +677,41 @@ function ResumeListItem({
     : "Just now"
 
   return (
-    <div className="group flex items-center gap-3 rounded-[1.25rem] border border-muted/20 bg-card/40 p-3.5 backdrop-blur-sm transition-all duration-300 hover:border-primary/50 hover:shadow-md md:gap-4 md:rounded-2xl md:p-4">
-      <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-muted/50 md:h-12 md:w-12">
-        <FileText className="h-6 w-6 text-primary/60 group-hover:text-primary transition-colors" />
-      </div>
-      
-      <Link href={`/editor?id=${resume.id}`} className="flex-1 min-w-0">
-        <div className="flex items-center gap-3">
-           <h3 className="line-clamp-1 truncate text-base font-semibold transition-colors group-hover:text-primary md:text-lg">
-            {resume.name}
-          </h3>
-          <Badge variant="outline" className="hidden md:flex rounded-full text-[10px] font-normal py-0">
-            {template.name}
-          </Badge>
-        </div>
-        <div className="flex items-center text-xs text-muted-foreground mt-0.5">
-          <Clock className="mr-1 h-3 w-3 " />
-          Updated {lastUpdated}
-        </div>
-      </Link>
+    <div className="group rounded-[1.5rem] border border-white/70 bg-white/82 p-4 shadow-[0_24px_55px_-42px_rgba(15,23,42,0.28)] backdrop-blur-xl transition-all duration-300 hover:-translate-y-0.5 hover:border-primary/20 hover:shadow-[0_30px_65px_-42px_rgba(124,58,237,0.24)] md:rounded-[1.7rem] md:p-5">
+      <div className="flex items-start gap-3">
+        <Link href={`/editor?id=${resume.id}`} className="min-w-0 flex-1">
+          <div className="flex items-start gap-3">
+            <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-[1rem] bg-gradient-to-br from-primary/12 to-secondary/12 text-primary shadow-[inset_0_1px_0_rgba(255,255,255,0.9)]">
+              <FileText className="h-[1.35rem] w-[1.35rem] transition-colors group-hover:text-primary" />
+            </div>
 
-      <div className="flex items-center gap-2">
-         <div className="mr-4 hidden flex-col items-end sm:flex">
-           <div className="flex items-center gap-1 text-[10px] uppercase font-bold text-emerald-600">
-             <Sparkles className="h-2.5 w-2.5" />
-             ATS Ready
-           </div>
-        </div>
+            <div className="min-w-0 space-y-2">
+              <div className="space-y-2">
+                <h3 className="line-clamp-1 truncate text-[1.02rem] font-black tracking-tight text-slate-900 transition-colors group-hover:text-primary md:text-lg">
+                  {resume.name}
+                </h3>
+                <div className="flex flex-wrap items-center gap-2">
+                  <Badge variant="outline" className="rounded-full border-primary/10 bg-primary/[0.04] px-2.5 py-1 text-[10px] font-black uppercase tracking-[0.16em] text-primary">
+                    {template.name}
+                  </Badge>
+                  <div className="flex items-center gap-1.5 rounded-full bg-emerald-50 px-2.5 py-1 text-[10px] font-black uppercase tracking-[0.16em] text-emerald-700">
+                    <Sparkles className="h-2.5 w-2.5" />
+                    ATS Ready
+                  </div>
+                </div>
+              </div>
 
-        <TooltipProvider>
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <Button 
-                size="icon" 
-                variant="ghost" 
-                className="h-9 w-9 rounded-full hover:bg-primary/10 hover:text-primary"
-                onClick={(e) => {
-                  e.preventDefault();
-                  e.stopPropagation();
-                  onRename(resume);
-                }}
-              >
-                <Pencil className="h-4 w-4" />
-              </Button>
-            </TooltipTrigger>
-            <TooltipContent>Rename Resume</TooltipContent>
-          </Tooltip>
-        </TooltipProvider>
-
-        <TooltipProvider>
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <Button asChild size="icon" variant="ghost" className="h-9 w-9 rounded-full hover:bg-primary/10 hover:text-primary">
-                <Link href={`/editor?id=${resume.id}`}>
-                  <ExternalLink className="h-4 w-4" />
-                </Link>
-              </Button>
-            </TooltipTrigger>
-            <TooltipContent>Open in Editor</TooltipContent>
-          </Tooltip>
-        </TooltipProvider>
+              <div className="flex items-center text-xs font-medium text-muted-foreground">
+                <Clock className="mr-1.5 h-3.5 w-3.5" />
+                Updated {lastUpdated}
+              </div>
+            </div>
+          </div>
+        </Link>
 
         <DropdownMenu modal={false}>
           <DropdownMenuTrigger asChild>
-            <Button size="icon" variant="ghost" className="h-9 w-9 rounded-full">
+            <Button size="icon" variant="ghost" className="h-9 w-9 shrink-0 rounded-full text-muted-foreground hover:bg-slate-100 hover:text-slate-900">
               <MoreVertical className="h-4 w-4" />
             </Button>
           </DropdownMenuTrigger>
@@ -724,6 +737,47 @@ function ResumeListItem({
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
+      </div>
+
+      <div className="mt-4 flex items-center justify-between gap-3 border-t border-slate-100/80 pt-3.5">
+        <div className="text-[10px] font-black uppercase tracking-[0.18em] text-slate-400">
+          Ready for edits and tailoring
+        </div>
+
+        <div className="flex items-center gap-1.5 rounded-full border border-slate-100 bg-slate-50/90 p-1 shadow-[inset_0_1px_0_rgba(255,255,255,0.95)]">
+          <TooltipProvider>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  size="icon"
+                  variant="ghost"
+                  className="h-9 w-9 rounded-full bg-white hover:bg-primary/10 hover:text-primary"
+                  onClick={(e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    onRename(resume);
+                  }}
+                >
+                  <Pencil className="h-4 w-4" />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>Rename Resume</TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
+
+          <TooltipProvider>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button asChild size="icon" variant="ghost" className="h-9 w-9 rounded-full bg-white hover:bg-primary/10 hover:text-primary">
+                  <Link href={`/editor?id=${resume.id}`}>
+                    <ExternalLink className="h-4 w-4" />
+                  </Link>
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>Open in Editor</TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
+        </div>
       </div>
     </div>
   )

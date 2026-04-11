@@ -841,7 +841,15 @@ export function buildTemplatePreviewResume(templateId?: string | null) {
           company: "Northbridge Labs",
           period: "2022 - Present",
           description:
-            "<ul><li>Improved reporting workflows and reduced manual review time by 38%.</li><li>Partnered with design and engineering to ship high-trust candidate tooling.</li></ul>",
+            "<ul><li>Improved reporting workflows and reduced manual review time by 38%.</li><li>Partnered with design and engineering to ship high-trust candidate tooling.</li><li>Created KPI dashboards used by product and leadership to guide weekly release decisions.</li></ul>",
+        },
+        {
+          id: "exp-2",
+          title: "Product Operations Analyst",
+          company: "Horizon Studio",
+          period: "2020 - 2022",
+          description:
+            "<ul><li>Mapped user journeys, documented release dependencies, and streamlined launch checklists across 4 product teams.</li><li>Established quality-control steps that cut rework by 27% across recurring workflow updates.</li></ul>",
         },
       ],
       projects: [
@@ -851,6 +859,13 @@ export function buildTemplatePreviewResume(templateId?: string | null) {
           url: "",
           description:
             "<p>Redesigned a cross-platform resume experience focused on print quality, ATS parsing, and mobile usability.</p>",
+        },
+        {
+          id: "proj-2",
+          name: "Template Intelligence System",
+          url: "",
+          description:
+            "<p>Built a template-aware preview flow that highlights layout differences, typography choices, and output quality at a glance.</p>",
         },
       ],
       education: [
@@ -867,12 +882,19 @@ export function buildTemplatePreviewResume(templateId?: string | null) {
         "ATS Optimization",
         "Product Analytics",
         "Content Systems",
+        "Workflow Design",
+        "Editorial Quality",
       ],
       certifications: [
         {
           id: "cert-1",
           name: "Professional Scrum Product Owner",
           date: "2024",
+        },
+        {
+          id: "cert-2",
+          name: "Google Analytics Certification",
+          date: "2023",
         },
       ],
       languages: [

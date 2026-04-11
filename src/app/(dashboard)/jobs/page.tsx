@@ -199,61 +199,63 @@ export default function JobsPage() {
   ]
 
   return (
-    <div className="flex h-[calc(100vh-64px)] flex-col bg-[#fdfdfd]">
+    <div className="min-h-[calc(100vh-64px)] bg-[#fdfdfd]">
       {/* Search Header Section */}
-      <section className="shrink-0 relative overflow-hidden bg-white border-b border-slate-100 px-6 py-8 lg:px-12">
+      <section className="relative overflow-hidden border-b border-slate-100 bg-white px-4 py-5 lg:px-8 lg:py-5">
         <div className="absolute top-0 right-0 -translate-y-1/2 translate-x-1/3 w-96 h-96 bg-blue-400/5 blur-[120px] rounded-full pointer-events-none" />
         <div className="absolute bottom-0 left-0 translate-y-1/2 -translate-x-1/4 w-64 h-64 bg-purple-400/5 blur-[100px] rounded-full pointer-events-none" />
         
-        <div className="relative flex flex-col gap-8 lg:flex-row lg:items-end lg:justify-between max-w-[1600px] mx-auto">
-          <div className="space-y-4">
+        <div className="relative mx-auto flex max-w-[1600px] flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
+          <div className="space-y-3 lg:max-w-3xl">
             <div className="flex items-center gap-3">
-              <div className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-blue-600 text-white text-[10px] font-black uppercase tracking-widest shadow-lg shadow-blue-500/20">
+              <div className="flex items-center gap-1.5 rounded-full bg-blue-600 px-3 py-1 text-[10px] font-black uppercase tracking-widest text-white shadow-[0_16px_36px_-24px_rgba(37,99,235,0.7)]">
                 <Zap className="w-3 h-3 fill-current" />
                 Live UK Search
               </div>
             </div>
             <div>
-               <h1 className="text-4xl font-black tracking-tighter bg-clip-text text-transparent bg-gradient-to-r from-blue-600 to-indigo-600 lg:text-5xl pb-2 leading-normal">
+               <h1 className="bg-clip-text pb-1 text-[2.8rem] font-black leading-[0.92] tracking-tighter text-transparent bg-gradient-to-r from-blue-600 to-indigo-600 sm:text-[3.2rem] lg:text-[3.35rem]">
                  Find your next role
                </h1>
-               <p className="mt-2 text-slate-500 font-bold text-lg max-w-xl leading-relaxed">Search and track thousands of live opportunities across the UK.</p>
+               <p className="mt-2 max-w-2xl text-sm font-semibold leading-relaxed text-slate-500 lg:text-base">
+                 Search live opportunities, save the ones worth chasing, and move the best matches into your pipeline faster.
+               </p>
             </div>
           </div>
 
-          <div className="flex items-center gap-6">
+          <div className="flex flex-wrap items-center gap-3 lg:justify-end">
              {stats.map((s, i) => (
-                <div key={i} className="hidden xl:flex flex-col items-center bg-white border border-slate-100 px-6 py-4 rounded-[2rem] shadow-sm min-w-[140px] transition-transform hover:scale-105">
-                   <span className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-1">{s.label}</span>
-                   <div className="flex items-center gap-2">
-                     <s.icon className={cn("w-4 h-4", s.color)} />
-                     <span className={cn("text-2xl font-black tabular-nums", s.color)}>{s.value}</span>
-                   </div>
-                </div>
-             ))}
-             <Button size="lg" className="h-16 px-8 rounded-[2rem] font-black shadow-2xl shadow-blue-500/30 text-lg hover:translate-y-[-2px] transition-all" asChild>
-                <Link href="/tracker">
-                  My Tracker <ArrowRight className="ml-2 h-5 w-5" />
-                </Link>
+                 <div key={i} className="hidden xl:flex flex-col items-center rounded-[1.5rem] border border-slate-100 bg-white px-5 py-3.5 shadow-[0_16px_36px_-28px_rgba(15,23,42,0.25)] min-w-[128px] transition-all hover:-translate-y-0.5 hover:shadow-[0_22px_42px_-30px_rgba(15,23,42,0.28)]">
+                    <span className="text-[10px] font-black uppercase tracking-[0.18em] text-slate-400 mb-1">{s.label}</span>
+                    <div className="flex items-center gap-2">
+                      <s.icon className={cn("w-4 h-4", s.color)} />
+                      <span className={cn("text-2xl font-black tabular-nums", s.color)}>{s.value}</span>
+                    </div>
+                 </div>
+              ))}
+              <Button size="lg" className="h-14 px-6 rounded-[1.8rem] font-black shadow-[0_24px_60px_-30px_rgba(37,99,235,0.45)] text-base lg:h-16 lg:px-8 lg:text-lg" asChild>
+                 <Link href="/tracker">
+                   My Tracker <ArrowRight className="ml-2 h-5 w-5" />
+                 </Link>
              </Button>
           </div>
         </div>
       </section>
 
       {/* Main Content Area */}
-      <div className="flex flex-1 overflow-hidden max-w-[1800px] mx-auto w-full">
-        <Tabs value={activeTab} onValueChange={setActiveTab} className="flex flex-1 overflow-hidden">
+      <div className="mx-auto w-full max-w-[1800px] px-4 pb-20 lg:px-8">
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
           {/* Left Column: List & Tabs */}
-          <div className="flex flex-col flex-1 bg-transparent">
+          <div className="bg-transparent">
             {/* Search & Filter Box */}
-            <div className="p-6 pb-2 space-y-4 max-w-5xl mx-auto w-full">
+            <div className="mx-auto w-full max-w-5xl space-y-3 p-4 pb-2 lg:p-6">
               <div className="relative group">
                 <div className="absolute -inset-1 bg-gradient-to-r from-blue-600 to-indigo-600 rounded-[2.5rem] blur opacity-10 group-focus-within:opacity-25 transition duration-1000 group-hover:duration-200" />
-                <div className="relative flex flex-col md:flex-row items-stretch md:items-center bg-white border border-slate-100 rounded-[2.5rem] md:rounded-[3rem] p-2 shadow-xl shadow-slate-200/50 gap-2">
+                <div className="relative flex flex-col md:flex-row items-stretch md:items-center bg-white border border-slate-100 rounded-[2rem] md:rounded-[2.7rem] p-2 shadow-[0_22px_60px_-38px_rgba(15,23,42,0.3)] gap-2">
                   
                   {/* Keywords Input */}
                   <div className="flex flex-1 items-center min-w-0">
-                    <div className="ml-4 flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-blue-50 text-blue-600">
+                    <div className="ml-3 flex h-9 w-9 shrink-0 items-center justify-center rounded-2xl bg-blue-50 text-blue-600">
                       <Search className="h-5 w-5" />
                     </div>
                     <Input 
@@ -261,7 +263,7 @@ export default function JobsPage() {
                       onChange={e => setSearchTerm(e.target.value)}
                       onKeyDown={e => e.key === "Enter" && handlePerformSearch()}
                       placeholder="Role or keywords..."
-                      className="flex-1 border-0 bg-transparent text-base md:text-lg font-bold placeholder:text-slate-300 focus-visible:ring-0 focus-visible:ring-offset-0 h-12"
+                      className="flex-1 border-0 bg-transparent text-base md:text-lg font-bold placeholder:text-slate-300 focus-visible:ring-0 focus-visible:ring-offset-0 h-11 md:h-12"
                     />
                   </div>
 
@@ -269,7 +271,7 @@ export default function JobsPage() {
 
                   {/* Location Input */}
                   <div className="flex flex-1 items-center min-w-0">
-                    <div className="ml-4 flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-orange-50 text-orange-600">
+                    <div className="ml-3 flex h-9 w-9 shrink-0 items-center justify-center rounded-2xl bg-orange-50 text-orange-600">
                       <MapPin className="h-5 w-5" />
                     </div>
                     <Input 
@@ -277,14 +279,14 @@ export default function JobsPage() {
                       onChange={e => setLocationSearch(e.target.value)}
                       onKeyDown={e => e.key === "Enter" && handlePerformSearch()}
                       placeholder="City or UK region..."
-                      className="flex-1 border-0 bg-transparent text-base md:text-lg font-bold placeholder:text-slate-300 focus-visible:ring-0 focus-visible:ring-offset-0 h-12"
+                      className="flex-1 border-0 bg-transparent text-base md:text-lg font-bold placeholder:text-slate-300 focus-visible:ring-0 focus-visible:ring-offset-0 h-11 md:h-12"
                     />
                   </div>
 
                   <Button 
                     onClick={handlePerformSearch}
                     disabled={isApiLoading}
-                    className="h-12 md:h-14 px-10 rounded-[2rem] font-black text-sm uppercase tracking-widest bg-slate-900 shadow-lg hover:translate-y-[-1px] transition-all"
+                    className="h-11 md:h-14 px-8 md:px-10 rounded-[1.8rem] font-black text-[11px] uppercase tracking-[0.18em] bg-slate-900 shadow-[0_18px_46px_-28px_rgba(15,23,42,0.45)]"
                   >
                     {isApiLoading ? <Loader2 className="h-5 w-5 animate-spin" /> : "Search Jobs"}
                   </Button>
@@ -292,10 +294,10 @@ export default function JobsPage() {
               </div>
 
               {/* Advanced Filters: Workplace Type */}
-              <div className="flex flex-wrap items-center justify-center gap-4 py-2">
-                 <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-slate-50 border border-slate-100">
-                    <span className="text-[10px] font-black uppercase tracking-widest text-slate-400">Workplace:</span>
-                    <div className="flex gap-1">
+              <div className="flex flex-wrap items-center justify-between gap-3 py-1.5">
+                 <div className="flex items-center gap-2 rounded-full border border-slate-100 bg-slate-50 px-3 py-1.5">
+                     <span className="text-[10px] font-black uppercase tracking-widest text-slate-400">Workplace:</span>
+                     <div className="flex gap-1">
                       {[
                         { id: "all", label: "Any" },
                         { id: "remote", label: "Remote" },
@@ -319,21 +321,21 @@ export default function JobsPage() {
                  </div>
               </div>
 
-              <div className="flex items-center justify-center pt-2">
-                <TabsList className="inline-flex h-12 items-center rounded-2xl bg-slate-100/30 p-1.5 border border-slate-100/50 backdrop-blur-sm min-w-[320px]">
-                  <TabsTrigger value="discover" className="flex-1 rounded-xl h-9 font-black text-[10px] uppercase tracking-widest data-[state=active]:bg-white data-[state=active]:text-blue-600 data-[state=active]:shadow-sm transition-all">Discover</TabsTrigger>
-                  <TabsTrigger value="saved" className="flex-1 rounded-xl h-9 font-black text-[10px] uppercase tracking-widest data-[state=active]:bg-white data-[state=active]:text-amber-600 data-[state=active]:shadow-sm transition-all">Saved</TabsTrigger>
-                  <TabsTrigger value="tracking" className="flex-1 rounded-xl h-9 font-black text-[10px] uppercase tracking-widest data-[state=active]:bg-white data-[state=active]:text-emerald-600 data-[state=active]:shadow-sm transition-all">Tracking</TabsTrigger>
-                </TabsList>
-              </div>
+               <div className="flex items-center justify-center pt-1">
+                 <TabsList className="inline-flex h-11 items-center rounded-[1.4rem] border border-slate-100 bg-white/80 p-1 backdrop-blur-sm min-w-[300px] shadow-[0_16px_40px_-28px_rgba(15,23,42,0.22)]">
+                   <TabsTrigger value="discover" className="flex-1 rounded-[1rem] h-9 font-black text-[10px] uppercase tracking-widest data-[state=active]:bg-white data-[state=active]:text-blue-600 data-[state=active]:shadow-sm transition-all">Discover</TabsTrigger>
+                   <TabsTrigger value="saved" className="flex-1 rounded-[1rem] h-9 font-black text-[10px] uppercase tracking-widest data-[state=active]:bg-white data-[state=active]:text-amber-600 data-[state=active]:shadow-sm transition-all">Saved</TabsTrigger>
+                   <TabsTrigger value="tracking" className="flex-1 rounded-[1rem] h-9 font-black text-[10px] uppercase tracking-widest data-[state=active]:bg-white data-[state=active]:text-emerald-600 data-[state=active]:shadow-sm transition-all">Tracking</TabsTrigger>
+                 </TabsList>
+               </div>
             </div>
 
             {/* Scrollable List container */}
-            <div className="flex-1 overflow-y-auto px-6 pb-24 space-y-4 scrollbar-hide">
-              <div className="max-w-5xl mx-auto w-full pt-4">
+            <div className="space-y-4 px-4 pb-6 pt-4 scrollbar-hide lg:px-6">
+              <div className="mx-auto w-full max-w-5xl">
                 <TabsContent value="discover" className="m-0 space-y-4 outline-none">
                   {!hasSearched ? (
-                    <div className="py-24 text-center">
+                    <div className="py-20 text-center lg:py-24">
                       <div className="w-24 h-24 bg-gradient-to-br from-blue-50 to-indigo-50 rounded-[3rem] flex items-center justify-center mx-auto mb-8 shadow-inner">
                         <Briefcase className="w-10 h-10 text-blue-500/50" />
                       </div>
@@ -341,7 +343,7 @@ export default function JobsPage() {
                       <p className="mt-2 text-slate-500 font-bold max-w-[320px] mx-auto text-sm leading-relaxed">Search for keywords above to pull live opportunities from across the UK tech ecosystem.</p>
                     </div>
                   ) : isApiLoading ? (
-                    <div className="py-24 flex flex-col items-center justify-center space-y-6">
+                    <div className="py-20 flex flex-col items-center justify-center space-y-6 lg:py-24">
                       <div className="relative">
                         <div className="absolute inset-0 bg-blue-500/10 blur-[40px] animate-pulse rounded-full" />
                         <Loader2 className="h-16 w-16 animate-spin text-blue-600 relative opacity-80" strokeWidth={3} />
@@ -351,13 +353,13 @@ export default function JobsPage() {
                       </div>
                     </div>
                   ) : apiListings.length === 0 ? (
-                    <div className="py-24 text-center bg-slate-50/50 rounded-[2.5rem] border border-dashed border-slate-200">
+                    <div className="rounded-[2.5rem] border border-dashed border-slate-200 bg-slate-50/50 py-20 text-center lg:py-24">
                       <Info className="h-12 w-12 mx-auto mb-4 text-slate-200" />
                       <h4 className="text-lg font-black text-slate-800 uppercase tracking-tight">No matches found</h4>
                       <p className="mt-1 text-xs font-bold text-slate-400 px-12">Try different keywords or a more general search.</p>
                     </div>
                   ) : (
-                    <div className="grid gap-4 md:grid-cols-2">
+                    <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
                        {apiListings.map(job => (
                         <JobCard
                           key={job.id} 
@@ -372,7 +374,7 @@ export default function JobsPage() {
                 </TabsContent>
 
                 <TabsContent value="saved" className="m-0 space-y-4 outline-none">
-                  <div className="grid gap-4 md:grid-cols-2">
+                  <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
                     {(trackedApplications || []).filter(a => a.status === "saved").map(app => (
                       <JobCard
                           key={app.id} 
@@ -392,7 +394,7 @@ export default function JobsPage() {
                 </TabsContent>
 
                 <TabsContent value="tracking" className="m-0 space-y-4 outline-none">
-                  <div className="grid gap-4 md:grid-cols-2">
+                  <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
                     {(trackedApplications || []).filter(a => a.status !== "saved").map(app => (
                       <JobCard
                           key={app.id} 
@@ -414,9 +416,9 @@ export default function JobsPage() {
       {viewingJob && (
          <Dialog open={!!viewingJob} onOpenChange={() => setViewingJob(null)}>
             <DialogContent className={cn(
-              "max-w-4xl p-0 border-none outline-none overflow-hidden bg-white shadow-2xl rounded-[2.5rem]",
-              isMobile && "h-[100vh] w-full rounded-none m-0"
-            )}>
+               "max-w-4xl p-0 border-none outline-none overflow-hidden bg-white shadow-2xl rounded-[2.5rem]",
+               isMobile && "h-[100vh] w-full rounded-none m-0"
+             )}>
               <div className="flex flex-col h-full max-h-[90vh]">
                 <div className="flex-1 overflow-y-auto p-8 lg:p-12 space-y-12 scrollbar-hide">
                   <DialogHeader className="sr-only">

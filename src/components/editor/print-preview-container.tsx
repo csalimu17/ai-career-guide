@@ -5,6 +5,7 @@ import { ResumeTemplate } from "./resume-template"
 import { cn } from "@/lib/utils"
 import { Maximize2, Minimize2, ZoomIn, ZoomOut, FileText } from "lucide-react"
 import { Button } from "@/components/ui/button"
+import { getTemplateConfig } from "@/lib/templates-config"
 
 interface PrintPreviewContainerProps {
   resume: any
@@ -31,6 +32,12 @@ export function PrintPreviewContainer({ resume, className, defaultFitMode = "pag
   const [pageCount, setPageCount] = useState(1)
   // fitMode: "width" = fit width, "page" = fit single page, null = manual
   const [fitMode, setFitMode]   = useState<"width" | "page" | null>(defaultFitMode)
+  const templateCategory = getTemplateConfig(resume?.templateId).category
+  const chromeTone = {
+    Professional: "bg-[#2b3545] before:absolute before:inset-0 before:content-[''] before:bg-[radial-gradient(circle_at_top_right,rgba(99,102,241,0.08),transparent_35%),radial-gradient(circle_at_bottom_left,rgba(15,23,42,0.12),transparent_40%)]",
+    Modern: "bg-[#edf4ff] before:absolute before:inset-0 before:content-[''] before:bg-[radial-gradient(circle_at_top_right,rgba(59,130,246,0.10),transparent_35%),radial-gradient(circle_at_bottom_left,rgba(14,165,233,0.08),transparent_40%)]",
+    Classic: "bg-[#f6efe4] before:absolute before:inset-0 before:content-[''] before:bg-[radial-gradient(circle_at_top_right,rgba(180,83,9,0.10),transparent_35%),radial-gradient(circle_at_bottom_left,rgba(120,53,15,0.08),transparent_40%)]",
+  }[templateCategory]
 
   // Recalculate page count whenever resume changes
   // We use CSS Columns to determine the logical number of pages
@@ -54,10 +61,12 @@ export function PrintPreviewContainer({ resume, className, defaultFitMode = "pag
     if (fitMode === "width") {
       setScale(Math.min(availW / PAGE_W, 2))
     } else if (fitMode === "page") {
-      // Fit a single A4 page vertically
-      setScale(Math.min(availH / PAGE_H, 2))
+      // Fit a whole A4 page inside the viewport bounds.
+      // On narrow mobile screens we must clamp to width as well as height,
+      // otherwise the page can still overflow horizontally and look cropped.
+      setScale(Math.min(availW / PAGE_W, availH / PAGE_H, 2))
     }
-  }, [fitMode])
+  }, [compact, fitMode])
 
   // Re-run auto-fit on mount, resize, or mode change
   useEffect(() => {
@@ -158,7 +167,7 @@ export function PrintPreviewContainer({ resume, className, defaultFitMode = "pag
       {/* ── Preview Area ── */}
       <div
         ref={containerRef}
-        className="flex-1 overflow-auto bg-[#2b3545]"
+        className={cn("relative flex-1 overflow-auto", chromeTone)}
         style={{ scrollbarColor: "#475569 #1e293b", scrollbarWidth: "thin" }}
       >
         {/* Centering wrapper - sets the correct scrollable height */}

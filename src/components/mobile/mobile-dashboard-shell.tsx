@@ -265,11 +265,7 @@ export function MobileDashboardShell({
 
 
               <div className="min-w-0 flex-1">
-                <div className="inline-flex items-center gap-2 rounded-full bg-primary/5 px-3 py-1 text-[0.58rem] font-semibold uppercase tracking-[0.22em] text-primary">
-                  <Sparkles className="h-3.5 w-3.5" />
-                  AI Career Guide
-                </div>
-                <p className="mt-1.5 truncate text-[1rem] font-black tracking-tight text-primary">{sectionLabel}</p>
+                <p className="truncate text-[1rem] font-black tracking-tight text-primary">{sectionLabel}</p>
               </div>
 
               <SheetTrigger asChild>
@@ -294,6 +290,7 @@ export function MobileDashboardShell({
 
       <main className={cn(
         "mobile-app-page print:max-w-none print:px-0 print:pb-0 print:pt-0",
+        !isEditor && "pb-[calc(env(safe-area-inset-bottom)+6.75rem)]",
         isEditor && "pt-0"
       )}>
         {children}

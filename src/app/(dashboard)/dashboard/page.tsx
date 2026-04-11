@@ -9,7 +9,6 @@ import {
   Briefcase,
   CheckCircle2,
   Clock3,
-  ExternalLink,
   FileText,
   Gauge,
   History,
@@ -70,6 +69,12 @@ type DashboardJob = {
 }
 type InsightView = "command" | "pipeline" | "ats"
 type ActionCard = { title: string; description: string; href: string; cta: string; icon: LucideIcon; variant?: "primary" | "secondary" }
+
+const desktopHeroButtonBase = "group h-14 rounded-[1.5rem] px-5 text-[0.95rem] font-black tracking-tight transition-all duration-300"
+const desktopSegmentButtonBase = "h-10 rounded-[1.1rem] px-4 font-black capitalize tracking-tight transition-all duration-300"
+const desktopActionButtonBase = "group h-11 rounded-[1.1rem] px-4 font-black tracking-tight transition-all duration-300"
+const desktopUtilityButtonBase = "group h-10 rounded-[1.1rem] px-4 font-black tracking-tight transition-all duration-300"
+const dashboardChipBase = "rounded-full border border-border/50 bg-white/80 px-3 py-1.5 text-[0.62rem] font-black uppercase tracking-[0.18em] shadow-[0_8px_20px_-16px_rgba(15,23,42,0.28)] transition-all"
 
 const scoreTone = (score: number) => (score >= 85 ? "text-emerald-500" : score >= 70 ? "text-sky-500" : score >= 55 ? "text-amber-500" : "text-rose-500")
 const scoreBg = (score: number) => (score >= 85 ? "bg-emerald-500/10" : score >= 70 ? "bg-sky-500/10" : score >= 55 ? "bg-amber-500/10" : "bg-rose-500/10")
@@ -235,8 +240,8 @@ export default function DashboardPage() {
     : { title: "Increase application momentum", description: "Your materials are strong. The next leverage move is discovering more roles.", href: "/jobs", cta: "Find jobs", icon: Search, variant: "primary" }
 
   const actionCards: ActionCard[] = [
-    { title: latestResume ? "Update your CV" : "Build your first draft", description: latestResume ? "Switch templates, improve copy, and keep your strongest version current." : "Create a polished base version you can tailor role by role.", href: latestResume ? "/editor" : "/onboarding", cta: latestResume ? "Open builder" : "Build resume", icon: FileText },
-    { title: activePipelineCount > 0 ? "Work the active pipeline" : "Discover fresh roles", description: activePipelineCount > 0 ? "Review statuses, confirm external applies, and keep momentum visible." : "Search curated opportunities and start tracked external apply flows.", href: activePipelineCount > 0 ? "/tracker" : "/jobs", cta: activePipelineCount > 0 ? "Open tracker" : "Browse jobs", icon: activePipelineCount > 0 ? Layers3 : Briefcase },
+    { title: latestResume ? "Update your CV" : "Build your first draft", description: latestResume ? "Switch templates, improve copy, and keep your strongest version current." : "Create a polished base version you can tailor role by role.", href: latestResume ? "/editor" : "/onboarding", cta: latestResume ? "Open builder" : "Build resume", icon: FileText, variant: "primary" },
+    { title: activePipelineCount > 0 ? "Work the active pipeline" : "Discover fresh roles", description: activePipelineCount > 0 ? "Review statuses, confirm external applies, and keep momentum visible." : "Search curated opportunities and start tracked external apply flows.", href: activePipelineCount > 0 ? "/tracker" : "/jobs", cta: activePipelineCount > 0 ? "Open tracker" : "Browse jobs", icon: activePipelineCount > 0 ? Layers3 : Briefcase, variant: "secondary" },
   ]
 
   const statCards = [
@@ -293,12 +298,8 @@ export default function DashboardPage() {
         <div className="absolute -right-20 -top-20 h-96 w-96 rounded-full bg-primary/5 blur-3xl" />
         <div className="absolute -bottom-20 -left-20 h-96 w-96 rounded-full bg-secondary/5 blur-3xl" />
         
-        <div className="flex flex-col gap-8 p-8 md:p-12 xl:flex-row xl:items-center xl:justify-between">
-          <div className="space-y-6 xl:flex-1">
-            <div className="eyebrow-chip border-glow-primary bg-primary/5 text-primary">
-              <Sparkles className="h-3.5 w-3.5" />
-              Overview
-            </div>
+        <div className="flex flex-col gap-7 p-8 md:p-12 xl:flex-row xl:items-center xl:justify-between">
+          <div className="space-y-5 xl:flex-1">
             <div className="space-y-4">
               <h1 className="text-4xl font-black leading-tight tracking-tight text-primary lg:text-5xl">
                 Your search <span className="logo-gradient">command center</span>.
@@ -310,17 +311,41 @@ export default function DashboardPage() {
               </p>
             </div>
             <div className="flex flex-wrap gap-2">
-              {profile?.targetRoles && <Badge variant="secondary" className="rounded-full bg-primary/5 px-4 py-1.5 text-[0.7rem] font-bold uppercase tracking-widest text-primary border-none">{profile.targetRoles}</Badge>}
-              <Badge variant="outline" className="rounded-full border-border/80 bg-white/50 backdrop-blur-sm px-4 py-1.5 text-[0.7rem] font-bold uppercase tracking-widest text-muted-foreground">{(profile?.plan || "free").toUpperCase()} WORKSPACE</Badge>
+              {profile?.targetRoles && <Badge variant="secondary" className={cn(dashboardChipBase, "border-primary/10 bg-primary/5 text-primary")}>{profile.targetRoles}</Badge>}
+              <Badge variant="outline" className={cn(dashboardChipBase, "border-border/80 bg-white/50 backdrop-blur-sm text-muted-foreground")}>{(profile?.plan || "free").toUpperCase()} WORKSPACE</Badge>
             </div>
           </div>
           
           <div className="flex flex-wrap gap-3 xl:shrink-0">
-             <Button variant="outline" asChild className="h-14 rounded-2xl border-none bg-white text-base font-bold shadow-sm hover:bg-muted/50 transition-colors px-6">
-              <Link href="/onboarding/upload"><Upload className="mr-2 h-5 w-5" />Upload CV</Link>
+            <Button
+              variant="outline"
+              asChild
+              className={cn(
+                desktopHeroButtonBase,
+                "border border-slate-200/80 bg-white/92 text-primary shadow-[0_24px_50px_-32px_rgba(15,23,42,0.38)] hover:-translate-y-0.5 hover:border-primary/20 hover:bg-white hover:shadow-[0_32px_60px_-34px_rgba(15,23,42,0.42)]"
+              )}
+            >
+              <Link href="/onboarding/upload">
+                <span className="flex h-9 w-9 items-center justify-center rounded-full bg-primary/6 text-primary ring-1 ring-primary/10 transition-transform duration-300 group-hover:scale-110 group-hover:bg-primary/10">
+                  <Upload className="h-4.5 w-4.5" />
+                </span>
+                <span>Upload CV</span>
+              </Link>
             </Button>
-            <Button asChild className="h-14 rounded-2xl bg-primary text-base font-bold shadow-xl shadow-primary/20 hover:shadow-primary/30 active:scale-95 transition-all px-6">
-              <Link href="/jobs"><Search className="mr-2 h-5 w-5" />Find Jobs</Link>
+            <Button
+              asChild
+              className={cn(
+                desktopHeroButtonBase,
+                "pl-5 pr-4 shadow-[0_30px_70px_-34px_rgba(124,58,237,0.58)] hover:-translate-y-0.5 hover:brightness-105 hover:shadow-[0_38px_80px_-36px_rgba(124,58,237,0.65)]"
+              )}
+            >
+              <Link href="/jobs">
+                <span className="flex h-9 w-9 items-center justify-center rounded-full bg-white/14 text-white ring-1 ring-white/20 transition-transform duration-300 group-hover:scale-110">
+                  <Search className="h-4.5 w-4.5" />
+                </span>
+                <span>Find Jobs</span>
+                <ArrowRight className="ml-1 h-4 w-4 transition-transform duration-300 group-hover:translate-x-1" />
+              </Link>
             </Button>
           </div>
         </div>
@@ -346,15 +371,17 @@ export default function DashboardPage() {
                 <CardTitle className="text-2xl font-black text-primary">Next Actions</CardTitle>
                 <CardDescription className="text-sm font-medium">Your current feed and recommended steps.</CardDescription>
               </div>
-              <div className="flex gap-1.5 rounded-2xl bg-muted/30 p-1">
+              <div className="flex gap-1.5 rounded-[1.35rem] border border-border/50 bg-white/85 p-1.5 shadow-[inset_0_1px_0_rgba(255,255,255,0.9)]">
                 {(["command", "pipeline", "ats"] as InsightView[]).map((view) => (
                   <Button
                     key={view}
                     size="sm"
                     variant={insightView === view ? "secondary" : "ghost"}
                     className={cn(
-                      "rounded-xl px-4 font-black capitalize transition-all",
-                      insightView === view ? "bg-white text-primary shadow-sm hover:bg-white" : "text-muted-foreground/80 hover:bg-muted/50 hover:text-primary"
+                      desktopSegmentButtonBase,
+                      insightView === view
+                      ? "brand-gradient-bg text-white shadow-[0_18px_44px_-28px_rgba(124,58,237,0.58)] hover:brightness-105"
+                      : "bg-white/0 text-muted-foreground/80 hover:bg-white hover:text-primary hover:shadow-sm"
                     )}
                     onClick={() => setInsightView(view)}
                   >
@@ -378,20 +405,47 @@ export default function DashboardPage() {
                         <h2 className="text-2xl font-black tracking-tight text-primary lg:text-3xl">{primaryAction.title}</h2>
                         <p className="max-w-2xl text-sm leading-relaxed text-muted-foreground/90 font-medium">{primaryAction.description}</p>
                       </div>
-                      <Button asChild className="h-12 rounded-xl bg-primary px-6 font-black tracking-tight hover:shadow-lg hover:shadow-primary/20">
-                        <Link href={primaryAction.href}>{primaryAction.cta}<ArrowRight className="ml-2 h-4 w-4" /></Link>
+                      <Button
+                        asChild
+                        className={cn(
+                          desktopActionButtonBase,
+                          "mt-1 rounded-[1.15rem] pl-5 pr-4 shadow-[0_24px_60px_-32px_rgba(124,58,237,0.56)] hover:-translate-y-0.5 hover:shadow-[0_30px_70px_-32px_rgba(124,58,237,0.62)]"
+                        )}
+                      >
+                        <Link href={primaryAction.href}>
+                          <span>{primaryAction.cta}</span>
+                          <span className="flex h-8 w-8 items-center justify-center rounded-full bg-white/14 ring-1 ring-white/20 transition-transform duration-300 group-hover:scale-110">
+                            <ArrowRight className="h-4 w-4" />
+                          </span>
+                        </Link>
                       </Button>
                     </div>
                   </div>
                   <div className="grid gap-4 md:grid-cols-2">
                     {actionCards.map((action) => (
-                      <Link key={action.title} href={action.href} className="group flex items-start gap-4 rounded-3xl border border-border/40 bg-muted/10 p-5 transition-all hover:bg-white hover:border-primary/20 hover:shadow-md">
-                        <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-white text-primary shadow-sm ring-1 ring-black/5 transition-transform group-hover:scale-110">
-                          <action.icon className="h-6 w-6" />
+                      <Link
+                        key={action.title}
+                        href={action.href}
+                        className="group flex min-h-[132px] flex-col justify-between rounded-3xl border border-border/40 bg-muted/10 p-5 transition-all hover:-translate-y-0.5 hover:border-primary/20 hover:bg-white hover:shadow-md"
+                      >
+                        <div className="flex items-start gap-4">
+                          <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-white text-primary shadow-sm ring-1 ring-black/5 transition-transform group-hover:scale-110">
+                            <action.icon className="h-6 w-6" />
+                          </div>
+                          <div className="min-w-0 space-y-1">
+                            <p className="font-black text-primary tracking-tight">{action.title}</p>
+                            <p className="text-xs font-medium leading-relaxed text-muted-foreground">{action.description}</p>
+                          </div>
                         </div>
-                        <div className="space-y-1">
-                          <p className="font-black text-primary tracking-tight">{action.title}</p>
-                          <p className="text-xs font-medium leading-relaxed text-muted-foreground">{action.description}</p>
+
+                        <div className="mt-4 flex items-center justify-between">
+                          <span className="text-[0.62rem] font-black uppercase tracking-[0.18em] text-primary/55">
+                            {action.variant === "primary" ? "Recommended" : "Quick action"}
+                          </span>
+                          <span className="inline-flex items-center gap-2 rounded-full bg-white px-3 py-1.5 text-[0.68rem] font-black uppercase tracking-[0.16em] text-primary shadow-sm ring-1 ring-black/5 transition-transform group-hover:translate-x-0.5">
+                            {action.cta}
+                            <ArrowRight className="h-3.5 w-3.5" />
+                          </span>
                         </div>
                       </Link>
                     ))}
@@ -448,7 +502,20 @@ export default function DashboardPage() {
                   </div>
                   <h3 className="text-lg font-black text-primary">No ATS intelligence yet</h3>
                   <p className="mt-2 text-sm font-medium text-muted-foreground max-w-sm">Benchmark your resume against a job role to see feedback here.</p>
-                  <Button asChild className="mt-6 rounded-xl font-bold"><Link href="/ats">Run Benchmark</Link></Button>
+                  <Button
+                    asChild
+                    className={cn(
+                      desktopActionButtonBase,
+                      "mt-6 rounded-[1.1rem] pl-5 pr-4 shadow-[0_22px_54px_-34px_rgba(124,58,237,0.5)] hover:-translate-y-0.5 hover:shadow-[0_28px_64px_-34px_rgba(124,58,237,0.56)]"
+                    )}
+                  >
+                    <Link href="/ats">
+                      <span>Run Benchmark</span>
+                      <span className="flex h-8 w-8 items-center justify-center rounded-full bg-white/14 ring-1 ring-white/20 transition-transform duration-300 group-hover:scale-110">
+                        <ArrowRight className="h-4 w-4" />
+                      </span>
+                    </Link>
+                  </Button>
                 </div>
               )}
             </div>
@@ -461,15 +528,17 @@ export default function DashboardPage() {
                 <CardTitle className="text-2xl font-black text-primary">Live tracker</CardTitle>
                 <CardDescription className="text-sm font-medium">Manage tracked roles and current interview pipeline.</CardDescription>
               </div>
-              <div className="flex flex-wrap gap-1.5 rounded-2xl bg-muted/30 p-1">
+              <div className="flex flex-wrap gap-1.5 rounded-[1.35rem] border border-border/50 bg-white/85 p-1.5 shadow-[inset_0_1px_0_rgba(255,255,255,0.9)]">
                 {(["all", "started", "applied", "interviewing", "offer"] as const).map((filter) => (
                   <Button
                     key={filter}
                     size="sm"
                     variant={pipelineFilter === filter ? "secondary" : "ghost"}
                     className={cn(
-                      "rounded-xl px-3 font-black capitalize transition-all",
-                      pipelineFilter === filter ? "bg-white text-primary shadow-sm hover:bg-white" : "text-muted-foreground/80 hover:bg-muted/30 hover:text-primary"
+                      desktopSegmentButtonBase,
+                      pipelineFilter === filter
+                      ? "brand-gradient-bg text-white shadow-[0_18px_44px_-28px_rgba(124,58,237,0.58)] hover:brightness-105"
+                      : "bg-white/0 text-muted-foreground/80 hover:bg-white hover:text-primary hover:shadow-sm"
                     )}
                     onClick={() => setPipelineFilter(filter)}
                   >
@@ -503,10 +572,34 @@ export default function DashboardPage() {
                       </div>
                     </div>
                     <div className="flex gap-2.5">
-                      <Button variant="ghost" size="sm" asChild className="rounded-xl font-black text-primary hover:bg-primary/5"><Link href="/tracker">View in tracker</Link></Button>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        asChild
+                        className={cn(
+                          desktopUtilityButtonBase,
+                          "bg-primary/[0.04] text-primary hover:-translate-y-0.5 hover:bg-primary/[0.08] hover:text-primary"
+                        )}
+                      >
+                        <Link href="/tracker">
+                          <span>View in tracker</span>
+                          <ChevronRight className="h-4 w-4 transition-transform duration-300 group-hover:translate-x-1" />
+                        </Link>
+                      </Button>
                       {job.sourceUrl && (
-                        <Button variant="outline" size="sm" asChild className="rounded-xl bg-white border border-border text-primary font-black shadow-sm hover:bg-muted/20">
-                          <a href={job.sourceUrl} target="_blank" rel="noreferrer">Role Source <ArrowUpRight className="ml-1.5 h-3.5 w-3.5 opacity-70" /></a>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          asChild
+                          className={cn(
+                            desktopUtilityButtonBase,
+                            "border border-border/80 bg-white text-primary shadow-[0_18px_42px_-30px_rgba(15,23,42,0.32)] hover:-translate-y-0.5 hover:border-primary/20 hover:bg-white hover:shadow-[0_24px_52px_-30px_rgba(15,23,42,0.4)]"
+                          )}
+                        >
+                          <a href={job.sourceUrl} target="_blank" rel="noreferrer">
+                            <span>Role Source</span>
+                            <ArrowUpRight className="h-4 w-4 opacity-70 transition-transform duration-300 group-hover:translate-x-0.5 group-hover:-translate-y-0.5" />
+                          </a>
                         </Button>
                       )}
                     </div>
@@ -519,7 +612,20 @@ export default function DashboardPage() {
                   </div>
                   <h3 className="text-lg font-black text-primary">No active tracking</h3>
                   <p className="text-sm font-medium text-muted-foreground mt-2 max-w-sm">Use the jobs workspace to discover roles and start your pipeline tracking.</p>
-                  <Button asChild className="mt-8 rounded-xl font-bold shadow-lg shadow-primary/10"><Link href="/jobs">Discover Jobs</Link></Button>
+                  <Button
+                    asChild
+                    className={cn(
+                      desktopActionButtonBase,
+                      "mt-8 rounded-[1.1rem] pl-5 pr-4 shadow-[0_22px_54px_-34px_rgba(124,58,237,0.5)] hover:-translate-y-0.5 hover:shadow-[0_28px_64px_-34px_rgba(124,58,237,0.56)]"
+                    )}
+                  >
+                    <Link href="/jobs">
+                      <span>Discover Jobs</span>
+                      <span className="flex h-8 w-8 items-center justify-center rounded-full bg-white/14 ring-1 ring-white/20 transition-transform duration-300 group-hover:scale-110">
+                        <ArrowRight className="h-4 w-4" />
+                      </span>
+                    </Link>
+                  </Button>
                 </div>
               )}
             </div>
@@ -599,8 +705,36 @@ export default function DashboardPage() {
               </div>
               
               <div className="grid grid-cols-2 gap-3">
-                <Button variant="outline" asChild className="rounded-xl font-bold h-10 border-border/60 hover:bg-muted/50"><Link href="/editor">Builder</Link></Button>
-                <Button variant="outline" asChild className="rounded-xl font-bold h-10 border-border/60 hover:bg-muted/50"><Link href="/ats">ATS Center</Link></Button>
+                <Button
+                  variant="outline"
+                  asChild
+                  className="group h-14 justify-start rounded-[1.2rem] border-border/70 bg-white/90 px-4 text-left shadow-[0_20px_48px_-32px_rgba(15,23,42,0.32)] transition-all duration-300 hover:-translate-y-0.5 hover:border-primary/20 hover:bg-white hover:shadow-[0_28px_60px_-34px_rgba(15,23,42,0.38)]"
+                >
+                  <Link href="/editor">
+                    <span className="flex h-9 w-9 items-center justify-center rounded-full bg-primary/6 text-primary ring-1 ring-primary/10 transition-transform duration-300 group-hover:scale-110">
+                      <FileText className="h-4.5 w-4.5" />
+                    </span>
+                    <span className="flex flex-col items-start leading-none">
+                      <span className="text-sm font-black tracking-tight text-primary">Builder</span>
+                      <span className="mt-1 text-[0.58rem] font-bold uppercase tracking-[0.18em] text-muted-foreground/70">Resume edits</span>
+                    </span>
+                  </Link>
+                </Button>
+                <Button
+                  variant="outline"
+                  asChild
+                  className="group h-14 justify-start rounded-[1.2rem] border-border/70 bg-white/90 px-4 text-left shadow-[0_20px_48px_-32px_rgba(15,23,42,0.32)] transition-all duration-300 hover:-translate-y-0.5 hover:border-primary/20 hover:bg-white hover:shadow-[0_28px_60px_-34px_rgba(15,23,42,0.38)]"
+                >
+                  <Link href="/ats">
+                    <span className="flex h-9 w-9 items-center justify-center rounded-full bg-secondary/10 text-secondary ring-1 ring-secondary/15 transition-transform duration-300 group-hover:scale-110">
+                      <Target className="h-4.5 w-4.5" />
+                    </span>
+                    <span className="flex flex-col items-start leading-none">
+                      <span className="text-sm font-black tracking-tight text-primary">ATS Center</span>
+                      <span className="mt-1 text-[0.58rem] font-bold uppercase tracking-[0.18em] text-muted-foreground/70">Benchmarking</span>
+                    </span>
+                  </Link>
+                </Button>
               </div>
             </div>
           </BentoCard>
@@ -677,29 +811,91 @@ function MobileDashboardExperience({
     <div className="space-y-4 px-4 pb-24 pt-4">
       {/* Mobile Hero */}
       <section className="overflow-hidden rounded-[2rem] border border-white/80 bg-white/70 p-6 shadow-xl backdrop-blur-xl">
-        <div className="eyebrow-chip text-[0.6rem] py-1 border-glow-primary bg-primary/5 text-primary">
-          <Sparkles className="h-3 w-3" />
-          Dashboard
-        </div>
-        <h1 className="mt-4 text-[1.8rem] font-black leading-none tracking-tighter text-primary">
+        <h1 className="text-[1.8rem] font-black leading-none tracking-tighter text-primary">
           Your search <span className="logo-gradient">center</span>.
         </h1>
         <p className="mt-3 text-sm font-medium leading-relaxed text-muted-foreground">
           {profile?.targetRoles ? `Optimizing for ${profile.targetRoles}.` : "Your command center is ready."}
         </p>
-        <div className="mt-6 space-y-3">
-          <Button asChild className="h-12 w-full rounded-2xl bg-primary font-black shadow-lg shadow-primary/20">
-            <Link href={primaryAction.href}>{primaryAction.cta}<ArrowRight className="ml-2 h-4 w-4" /></Link>
-          </Button>
-          <Button asChild className="h-12 w-full rounded-2xl bg-white border-2 border-primary/10 text-primary font-black shadow-sm group">
-            <Link href="/onboarding/upload">
-              <Upload className="mr-2 h-4 w-4 text-accent transition-transform group-hover:scale-110" />
-              Upload CV
+        <div className="mt-6 space-y-3.5">
+          <Button
+            asChild
+            className="h-auto w-full rounded-[1.7rem] border-0 bg-gradient-to-r from-violet-600 via-fuchsia-500 to-orange-400 px-0 py-0 text-white shadow-[0_18px_40px_-18px_rgba(124,58,237,0.55)] transition-transform duration-300 hover:scale-[1.01] hover:shadow-[0_24px_50px_-20px_rgba(124,58,237,0.65)]"
+          >
+            <Link href={primaryAction.href} className="flex min-h-[60px] w-full items-center justify-between gap-4 px-4 py-3 text-left">
+              <div className="flex min-w-0 items-center gap-3">
+                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-white/18 ring-1 ring-white/20 backdrop-blur-md">
+                  <primaryAction.icon className="h-5 w-5" />
+                </div>
+                <div className="min-w-0">
+                  <p className="truncate text-[0.95rem] font-black tracking-tight">{primaryAction.cta}</p>
+                  <p className="truncate text-[0.68rem] font-bold uppercase tracking-[0.16em] text-white/72">
+                    Score match and fix gaps
+                  </p>
+                </div>
+              </div>
+              <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-white/16 ring-1 ring-white/20">
+                <ArrowRight className="h-4.5 w-4.5" />
+              </div>
             </Link>
           </Button>
+
+          <Button
+            asChild
+            variant="outline"
+            className="group h-auto w-full rounded-[1.7rem] border border-primary/12 bg-white/88 px-0 py-0 text-primary shadow-[0_14px_32px_-24px_rgba(15,23,42,0.32)] transition-all duration-300 hover:border-primary/20 hover:bg-white"
+          >
+            <Link href="/onboarding/upload" className="flex min-h-[58px] w-full items-center justify-between gap-4 px-4 py-3 text-left">
+              <div className="flex min-w-0 items-center gap-3">
+                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-primary/8 text-accent ring-1 ring-primary/10">
+                  <Upload className="h-4.5 w-4.5 transition-transform duration-300 group-hover:scale-110" />
+                </div>
+                <div className="min-w-0">
+                  <p className="truncate text-[0.95rem] font-black tracking-tight text-primary">Upload CV</p>
+                  <p className="truncate text-[0.68rem] font-bold uppercase tracking-[0.16em] text-muted-foreground/75">
+                    Import PDF, DOCX, or image
+                  </p>
+                </div>
+              </div>
+              <ArrowUpRight className="h-4.5 w-4.5 shrink-0 text-primary/55" />
+            </Link>
+          </Button>
+
           <div className="grid grid-cols-2 gap-3">
-            <Button variant="outline" asChild className="h-11 rounded-2xl font-bold bg-white/50"><Link href="/editor">Builder</Link></Button>
-            <Button variant="outline" asChild className="h-11 rounded-2xl font-bold bg-white/50"><Link href="/jobs">Jobs</Link></Button>
+            <Button
+              variant="outline"
+              asChild
+              className="h-auto rounded-[1.45rem] border border-slate-200/80 bg-white/78 px-0 py-0 shadow-sm transition-all duration-300 hover:-translate-y-0.5 hover:border-primary/12 hover:bg-white"
+            >
+              <Link href="/editor" className="flex min-h-[56px] w-full items-center gap-3 px-4 py-3 text-left">
+                <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-2xl bg-slate-100 text-primary">
+                  <FileText className="h-4 w-4" />
+                </div>
+                <div className="min-w-0">
+                  <p className="text-[0.9rem] font-black tracking-tight text-slate-900">Builder</p>
+                  <p className="truncate text-[0.62rem] font-bold uppercase tracking-[0.14em] text-slate-400">
+                    Edit resume
+                  </p>
+                </div>
+              </Link>
+            </Button>
+            <Button
+              variant="outline"
+              asChild
+              className="h-auto rounded-[1.45rem] border border-slate-200/80 bg-white/78 px-0 py-0 shadow-sm transition-all duration-300 hover:-translate-y-0.5 hover:border-primary/12 hover:bg-white"
+            >
+              <Link href="/jobs" className="flex min-h-[56px] w-full items-center gap-3 px-4 py-3 text-left">
+                <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-2xl bg-slate-100 text-primary">
+                  <Search className="h-4 w-4" />
+                </div>
+                <div className="min-w-0">
+                  <p className="text-[0.9rem] font-black tracking-tight text-slate-900">Jobs</p>
+                  <p className="truncate text-[0.62rem] font-bold uppercase tracking-[0.14em] text-slate-400">
+                    Find matches
+                  </p>
+                </div>
+              </Link>
+            </Button>
           </div>
         </div>
       </section>
@@ -721,9 +917,20 @@ function MobileDashboardExperience({
       <BentoCard className="p-5 rounded-[2rem]">
         <div className="flex items-center justify-between gap-4 mb-4">
           <p className="text-lg font-black text-primary">Focus board</p>
-          <div className="flex gap-1 rounded-xl bg-muted/40 p-1">
+          <div className="flex gap-1.5 rounded-2xl border border-border/50 bg-white/80 p-1.5 shadow-[inset_0_1px_0_rgba(255,255,255,0.88)]">
             {(["command", "pipeline", "ats"] as InsightView[]).map((v) => (
-              <button key={v} onClick={() => setInsightView(v)} className={cn("rounded-lg px-2 py-1 text-[0.6rem] font-black uppercase tracking-wider transition-all", insightView === v ? "bg-white text-primary shadow-sm" : "text-muted-foreground/60")}>{v}</button>
+              <button
+                key={v}
+                onClick={() => setInsightView(v)}
+                className={cn(
+                  "min-h-[34px] rounded-xl px-3 py-2 text-[0.62rem] font-black uppercase tracking-[0.16em] transition-all duration-300 border",
+                  insightView === v
+                    ? "bg-white text-primary shadow-[0_8px_20px_-12px_rgba(15,23,42,0.3)] ring-1 ring-black/5 border-white"
+                    : "text-muted-foreground/65 bg-transparent border-transparent hover:bg-white/70 hover:text-primary hover:border-border/40"
+                )}
+              >
+                {v}
+              </button>
             ))}
           </div>
         </div>
@@ -734,34 +941,53 @@ function MobileDashboardExperience({
               <div className="rounded-2xl bg-primary/5 p-4 border border-primary/10">
                 <p className="text-[0.6rem] font-black uppercase tracking-widest text-primary/70 mb-2">Next Best move</p>
                 <p className="font-black text-primary leading-tight text-lg">{primaryAction.title}</p>
-                <Button asChild className="mt-4 h-9 w-full rounded-xl bg-primary text-xs font-black shadow-md"><Link href={primaryAction.href}>{primaryAction.cta}</Link></Button>
+                <Button
+                  asChild
+                  className="mt-4 h-11 w-full rounded-2xl bg-primary px-0 text-[0.72rem] font-black uppercase tracking-[0.16em] shadow-[0_16px_30px_-18px_rgba(124,58,237,0.55)]"
+                >
+                  <Link href={primaryAction.href} className="flex w-full items-center justify-center gap-2 px-4">
+                    <primaryAction.icon className="h-4 w-4" />
+                    {primaryAction.cta}
+                    <ArrowRight className="h-4 w-4" />
+                  </Link>
+                </Button>
               </div>
             </div>
           ) : insightView === "pipeline" ? (
              <div className="grid grid-cols-2 gap-3">
               {pipelineStages.slice(0, 4).map((s) => (
-                <Link key={s.status} href="/tracker" className="rounded-2xl border border-border/40 bg-muted/5 p-4">
+                <Link key={s.status} href="/tracker" className="rounded-[1.4rem] border border-border/40 bg-white p-4 shadow-sm transition-all hover:-translate-y-0.5 hover:shadow-md">
                   <span className={cn("text-[0.55rem] font-black uppercase tracking-widest", scoreTone(s.count > 0 ? 100 : 0))}>{JOB_STATUS_CONFIG[s.status].label}</span>
                   <p className="mt-1 text-2xl font-black text-primary">{s.count}</p>
                 </Link>
               ))}
             </div>
           ) : latestReport ? (
-            <div className="rounded-2xl bg-emerald-500/5 p-4 border border-emerald-500/10 text-center">
+            <div className="rounded-[1.5rem] bg-emerald-500/5 p-4 border border-emerald-500/10 text-center shadow-[0_16px_34px_-28px_rgba(16,185,129,0.3)]">
               <p className="text-[0.6rem] font-black uppercase tracking-widest text-emerald-600/70 mb-2">ATS Score</p>
               <p className={cn("text-4xl font-black tracking-tighter", scoreTone(latestScore))}>{latestScore}%</p>
-              <Button asChild variant="ghost" className="mt-4 h-9 font-black text-emerald-600 hover:bg-emerald-500/10"><Link href="/ats">Open Optimizer</Link></Button>
+              <Button
+                asChild
+                variant="outline"
+                className="mt-4 h-11 rounded-2xl border border-emerald-500/15 bg-white/80 px-0 text-[0.72rem] font-black uppercase tracking-[0.14em] text-emerald-700 shadow-[0_12px_24px_-18px_rgba(16,185,129,0.45)] hover:bg-emerald-500/10 hover:text-emerald-800"
+              >
+                <Link href="/ats" className="flex w-full items-center justify-center gap-2 px-4">
+                  <Target className="h-4 w-4" />
+                  Open Optimizer
+                  <ArrowUpRight className="h-4 w-4" />
+                </Link>
+              </Button>
             </div>
           ) : <p className="text-center py-8 text-sm text-muted-foreground font-medium italic">No scan intelligence yet.</p>}
         </div>
       </BentoCard>
 
       {/* Application List (Mobile) */}
-      <BentoCard className="p-5 rounded-[2rem]">
+      <BentoCard className="rounded-[2rem] p-5">
          <p className="text-lg font-black text-primary mb-4">Live roles</p>
          <div className="space-y-4">
             {recentJobs.length ? recentJobs.slice(0, 3).map((job) => (
-              <div key={job.id} className="rounded-2xl border border-border/40 bg-[#FAFBFD] p-4">
+              <div key={job.id} className="rounded-[1.4rem] border border-border/40 bg-white p-4 shadow-sm transition-all hover:-translate-y-0.5 hover:shadow-md">
                 <div className="flex items-center justify-between mb-2">
                    <Badge variant="outline" className={cn("rounded-full px-2 py-0.5 text-[0.55rem] font-black uppercase border-none", JOB_STATUS_CONFIG[job.status || "saved"].chipClassName)}>{JOB_STATUS_CONFIG[job.status || "saved"].label}</Badge>
                    <span className="text-[0.6rem] font-bold text-muted-foreground/50">{formatTime(job.updatedAt)}</span>
@@ -770,19 +996,29 @@ function MobileDashboardExperience({
                 <p className="text-xs font-bold text-muted-foreground/70">{job.company}</p>
               </div>
             )) : <p className="text-sm text-center py-4 text-muted-foreground italic">No jobs tracked yet.</p>}
-            <Button variant="secondary" asChild className="w-full h-10 rounded-xl bg-primary/5 text-primary text-xs font-black uppercase tracking-widest border-none hover:bg-primary/10 shadow-none"><Link href="/tracker">Open Full Tracker</Link></Button>
+            <Button
+              variant="secondary"
+              asChild
+              className="h-11 w-full rounded-2xl border border-primary/10 bg-gradient-to-r from-primary/10 via-primary/5 to-orange-400/10 px-0 text-[0.72rem] font-black uppercase tracking-[0.16em] text-primary shadow-none hover:from-primary/15 hover:to-orange-400/15"
+            >
+              <Link href="/tracker" className="flex w-full items-center justify-center gap-2 px-4">
+                <ClipboardList className="h-4 w-4" />
+                Open Full Tracker
+                <ArrowUpRight className="h-4 w-4" />
+              </Link>
+            </Button>
          </div>
       </BentoCard>
 
       {/* Momentum (Mobile) */}
-      <BentoCard className="p-5 rounded-[2rem]">
+      <BentoCard className="rounded-[2rem] p-5">
         <div className="flex items-center justify-between gap-4 mb-6">
            <p className="text-lg font-black text-primary">Momentum</p>
            <span className="text-2xl font-black text-primary tracking-tighter">{readinessScore}%</span>
         </div>
         <div className="space-y-3">
           {checklist.map((item) => (
-            <div key={item.label} className="flex items-center justify-between rounded-xl bg-muted/20 px-4 py-3">
+            <div key={item.label} className="flex items-center justify-between rounded-[1.15rem] border border-border/40 bg-white/80 px-4 py-3 shadow-sm">
                <div className="flex items-center gap-3">
                   <div className={cn("h-6 w-6 rounded-full flex items-center justify-center", item.done ? "bg-emerald-500 text-white" : "bg-muted text-muted-foreground/30")}>
                     {item.done ? <CheckCircle2 className="h-3 w-3" /> : <Clock3 className="h-3 w-3" />}

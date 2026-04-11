@@ -38,13 +38,12 @@ import { Input } from "@/components/ui/input"
 import { Badge } from "@/components/ui/badge"
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
 import { getTemplateConfig } from "@/lib/templates-config"
+import { getRolePlaybook } from "@/lib/career-role-playbooks"
 import { EditorDesignStudio } from "./editor-design-studio"
-import { ResumeTemplate } from "./resume-template"
+import { PrintPreviewContainer } from "./print-preview-container"
 import { PhotoUpload } from "./PhotoUpload"
 import { RichTextField } from "./rich-text-field"
 import { cn } from "@/lib/utils"
-import { BrandWordmark } from "@/components/brand/brand-wordmark"
-
 interface MobileEditorProps {
   editor: any
 }
@@ -66,6 +65,9 @@ export function MobileEditor({ editor }: MobileEditorProps) {
     isEnhancing,
     isSuggestingRoleBullets,
     runSuggestRoleBullets,
+    roleBulletSuggestions,
+    applyRoleBulletSuggestions,
+    dismissRoleBulletSuggestions,
     isGeneratingSummarySuggestions,
     summarySuggestions,
     runSummarySuggestions,
@@ -73,6 +75,7 @@ export function MobileEditor({ editor }: MobileEditorProps) {
     skillSuggestions,
     runSkillSuggestions,
     setSkillSuggestions,
+    jobDescription,
     applyTemplate,
     updateStyle,
     resetTemplateStyles,
@@ -94,6 +97,34 @@ export function MobileEditor({ editor }: MobileEditorProps) {
 
   const [chatInput, setChatInput] = useState("")
   const [isTyping, setIsTyping] = useState(false)
+  const currentExperienceTitle =
+    roleBulletSuggestions?.title || resume?.content?.experience?.[0]?.title || resume?.content?.personal?.title || ""
+  const experiencePlaybook = getRolePlaybook(currentExperienceTitle, jobDescription)
+  const sectionChipClass =
+    "whitespace-nowrap h-9 px-4 rounded-full text-[11px] font-bold uppercase tracking-wider transition-all shadow-sm border"
+  const sectionActionButtonClass =
+    "rounded-xl h-9 px-3.5 text-[11px] font-bold uppercase tracking-wider shadow-sm transition-all"
+  const sectionIconButtonClass =
+    "h-8 w-8 rounded-xl border border-slate-100 bg-white text-slate-400 shadow-sm transition-all hover:border-slate-200 hover:bg-slate-50 hover:text-slate-700"
+  const handleBack = () => {
+    if (mobileView === "preview") {
+      setMobileView("edit")
+      return
+    }
+
+    if (activeTab !== "content") {
+      setActiveTab("content")
+      setActiveSection("personal")
+      return
+    }
+
+    if (activeSection !== "personal") {
+      setActiveSection("personal")
+      return
+    }
+
+    window.location.href = "/dashboard"
+  }
 
   const handleSendMessage = async () => {
     if (!chatInput.trim() || isTyping) return
@@ -164,67 +195,74 @@ export function MobileEditor({ editor }: MobileEditorProps) {
   return (
     <div className="min-h-screen bg-slate-50 flex flex-col pb-24">
       {/* Dynamic Mobile Header */}
-      <header className="sticky top-0 z-40 bg-white/80 backdrop-blur-md border-b px-5 py-4 flex items-center justify-between shadow-sm">
-        <div className="flex items-center gap-3">
-          <Link href="/dashboard" className="p-2 -ml-2 text-slate-400">
+      <header className="sticky top-0 z-40 border-b bg-white/88 px-4 py-3 shadow-sm backdrop-blur-md">
+        <div className="grid grid-cols-[auto,minmax(0,1fr),auto] items-start gap-3">
+          <button type="button" onClick={handleBack} className="mt-0.5 rounded-full p-2 -ml-1 text-slate-400 transition-colors hover:bg-slate-100 hover:text-slate-700">
             <ArrowLeft className="h-5 w-5" />
-          </Link>
-          <BrandWordmark className="scale-[0.5] origin-left -mr-28" />
-          <div className="min-w-0 ml-1 flex-1">
-             {isEditingName ? (
-               <div className="flex items-center gap-1">
-                 <Input 
-                   value={tempName}
-                   onChange={(e) => setTempName(e.target.value)}
-                   onKeyDown={(e) => {
-                     if (e.key === "Enter") {
-                       handleUpdate("name", tempName)
-                       setIsEditingName(false)
-                     }
-                   }}
-                   autoFocus
-                   className="h-8 py-0 px-2 text-[13px] font-bold text-slate-900 bg-white border-slate-200 focus-visible:ring-indigo-100 min-w-[140px]"
-                 />
-                 <Button 
-                   size="icon" 
-                   variant="ghost" 
-                   className="h-8 w-8 text-primary"
-                   onClick={() => {
-                     handleUpdate("name", tempName)
-                     setIsEditingName(false)
-                   }}
-                 >
-                   <Check className="h-4 w-4" />
-                 </Button>
-               </div>
-             ) : (
-               <div 
-                 className="group flex flex-col cursor-pointer"
-                 onClick={() => {
-                   setTempName(resume.name)
-                   setIsEditingName(true)
-                 }}
-               >
-                 <div className="flex items-center gap-1.5">
-                   <h1 className="text-[13px] font-black truncate text-slate-900 tracking-tight">{resume.name}</h1>
-                   <Pencil className="h-2.5 w-2.5 text-slate-300" />
-                 </div>
-                 <p className="text-[10px] font-bold uppercase tracking-widest text-slate-400">
-                   {saveStatus === "saving" ? "Syncing..." : `${activeTemplate.name} active`}
-                 </p>
-               </div>
-             )}
+          </button>
+
+          <div className="min-w-0 pt-0.5">
+            {isEditingName ? (
+              <div className="flex items-center gap-2">
+                <Input 
+                  value={tempName}
+                  onChange={(e) => setTempName(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter") {
+                      handleUpdate("name", tempName)
+                      setIsEditingName(false)
+                    }
+                  }}
+                  autoFocus
+                  className="h-9 min-w-0 flex-1 rounded-xl border-slate-200 bg-white px-3 text-[13px] font-bold text-slate-900 focus-visible:ring-indigo-100"
+                />
+                <Button 
+                  size="icon" 
+                  variant="ghost" 
+                  className="h-9 w-9 shrink-0 rounded-xl text-primary"
+                  onClick={() => {
+                    handleUpdate("name", tempName)
+                    setIsEditingName(false)
+                  }}
+                >
+                  <Check className="h-4 w-4" />
+                </Button>
+              </div>
+            ) : (
+              <button
+                type="button"
+                className="group flex w-full flex-col items-start rounded-2xl px-1 py-0.5 text-left"
+                onClick={() => {
+                  setTempName(resume.name)
+                  setIsEditingName(true)
+                }}
+              >
+                <div className="flex w-full items-center gap-2">
+                  <h1 className="truncate text-[15px] font-black tracking-tight text-slate-900">
+                    {resume.name}
+                  </h1>
+                  <Pencil className="h-3 w-3 shrink-0 text-slate-300 transition-colors group-hover:text-slate-500" />
+                </div>
+
+                <div className="mt-1 flex w-full items-center gap-2 text-[10px] font-bold uppercase tracking-[0.18em] text-slate-400">
+                  <span className="truncate">
+                    {saveStatus === "saving" ? "Syncing" : activeTemplate.name}
+                  </span>
+                </div>
+              </button>
+            )}
           </div>
+
+          <Button 
+            size="sm" 
+            onClick={handleDownloadPdf} 
+            disabled={isExporting}
+            className="h-10 rounded-2xl px-3.5 text-[11px] font-black shadow-lg shadow-primary/15"
+          >
+            {isExporting ? <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" /> : <FileDown className="mr-1.5 h-3.5 w-3.5" />}
+            PDF
+          </Button>
         </div>
-        <Button 
-          size="sm" 
-          onClick={handleDownloadPdf} 
-          disabled={isExporting}
-          className="rounded-xl h-9 px-4 bg-primary text-white font-bold gap-2 text-xs shadow-lg shadow-primary/15"
-        >
-          {isExporting ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <FileDown className="h-3.5 w-3.5" />}
-          PDF
-        </Button>
       </header>
 
       {mobileView === "edit" ? (
@@ -254,10 +292,10 @@ export function MobileEditor({ editor }: MobileEditorProps) {
                       key={section.id}
                       onClick={() => setActiveSection(section.id)}
                       className={cn(
-                        "whitespace-nowrap h-9 px-4 rounded-full text-[11px] font-bold uppercase tracking-wider transition-all shadow-sm",
-                        activeSection === section.id 
-                          ? "bg-slate-900 text-white" 
-                          : "bg-white text-slate-400 border border-slate-200"
+                        sectionChipClass,
+                        activeSection === section.id
+                          ? "bg-slate-900 text-white border-slate-900 shadow-md shadow-slate-200/60"
+                          : "bg-white text-slate-400 border-slate-200 hover:border-slate-300 hover:text-slate-700"
                       )}
                     >
                       {section.label}
@@ -339,7 +377,7 @@ export function MobileEditor({ editor }: MobileEditorProps) {
                                 size="sm" 
                                 disabled={isGeneratingSummarySuggestions}
                                 onClick={runSummarySuggestions}
-                                className="h-8 text-primary font-bold text-[10px] gap-1.5 uppercase hover:bg-primary/5"
+                                className={cn(sectionActionButtonClass, "text-primary gap-1.5 bg-primary/5 hover:bg-primary/10")}
                               >
                                 {isGeneratingSummarySuggestions ? <Loader2 className="h-3 w-3 animate-spin" /> : <Target className="h-3 w-3" />}
                                 Options
@@ -378,7 +416,7 @@ export function MobileEditor({ editor }: MobileEditorProps) {
                             size="sm" 
                             disabled={isEnhancing}
                             onClick={() => runEnhanceContent("summary")}
-                            className="h-8 text-primary font-bold text-[10px] gap-1.5 uppercase hover:bg-primary/5"
+                            className={cn(sectionActionButtonClass, "text-primary gap-1.5 bg-primary/5 hover:bg-primary/10")}
                           >
                             {isEnhancing ? <Loader2 className="h-3 w-3 animate-spin" /> : <Sparkles className="h-3 w-3" />}
                             Enhance
@@ -401,7 +439,7 @@ export function MobileEditor({ editor }: MobileEditorProps) {
                           <Button 
                             variant="secondary" 
                             size="sm" 
-                            className="rounded-xl h-9 w-9 p-0"
+                            className={cn(sectionIconButtonClass, "p-0 bg-slate-50")}
                             onClick={() => {
                                 const newExp = [...(resume.content.experience || []), { id: Date.now(), title: "", company: "", period: "", description: "" }]
                                 handleUpdate("content.experience", newExp)
@@ -410,14 +448,110 @@ export function MobileEditor({ editor }: MobileEditorProps) {
                             <Plus className="h-4 w-4" />
                           </Button>
                        </div>
+                       {currentExperienceTitle && (
+                         <div className="rounded-2xl border border-slate-200 bg-slate-50/80 p-4">
+                           <div className="flex items-start justify-between gap-3">
+                             <div>
+                               <p className="text-[10px] font-black uppercase tracking-[0.18em] text-slate-400">Role intelligence</p>
+                               <h4 className="mt-1 text-sm font-bold text-slate-900">{experiencePlaybook.headline}</h4>
+                               <p className="mt-1 text-[11px] leading-relaxed text-slate-600">
+                                 Detected from <span className="font-semibold text-slate-900">{currentExperienceTitle}</span>
+                               </p>
+                             </div>
+                             <Badge className="rounded-full bg-white px-2.5 py-1 text-[10px] font-bold uppercase tracking-[0.14em] text-slate-600 border border-slate-200">
+                               {experiencePlaybook.family}
+                             </Badge>
+                           </div>
+                           <div className="mt-3 flex flex-wrap gap-2">
+                             {experiencePlaybook.keywords.slice(0, 6).map((keyword) => (
+                               <span
+                                 key={keyword}
+                                 className="rounded-full bg-white px-2.5 py-1 text-[10px] font-semibold text-slate-500 border border-slate-200"
+                               >
+                                 {keyword}
+                               </span>
+                             ))}
+                           </div>
+                           <p className="mt-3 text-[11px] leading-relaxed text-slate-500">
+                             Bullet shape: {experiencePlaybook.bulletPatterns[0]}
+                           </p>
+                         </div>
+                       )}
+                       {roleBulletSuggestions && (
+                         <div className="rounded-2xl border border-indigo-100 bg-indigo-50/70 p-4 shadow-sm">
+                           <div className="flex items-start justify-between gap-3">
+                             <div>
+                               <p className="text-[10px] font-black uppercase tracking-[0.18em] text-indigo-500">AI bullet draft</p>
+                               <h4 className="mt-1 text-sm font-bold text-slate-900">{roleBulletSuggestions.title}</h4>
+                               <p className="mt-1 text-[11px] leading-relaxed text-slate-600">
+                                 Review the draft bullets before applying them to the experience block.
+                               </p>
+                             </div>
+                             <Button
+                               variant="ghost"
+                               size="icon"
+                               className={cn(sectionIconButtonClass, "shrink-0")}
+                               onClick={dismissRoleBulletSuggestions}
+                             >
+                               <Trash2 className="h-4 w-4" />
+                             </Button>
+                           </div>
+                           <div className="mt-3 space-y-2">
+                             {roleBulletSuggestions.bullets.map((bullet: string, bulletIndex: number) => (
+                               <div key={bulletIndex} className="rounded-xl border border-white bg-white px-3 py-2 text-[11px] leading-relaxed text-slate-700 shadow-sm">
+                                 <span className="mr-2 font-black text-indigo-500">•</span>
+                                 {bullet}
+                               </div>
+                             ))}
+                           </div>
+                           <div className="mt-4 flex items-center gap-2">
+                             <Button
+                               className={cn(sectionActionButtonClass, "flex-1 bg-gradient-to-r from-indigo-500 via-blue-500 to-orange-400 px-4 text-white")}
+                               onClick={applyRoleBulletSuggestions}
+                             >
+                               Apply bullets
+                             </Button>
+                             <Button
+                               variant="outline"
+                               className={cn(sectionActionButtonClass, "border border-slate-200 bg-white px-4 text-slate-600")}
+                               onClick={() => runSuggestRoleBullets(roleBulletSuggestions.index)}
+                             >
+                               Regenerate
+                             </Button>
+                           </div>
+                         </div>
+                       )}
                        {resume.content.experience?.map((exp: any, idx: number) => (
-                         <Card key={exp.id || idx} className="p-5 border-none shadow-sm space-y-4 relative overflow-hidden bg-white">
-                            <div className="absolute top-2 right-2 flex items-center gap-1 bg-white/80 backdrop-blur-sm rounded-lg p-1">
-                               {idx > 0 && (
+                         <Card key={exp.id || idx} className="p-5 border-none shadow-sm space-y-4 overflow-hidden bg-white">
+                            <div className="flex items-start justify-between gap-2">
+                              <div className="min-w-0 space-y-2 flex-1">
+                                <Input 
+                                  value={exp.company} 
+                                  onChange={(e) => {
+                                    const next = [...resume.content.experience]
+                                    next[idx] = { ...next[idx], company: e.target.value }
+                                    handleUpdate("content.experience", next)
+                                  }}
+                                  className="h-10 rounded-xl border-slate-100 bg-slate-50 text-sm font-semibold text-slate-900"
+                                  placeholder="Company Name"
+                                />
+                                <Input 
+                                  value={exp.title} 
+                                  onChange={(e) => {
+                                    const next = [...resume.content.experience]
+                                    next[idx] = { ...next[idx], title: e.target.value }
+                                    handleUpdate("content.experience", next)
+                                  }}
+                                  placeholder="Job Title"
+                                  className="h-10 rounded-xl border-slate-100 bg-slate-50 text-sm font-bold text-slate-900"
+                                />
+                              </div>
+                              <div className="flex shrink-0 flex-col gap-1 rounded-xl bg-slate-50 p-1">
+                                {idx > 0 && (
                                   <Button 
                                     variant="ghost" 
                                     size="icon" 
-                                    className="h-8 w-8 text-slate-300 hover:text-slate-600"
+                                    className={sectionIconButtonClass}
                                     onClick={() => {
                                       const next = [...resume.content.experience]
                                       const temp = next[idx]
@@ -428,12 +562,12 @@ export function MobileEditor({ editor }: MobileEditorProps) {
                                   >
                                     <ChevronUp className="h-4 w-4" />
                                   </Button>
-                               )}
-                               {idx < resume.content.experience.length - 1 && (
+                                )}
+                                {idx < resume.content.experience.length - 1 && (
                                   <Button 
                                     variant="ghost" 
                                     size="icon" 
-                                    className="h-8 w-8 text-slate-300 hover:text-slate-600"
+                                    className={sectionIconButtonClass}
                                     onClick={() => {
                                       const next = [...resume.content.experience]
                                       const temp = next[idx]
@@ -444,14 +578,14 @@ export function MobileEditor({ editor }: MobileEditorProps) {
                                   >
                                     <ChevronDown className="h-4 w-4" />
                                   </Button>
-                               )}
-                               <Button 
+                                )}
+                                <Button 
                                   variant="ghost" 
                                   size="icon" 
                                   disabled={isEnhancing}
                                   onClick={() => runEnhanceContent("experience", idx)}
-                                  className="h-8 w-8 text-primary/40 hover:text-primary transition-colors"
-                                  title="Enhance existing content"
+                                  className={cn(sectionIconButtonClass, "text-primary/40 hover:text-primary")}
+                                  title="Rewrite this role as stronger bullet points"
                                 >
                                   <Sparkles className="h-3.5 w-3.5" />
                                 </Button>
@@ -460,7 +594,7 @@ export function MobileEditor({ editor }: MobileEditorProps) {
                                   size="icon"
                                   disabled={isSuggestingRoleBullets === idx || !exp.title}
                                   onClick={() => runSuggestRoleBullets(idx)}
-                                  className="h-8 w-8 text-blue-400 hover:text-blue-500 transition-colors"
+                                  className={cn(sectionIconButtonClass, "text-blue-400 hover:text-blue-500")}
                                   title="Suggest bullet points based on Role Title"
                                 >
                                   {isSuggestingRoleBullets === idx ? <Loader2 className="h-3 w-3 animate-spin" /> : <ListPlus className="h-3.5 w-3.5" />}
@@ -468,7 +602,7 @@ export function MobileEditor({ editor }: MobileEditorProps) {
                                 <Button 
                                   variant="ghost" 
                                   size="icon" 
-                                  className="h-8 w-8 text-slate-200"
+                                  className={cn(sectionIconButtonClass, "text-slate-300 hover:text-red-500")}
                                   onClick={() => {
                                      const next = resume.content.experience.filter((_: any, i: number) => i !== idx)
                                      handleUpdate("content.experience", next)
@@ -476,17 +610,8 @@ export function MobileEditor({ editor }: MobileEditorProps) {
                                 >
                                   <Trash2 className="h-3.5 w-3.5" />
                                 </Button>
+                              </div>
                             </div>
-                            <Input 
-                              value={exp.title} 
-                              onChange={(e) => {
-                                const next = [...resume.content.experience]
-                                next[idx] = { ...next[idx], title: e.target.value }
-                                handleUpdate("content.experience", next)
-                              }}
-                              placeholder="Job Title"
-                              className="font-bold border-none bg-slate-50 h-11 pl-3 pr-24 text-sm"
-                            />
                             <RichTextField
                               value={exp.description}
                               onChange={(val) => {
@@ -508,7 +633,7 @@ export function MobileEditor({ editor }: MobileEditorProps) {
                          <Button 
                            variant="secondary" 
                            size="sm" 
-                           className="rounded-xl h-9 w-9 p-0"
+                           className={cn(sectionIconButtonClass, "p-0 bg-slate-50")}
                            onClick={() => {
                                const next = [...(resume.content.education || []), { id: Date.now(), institution: "", degree: "", period: "", description: "" }]
                                handleUpdate("content.education", next)
@@ -518,72 +643,76 @@ export function MobileEditor({ editor }: MobileEditorProps) {
                          </Button>
                       </div>
                       {resume.content.education?.map((edu: any, idx: number) => (
-                        <Card key={edu.id || idx} className="p-5 border-none shadow-sm space-y-4 relative overflow-hidden bg-white">
-                           <div className="absolute top-2 right-2 flex items-center gap-1 bg-white/80 backdrop-blur-sm rounded-lg p-1">
+                        <Card key={edu.id || idx} className="p-5 border-none shadow-sm space-y-4 overflow-hidden bg-white">
+                          <div className="flex items-start justify-between gap-2">
+                            <div className="min-w-0 space-y-2 flex-1">
+                              <Input 
+                                value={edu.institution} 
+                                onChange={(e) => {
+                                  const next = [...resume.content.education]
+                                  next[idx] = { ...next[idx], institution: e.target.value }
+                                  handleUpdate("content.education", next)
+                                }}
+                                placeholder="Institution Name"
+                                className="h-10 rounded-xl border-slate-100 bg-slate-50 px-3 text-sm font-semibold text-slate-900"
+                              />
+                              <Input 
+                                value={edu.degree} 
+                                onChange={(e) => {
+                                  const next = [...resume.content.education]
+                                  next[idx] = { ...next[idx], degree: e.target.value }
+                                  handleUpdate("content.education", next)
+                                }}
+                                placeholder="Degree"
+                                className="h-10 rounded-xl border-slate-100 bg-slate-50 px-3 text-xs font-semibold text-slate-700"
+                              />
+                            </div>
+                            <div className="flex shrink-0 flex-col gap-1 rounded-xl bg-slate-50 p-1">
                               {idx > 0 && (
-                                 <Button 
-                                   variant="ghost" 
-                                   size="icon" 
-                                   className="h-8 w-8 text-slate-300 hover:text-slate-600"
-                                   onClick={() => {
-                                     const next = [...resume.content.education]
-                                     const temp = next[idx]
-                                     next[idx] = next[idx - 1]
-                                     next[idx - 1] = temp
-                                     handleUpdate("content.education", next)
-                                   }}
-                                 >
-                                   <ChevronUp className="h-4 w-4" />
-                                 </Button>
+                                <Button 
+                                  variant="ghost" 
+                                  size="icon" 
+                                  className={sectionIconButtonClass}
+                                  onClick={() => {
+                                    const next = [...resume.content.education]
+                                    const temp = next[idx]
+                                    next[idx] = next[idx - 1]
+                                    next[idx - 1] = temp
+                                    handleUpdate("content.education", next)
+                                  }}
+                                >
+                                  <ChevronUp className="h-4 w-4" />
+                                </Button>
                               )}
                               {idx < resume.content.education.length - 1 && (
-                                 <Button 
-                                   variant="ghost" 
-                                   size="icon" 
-                                   className="h-8 w-8 text-slate-300 hover:text-slate-600"
-                                   onClick={() => {
-                                     const next = [...resume.content.education]
-                                     const temp = next[idx]
-                                     next[idx] = next[idx + 1]
-                                     next[idx + 1] = temp
-                                     handleUpdate("content.education", next)
-                                   }}
-                                 >
-                                   <ChevronDown className="h-4 w-4" />
-                                 </Button>
+                                <Button 
+                                  variant="ghost" 
+                                  size="icon" 
+                                  className={sectionIconButtonClass}
+                                  onClick={() => {
+                                    const next = [...resume.content.education]
+                                    const temp = next[idx]
+                                    next[idx] = next[idx + 1]
+                                    next[idx + 1] = temp
+                                    handleUpdate("content.education", next)
+                                  }}
+                                >
+                                  <ChevronDown className="h-4 w-4" />
+                                </Button>
                               )}
                               <Button 
-                                 variant="ghost" 
-                                 size="icon" 
-                                 className="h-8 w-8 text-slate-200"
-                                 onClick={() => {
-                                    const next = resume.content.education.filter((_: any, i: number) => i !== idx)
-                                    handleUpdate("content.education", next)
-                                 }}
-                               >
-                                 <Trash2 className="h-3.5 w-3.5" />
-                               </Button>
-                           </div>
-                           <Input 
-                             value={edu.institution} 
-                             onChange={(e) => {
-                               const next = [...resume.content.education]
-                               next[idx] = { ...next[idx], institution: e.target.value }
-                               handleUpdate("content.education", next)
-                             }}
-                             placeholder="Institution Name"
-                             className="font-bold border-none bg-slate-50 h-11 px-3 text-sm"
-                           />
-                           <Input 
-                             value={edu.degree} 
-                             onChange={(e) => {
-                               const next = [...resume.content.education]
-                               next[idx] = { ...next[idx], degree: e.target.value }
-                               handleUpdate("content.education", next)
-                             }}
-                             placeholder="Degree"
-                             className="border-none bg-slate-50 h-10 px-3 text-xs"
-                           />
+                                variant="ghost" 
+                                size="icon" 
+                                className="h-8 w-8 text-slate-200"
+                                onClick={() => {
+                                  const next = resume.content.education.filter((_: any, i: number) => i !== idx)
+                                  handleUpdate("content.education", next)
+                                }}
+                              >
+                                <Trash2 className="h-3.5 w-3.5" />
+                              </Button>
+                            </div>
+                          </div>
                         </Card>
                       ))}
                     </div>
@@ -598,7 +727,7 @@ export function MobileEditor({ editor }: MobileEditorProps) {
                           size="sm" 
                           disabled={isSuggestingSkills}
                           onClick={runSkillSuggestions}
-                          className="h-8 text-primary font-bold text-[10px] gap-1.5 uppercase hover:bg-primary/5"
+                          className={cn(sectionActionButtonClass, "text-primary gap-1.5 bg-primary/5 hover:bg-primary/10")}
                         >
                           {isSuggestingSkills ? <Loader2 className="h-3 w-3 animate-spin" /> : <Sparkles className="h-3 w-3" />}
                           AI Suggestions
@@ -669,7 +798,7 @@ export function MobileEditor({ editor }: MobileEditorProps) {
                     <div className="space-y-4">
                       <div className="flex items-center justify-between">
                          <p className="text-[10px] font-black tracking-[0.15em] uppercase text-slate-400">Creative Projects</p>
-                         <Button variant="secondary" size="sm" className="rounded-xl h-9 w-9 p-0"
+                         <Button variant="secondary" size="sm" className={cn(sectionIconButtonClass, "p-0 bg-slate-50")}
                            onClick={() => handleUpdate("content.projects", [...(resume.content.projects || []), { id: Date.now(), name: "", url: "", description: "" }])}>
                            <Plus className="h-4 w-4" />
                          </Button>
@@ -704,14 +833,14 @@ export function MobileEditor({ editor }: MobileEditorProps) {
                     <div className="space-y-4">
                       <div className="flex items-center justify-between">
                          <p className="text-[10px] font-black tracking-[0.15em] uppercase text-slate-400">Accreditations</p>
-                         <Button variant="secondary" size="sm" className="rounded-xl h-9 w-9 p-0"
+                         <Button variant="secondary" size="sm" className={cn(sectionIconButtonClass, "p-0 bg-slate-50")}
                            onClick={() => handleUpdate("content.certifications", [...(resume.content.certifications || []), { name: "", date: "" }])}>
                            <Plus className="h-4 w-4" />
                          </Button>
                       </div>
                       <div className="space-y-2">
                         {resume.content.certifications?.map((cert: any, i: number) => (
-                          <div key={i} className="flex gap-2 bg-white p-2 rounded-xl shadow-sm border border-slate-50">
+                          <div key={i} className="flex gap-2 rounded-xl border border-slate-50 bg-white p-3 shadow-sm">
                              <Input 
                               value={cert.name}
                               onChange={(e) => {
@@ -719,7 +848,8 @@ export function MobileEditor({ editor }: MobileEditorProps) {
                                 next[i] = { ...cert, name: e.target.value }
                                 handleUpdate("content.certifications", next)
                               }}
-                              className="flex-1 border-none bg-slate-50 h-10 text-[10px] font-bold"
+                              className="flex-1 border-slate-100 bg-slate-50 h-10 text-[10px] font-semibold"
+                              placeholder="Certification Name"
                             />
                             <Button variant="ghost" size="icon" onClick={() => {
                                const next = resume.content.certifications.filter((_: any, idx: number) => idx !== i)
@@ -875,17 +1005,23 @@ export function MobileEditor({ editor }: MobileEditorProps) {
         </main>
       ) : (
         /* Mobile Preview Mode (Full Screen) */
-        <main className="flex-1 bg-slate-900 min-h-[calc(100vh-140px)] flex flex-col items-center justify-center p-4 overflow-hidden">
-           <div className="w-full h-full max-h-[80vh] origin-center transition-transform duration-500 scale-[0.85] flex items-center justify-center">
-              <div className="bg-white shadow-[0_40px_80px_rgba(0,0,0,0.6)] rounded-[2px] w-full max-w-[340px] aspect-[1/1.41] overflow-hidden">
-                <ResumeTemplate data={resume} isPrint={false} />
-              </div>
-           </div>
-           <div className="mt-8 text-white/40 text-[10px] font-bold uppercase tracking-[0.3em] flex items-center gap-2">
+        <main className="flex-1 min-h-[calc(100vh-140px)] bg-slate-900 p-4 overflow-hidden">
+          <div className="flex h-full min-h-0 flex-col gap-4">
+            <div className="shrink-0 text-center text-white/40 text-[10px] font-bold uppercase tracking-[0.3em] flex items-center justify-center gap-2">
               <div className="h-1 w-8 bg-white/20 rounded-full" />
               {activeTemplate.name}
               <div className="h-1 w-8 bg-white/20 rounded-full" />
-           </div>
+            </div>
+
+            <div className="min-h-0 flex-1 overflow-hidden rounded-[2rem] border border-white/5 shadow-[0_30px_80px_rgba(0,0,0,0.35)]">
+              <PrintPreviewContainer
+                resume={resume}
+                compact={true}
+                defaultFitMode="page"
+                className="h-full"
+              />
+            </div>
+          </div>
         </main>
       )}
 
