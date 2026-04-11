@@ -1,10 +1,10 @@
 'use client';
 
 import { useEffect } from "react";
-import { doc } from "firebase/firestore";
+import { collection, doc, limit, query } from "firebase/firestore";
 import { Loader2 } from "lucide-react";
 import { usePathname, useRouter } from "next/navigation";
-import { useDoc, useFirestore, useMemoFirebase, useUser } from "@/firebase";
+import { useCollection, useDoc, useFirestore, useMemoFirebase, useUser } from "@/firebase";
 import { AppSidebar } from "@/components/dashboard/app-sidebar";
 import { HistoryButtons } from "@/components/navigation/history-buttons";
 import { MobileDashboardShell } from "@/components/mobile/mobile-dashboard-shell";
@@ -14,6 +14,7 @@ import { Button } from "@/components/ui/button";
 import { SidebarInset, SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import { Toaster } from "@/components/ui/toaster";
 import { useIsMobile } from "@/hooks/use-mobile";
+import { getPostAuthDestination } from "@/lib/user-profile";
 
 export default function DashboardLayoutClient({
   children,
@@ -35,18 +36,47 @@ export default function DashboardLayoutClient({
     suppressGlobalError: !!impersonatedUid 
   });
 
-  useEffect(() => {
-    if (!isUserLoading && !user) {
-      router.push("/login");
-    }
-  }, [user, isUserLoading, router]);
+  const resumesQuery = useMemoFirebase(() => {
+    if (!db || !uid) return null;
+    return query(collection(db, "users", uid, "resumes"), limit(1));
+  }, [db, uid]);
+
+  const { data: resumes, isLoading: isResumesLoading } = useCollection(resumesQuery);
 
   useEffect(() => {
-    const isActuallyIncomplete = profile && profile.onboardingComplete === false;
-    if (!impersonatedUid && !isProfileLoading && isActuallyIncomplete && !pathname.startsWith("/onboarding")) {
-      router.push("/onboarding");
+    if (impersonatedUid || isProfileLoading || isResumesLoading || isUserLoading) {
+      return;
     }
-  }, [profile, isProfileLoading, pathname, router, impersonatedUid]);
+
+    if (!user) {
+      router.replace("/login");
+      return;
+    }
+
+    const targetPath = getPostAuthDestination(profile, Boolean(resumes?.length));
+    const isCurrentlyOnboarding = pathname.startsWith("/onboarding");
+
+    // Rule 1: Should be in onboarding but isn't
+    if (targetPath === "/onboarding" && !isCurrentlyOnboarding) {
+      router.replace("/onboarding");
+      return;
+    }
+
+    // Rule 2: Should NOT be in onboarding but is
+    // This handles returning members landing on /onboarding
+    if (targetPath === "/dashboard" && isCurrentlyOnboarding) {
+      // Small exception: if they are strictly in /onboarding/upload or /onboarding/review, 
+      // they might have a resume but still want to finish the flow.
+      // But for a general "login then flash", we want to send them to dashboard if they are returning.
+      router.replace("/dashboard");
+      return;
+    }
+
+    // Rule 3: authoritative completion check
+    if (isCurrentlyOnboarding && profile?.onboardingComplete) {
+      router.replace("/dashboard");
+    }
+  }, [profile, resumes, isProfileLoading, isResumesLoading, isUserLoading, user, pathname, router, impersonatedUid]);
 
   useEffect(() => {
     if (impersonatedUid && profileError) {
@@ -55,7 +85,7 @@ export default function DashboardLayoutClient({
     }
   }, [impersonatedUid, profileError, clearImpersonation]);
 
-  if (isUserLoading) {
+  if (isUserLoading || isProfileLoading || isResumesLoading) {
     return (
       <div className="flex min-h-screen items-center justify-center">
         <div className="surface-card flex flex-col items-center gap-4 px-8 py-10 text-center">

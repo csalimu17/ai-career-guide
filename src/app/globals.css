@@ -157,6 +157,8 @@
   .logo-gradient {
     @apply bg-clip-text text-transparent;
     background-image: linear-gradient(to right, #7c3aed 0%, #2563eb 50%, #f97316 100%);
+    padding-right: 0.05em;
+    margin-right: -0.05em;
   }
 
   .headline-gradient-vivid {
@@ -184,6 +186,19 @@
   .eyebrow-chip {
     @apply inline-flex items-center gap-2 rounded-full border border-primary/10 bg-primary/5 px-3 py-1.5 text-[0.68rem] font-semibold uppercase tracking-[0.18em] text-primary;
   }
+
+  .bg-dot-grid {
+    background-image: radial-gradient(rgba(0, 0, 0, 0.05) 1px, transparent 1px);
+    background-size: 20px 20px;
+  }
+
+  .dark .bg-dot-grid {
+    background-image: radial-gradient(rgba(255, 255, 255, 0.05) 1px, transparent 1px);
+  }
+
+  .border-glow-primary {
+    @apply border border-primary/20 shadow-[0_0_15px_-3px_rgba(124,58,237,0.3)];
+  }
 }
 
 @layer utilities {
@@ -206,6 +221,36 @@
 
 .resume-paper-shadow {
   box-shadow: 0 28px 80px -36px rgba(15, 23, 42, 0.28);
+}
+
+.resume-section-heading {
+  break-after: avoid;
+  page-break-after: avoid;
+}
+
+.resume-entry {
+  break-inside: auto;
+  page-break-inside: auto;
+  orphans: 2;
+  widows: 2;
+}
+
+.resume-entry-header {
+  break-after: avoid;
+  page-break-after: avoid;
+}
+
+.block-layout {
+  display: block !important;
+}
+
+.block-layout > * {
+  display: block !important;
+  margin-bottom: var(--resume-section-gap, 28px);
+}
+
+.block-layout > *:last-child {
+  margin-bottom: 0 !important;
 }
 
 @media print {

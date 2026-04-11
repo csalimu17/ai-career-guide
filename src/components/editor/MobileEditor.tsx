@@ -23,7 +23,10 @@ import {
   SendHorizontal,
   ChevronUp,
   ChevronDown,
-  ListPlus
+  ListPlus,
+  Check,
+  FileText,
+  Upload
 } from "lucide-react"
 import Link from "next/link"
 import { AgentRole, CAREER_AGENTS } from "@/services/CareerAgents"
@@ -37,8 +40,10 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { getTemplateConfig } from "@/lib/templates-config"
 import { EditorDesignStudio } from "./editor-design-studio"
 import { ResumeTemplate } from "./resume-template"
+import { PhotoUpload } from "./PhotoUpload"
 import { RichTextField } from "./rich-text-field"
 import { cn } from "@/lib/utils"
+import { BrandWordmark } from "@/components/brand/brand-wordmark"
 
 interface MobileEditorProps {
   editor: any
@@ -48,6 +53,8 @@ export function MobileEditor({ editor }: MobileEditorProps) {
   const [mobileView, setMobileView] = useState<"edit" | "preview">("edit")
   const [activeTab, setActiveTab] = useState<"content" | "ai" | "design">("content")
   const [activeSection, setActiveSection] = useState<string>("personal")
+  const [isEditingName, setIsEditingName] = useState(false)
+  const [tempName, setTempName] = useState(editor.resume?.name || "")
   
   const { 
     resume, 
@@ -74,6 +81,15 @@ export function MobileEditor({ editor }: MobileEditorProps) {
     chatMessages,
     setChatMessages,
     sendAdvisoryMessage,
+
+    isUploading,
+    isCropping,
+    setIsCropping,
+    cropImage,
+    onCropComplete,
+    processCrop,
+    handlePhotoFileChange,
+    handleDeletePhoto,
   } = editor
 
   const [chatInput, setChatInput] = useState("")
@@ -108,7 +124,7 @@ export function MobileEditor({ editor }: MobileEditorProps) {
   ]
 
   const BottomTabs = () => (
-    <nav className="fixed bottom-0 left-0 right-0 z-50 bg-white/90 backdrop-blur-2xl border-t border-slate-100 flex items-center justify-around px-4 pb-[max(1.2rem,env(safe-area-inset-bottom))] pt-3 shadow-[0_-10px_40px_rgba(0,0,0,0.05)]">
+    <nav className="fixed bottom-0 left-0 right-0 z-50 bg-white/95 backdrop-blur-2xl border-t border-slate-100 flex items-center justify-around px-4 pb-[max(0.8rem,env(safe-area-inset-bottom))] pt-3 shadow-[0_-1px_20px_rgba(0,0,0,0.03)]">
       {[
         { id: "content", icon: Layout, label: "Content" },
         { id: "ai", icon: Cpu, label: "Career Intelligence Advisor" },
@@ -146,18 +162,58 @@ export function MobileEditor({ editor }: MobileEditorProps) {
   )
 
   return (
-    <div className="min-h-screen bg-slate-50 flex flex-col pb-32">
+    <div className="min-h-screen bg-slate-50 flex flex-col pb-24">
       {/* Dynamic Mobile Header */}
       <header className="sticky top-0 z-40 bg-white/80 backdrop-blur-md border-b px-5 py-4 flex items-center justify-between shadow-sm">
         <div className="flex items-center gap-3">
           <Link href="/dashboard" className="p-2 -ml-2 text-slate-400">
             <ArrowLeft className="h-5 w-5" />
           </Link>
-          <div className="min-w-0">
-             <h1 className="text-sm font-black truncate text-slate-900 tracking-tight">{resume.name}</h1>
-             <p className="text-[10px] font-bold uppercase tracking-widest text-slate-400">
-               {saveStatus === "saving" ? "Syncing..." : `${activeTemplate.name} active`}
-             </p>
+          <BrandWordmark className="scale-[0.5] origin-left -mr-28" />
+          <div className="min-w-0 ml-1 flex-1">
+             {isEditingName ? (
+               <div className="flex items-center gap-1">
+                 <Input 
+                   value={tempName}
+                   onChange={(e) => setTempName(e.target.value)}
+                   onKeyDown={(e) => {
+                     if (e.key === "Enter") {
+                       handleUpdate("name", tempName)
+                       setIsEditingName(false)
+                     }
+                   }}
+                   autoFocus
+                   className="h-8 py-0 px-2 text-[13px] font-bold text-slate-900 bg-white border-slate-200 focus-visible:ring-indigo-100 min-w-[140px]"
+                 />
+                 <Button 
+                   size="icon" 
+                   variant="ghost" 
+                   className="h-8 w-8 text-primary"
+                   onClick={() => {
+                     handleUpdate("name", tempName)
+                     setIsEditingName(false)
+                   }}
+                 >
+                   <Check className="h-4 w-4" />
+                 </Button>
+               </div>
+             ) : (
+               <div 
+                 className="group flex flex-col cursor-pointer"
+                 onClick={() => {
+                   setTempName(resume.name)
+                   setIsEditingName(true)
+                 }}
+               >
+                 <div className="flex items-center gap-1.5">
+                   <h1 className="text-[13px] font-black truncate text-slate-900 tracking-tight">{resume.name}</h1>
+                   <Pencil className="h-2.5 w-2.5 text-slate-300" />
+                 </div>
+                 <p className="text-[10px] font-bold uppercase tracking-widest text-slate-400">
+                   {saveStatus === "saving" ? "Syncing..." : `${activeTemplate.name} active`}
+                 </p>
+               </div>
+             )}
           </div>
         </div>
         <Button 
@@ -175,6 +231,23 @@ export function MobileEditor({ editor }: MobileEditorProps) {
         <main className="flex-1 p-5 space-y-6">
           {activeTab === "content" && (
             <div className="space-y-6">
+               <div className="flex items-center justify-between px-1 mb-2">
+                 <div>
+                   <h2 className="text-xs font-black uppercase tracking-[0.2em] text-slate-400">Content editor</h2>
+                   <p className="text-[10px] font-bold text-slate-300 mt-1 uppercase tracking-widest">Build your master story</p>
+                 </div>
+                 <div className="flex items-center gap-2">
+                   <Button variant="ghost" size="sm" asChild className="h-8 rounded-lg text-slate-500 hover:text-indigo-600 hover:bg-indigo-50/50 font-bold text-[10px] gap-1.5 border border-slate-200/50 bg-slate-50/50">
+                     <Link href="/onboarding/upload">
+                       <Upload className="h-3 w-3" />
+                       Import CV
+                     </Link>
+                   </Button>
+                   <Badge variant="outline" className="rounded-full bg-emerald-500/5 text-emerald-600 border-emerald-500/10 text-[9px] font-bold py-1 px-3">
+                     Autosaved
+                   </Badge>
+                 </div>
+               </div>
                <div className="flex gap-2 overflow-x-auto no-scrollbar py-2 -mx-5 px-5">
                   {sections.map((section) => (
                     <button 
@@ -195,8 +268,22 @@ export function MobileEditor({ editor }: MobileEditorProps) {
                {/* Section Specific Forms */}
                <div className="animate-in fade-in duration-300">
                  {activeSection === "personal" && (
-                   <div className="space-y-5">
-                     <div className="space-y-2">
+                   <div className="space-y-6">
+                     <div className="bg-white p-5 rounded-3xl border border-slate-100 shadow-sm">
+                       <PhotoUpload
+                         photoUrl={resume.content.personal.photoUrl}
+                         onFileChange={handlePhotoFileChange}
+                         onDelete={handleDeletePhoto}
+                         isCropping={isCropping}
+                         setIsCropping={setIsCropping}
+                         cropImage={cropImage}
+                         onCropComplete={onCropComplete}
+                         onProcessCrop={processCrop}
+                         isUploading={isUploading}
+                       />
+                     </div>
+                     <div className="space-y-4">
+                       <div className="space-y-2">
                        <label className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 ml-1">Full Identity</label>
                        <Input 
                         value={resume.content.personal.name} 
@@ -235,9 +322,10 @@ export function MobileEditor({ editor }: MobileEditorProps) {
                         placeholder="Location (City, State)"
                         className="h-12 rounded-2xl bg-white border-slate-100"
                        />
-                     </div>
-                   </div>
-                 )}
+                        </div>
+                      </div>
+                    </div>
+                  )}
 
                  {activeSection === "summary" && (
                     <div className="space-y-4">
@@ -397,7 +485,7 @@ export function MobileEditor({ editor }: MobileEditorProps) {
                                 handleUpdate("content.experience", next)
                               }}
                               placeholder="Job Title"
-                              className="font-bold border-none bg-slate-50 h-11 px-3 text-sm"
+                              className="font-bold border-none bg-slate-50 h-11 pl-3 pr-24 text-sm"
                             />
                             <RichTextField
                               value={exp.description}

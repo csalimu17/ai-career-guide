@@ -6,12 +6,12 @@ const projectRoot = path.resolve(__dirname);
 const nextConfig: NextConfig = {
   /* config options here */
   outputFileTracingRoot: projectRoot,
-  outputFileTracingIncludes: {
-    "/*": [
-      "node_modules/pdf-parse/dist/**/*",
-      "node_modules/pdfjs-dist/**/*",
-    ],
-  },
+//  outputFileTracingIncludes: {
+//    "/*": [
+//      "node_modules/pdf-parse/dist/**/*",
+//      "node_modules/pdfjs-dist/**/*",
+//    ],
+//  },
   experimental: {
     serverActions: {
       bodySizeLimit: '20mb',

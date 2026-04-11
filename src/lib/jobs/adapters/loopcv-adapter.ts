@@ -42,6 +42,24 @@ export class LoopCvAdapter implements JobApiAdapter {
     }
   }
 
+  async fetchJobDetails(externalId: string): Promise<string | null> {
+    // LoopCV often includes description in the list, but if we need to fetch specific details:
+    try {
+      const res = await fetch(`${this.endpoint}/${externalId}`, {
+        method: "GET",
+        headers: {
+          Accept: "application/json",
+        },
+      })
+      if (!res.ok) return null
+      const data = await res.json()
+      return data.job?.description || data.description || null
+    } catch (error) {
+      console.error("LoopCV details error:", error)
+      return null
+    }
+  }
+
   private mapToJobListing(raw: any): JobListingRecord {
     const id = String(raw.id || raw.job_id || Math.random().toString(36).slice(2))
     

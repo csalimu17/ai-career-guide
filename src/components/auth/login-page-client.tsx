@@ -4,8 +4,8 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { ArrowRight, Loader2, Lock, Mail, UserCircle } from "lucide-react";
-import { doc } from "firebase/firestore";
-import { useAuth, useDoc, useFirestore, useMemoFirebase, useUser } from "@/firebase";
+import { collection, doc, limit, query } from "firebase/firestore";
+import { useAuth, useCollection, useDoc, useFirestore, useMemoFirebase, useUser } from "@/firebase";
 import {
   initiateAnonymousSignIn,
   initiateEmailSignIn,
@@ -17,7 +17,7 @@ import { GoogleSignInButton } from "@/components/auth/google-sign-in-button";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { upsertUserProfile } from "@/lib/user-profile";
+import { getPostAuthDestination, upsertUserProfile } from "@/lib/user-profile";
 
 export default function LoginPageClient() {
   const auth = useAuth();
@@ -36,18 +36,18 @@ export default function LoginPageClient() {
 
   const { data: profile, isLoading: isProfileLoading } = useDoc(userDocRef);
 
+  const resumesQuery = useMemoFirebase(() => {
+    if (!db || !uid) return null;
+    return query(collection(db, "users", uid, "resumes"), limit(1));
+  }, [db, uid]);
+
+  const { data: resumes, isLoading: isResumesLoading } = useCollection(resumesQuery);
+
   useEffect(() => {
-    if (user && !isUserLoading && !isProfileLoading) {
-      if (profile && profile.onboardingComplete) {
-        router.push("/dashboard");
-      } else if (profile && !profile.onboardingComplete) {
-        router.push("/onboarding");
-      } else if (!profile) {
-        // If we have a user but no profile, they likely still need onboarding.
-        router.push("/onboarding");
-      }
+    if (user && !isUserLoading) {
+      router.replace("/dashboard");
     }
-  }, [user, isUserLoading, isProfileLoading, profile, router]);
+  }, [user, isUserLoading, router]);
 
   const handleEmailLogin = async (event: React.FormEvent) => {
     event.preventDefault();

@@ -1,6 +1,6 @@
 export const siteConfig = {
-  name: "Career Intelligence Advisor",
-  shortName: "Career Guide",
+  name: "Ai Career guide.",
+  shortName: "Ai guide.",
   description:
     "Build stronger resumes, improve ATS match rates, generate tailored cover letters, and manage your job search in one AI-powered workspace.",
   url: "https://aicareerguide.uk",
@@ -17,7 +17,7 @@ export const defaultKeywords = [
   "job application tracker",
   "resume templates",
   "career SaaS",
-  "AI career guide",
+  "Ai Career guide.",
 ];
 
 export const publicSiteRoutes = ["/", "/pricing", "/support", "/privacy", "/terms"];

@@ -31,6 +31,137 @@ function uniqueStrings(values: Array<string | undefined>) {
   return Array.from(new Set(values.map((value) => normalizeValue(value)).filter(Boolean)));
 }
 
+function containsEducationKeyword(value: string) {
+  return /\b(bachelor|master|msc|mba|bsc|ba|phd|doctorate|diploma|certificate|certification|gcse|a-level|university|college|school|academy|institute|course)\b/i.test(
+    value
+  );
+}
+
+function containsInstitutionKeyword(value: string) {
+  return /\b(university|college|school|academy|institute|faculty|campus)\b/i.test(value);
+}
+
+function containsRoleKeyword(value: string) {
+  return /\b(engineer|developer|manager|analyst|consultant|designer|assistant|specialist|lead|intern|director|coordinator|administrator|officer|executive)\b/i.test(
+    value
+  );
+}
+
+function containsSkillNoise(value: string) {
+  return (
+    !value ||
+    value.length > 60 ||
+    /@|https?:\/\/|linkedin\.com|www\./i.test(value) ||
+    /\b(summary|profile|experience|education|employment|skills|projects|certifications)\b/i.test(value) ||
+    /((19|20)\d{2})/.test(value)
+  );
+}
+
+function sanitizeSkillList(values: string[] | undefined) {
+  const expanded = (values || []).flatMap((value) =>
+    normalizeValue(value)
+      .split(/,|•|\||;/)
+      .map((item) => item.trim())
+      .filter(Boolean)
+  );
+
+  return uniqueStrings(expanded).filter((value) => !containsSkillNoise(value)).slice(0, 24);
+}
+
+function sanitizeDescriptionLines(values: string[] | undefined) {
+  return uniqueStrings(values || [])
+    .filter((line) => {
+      const normalized = normalizeValue(line);
+      return (
+        normalized.length >= 8 &&
+        !/^(summary|profile|experience|education|skills|projects|certifications?)$/i.test(normalized)
+      );
+    })
+    .slice(0, 8);
+}
+
+function tightenSectionPlacement(data: ResumeData): ResumeData {
+  const promotedEducation: NonNullable<ResumeData["education"]> = [];
+  const promotedExperience: NonNullable<ResumeData["workExperience"]> = [];
+
+  const workExperience = (data.workExperience || []).reduce<NonNullable<ResumeData["workExperience"]>>((acc, entry) => {
+    const title = normalizeValue(entry?.title);
+    const company = normalizeValue(entry?.company);
+    const description = sanitizeDescriptionLines(entry?.description);
+    const startDate = normalizeValue(entry?.startDate);
+    const endDate = normalizeValue(entry?.endDate);
+
+    const looksLikeEducationBlock =
+      (containsEducationKeyword(title) || containsInstitutionKeyword(company)) &&
+      !containsRoleKeyword(title) &&
+      !startDate &&
+      !endDate;
+
+    if (looksLikeEducationBlock) {
+      promotedEducation.push({
+        degree: title,
+        institution: company,
+        graduationDate: "",
+        description: description.join(" ").slice(0, 240),
+      });
+      return acc;
+    }
+
+    acc.push({
+      ...entry,
+      title,
+      company,
+      location: normalizeValue(entry?.location),
+      startDate,
+      endDate,
+      description,
+    });
+    return acc;
+  }, []);
+
+  const education = (data.education || []).reduce<NonNullable<ResumeData["education"]>>((acc, entry) => {
+    const degree = normalizeValue(entry?.degree);
+    const institution = normalizeValue(entry?.institution);
+    const graduationDate = normalizeValue(entry?.graduationDate);
+    const description = normalizeValue(entry?.description);
+
+    const looksLikeExperienceBlock =
+      containsRoleKeyword(degree) &&
+      !containsEducationKeyword(degree) &&
+      institution.length > 0 &&
+      !containsInstitutionKeyword(institution);
+
+    if (looksLikeExperienceBlock) {
+      promotedExperience.push({
+        title: degree,
+        company: institution,
+        startDate: "",
+        endDate: graduationDate,
+        location: normalizeValue(entry?.location),
+        description: description ? [description] : [],
+      });
+      return acc;
+    }
+
+    acc.push({
+      ...entry,
+      degree,
+      institution,
+      location: normalizeValue(entry?.location),
+      graduationDate,
+      description,
+    });
+    return acc;
+  }, []);
+
+  return {
+    ...data,
+    workExperience: mergeExperience(workExperience, promotedExperience),
+    education: mergeEducation(education, promotedEducation),
+    skills: sanitizeSkillList(data.skills),
+  };
+}
+
 function mergeLineArrays(left: string[] | undefined, right: string[] | undefined) {
   return uniqueStrings([...(left || []), ...(right || [])]);
 }
@@ -316,8 +447,8 @@ export const extractCvData = ai.defineFlow(
       let results: { data: ResumeData, score: number, method: string }[] = [];
       let multimodalCandidate: ResumeData | null = null;
 
-      // STRATEGY A: HIGH-FIDELITY MULTIMODAL (Gemini 2.5 Flash)
-      addLog('BRAIN', 'Executing Multimodal Analysis (Gemini 2.5 Flash)...');
+      // STRATEGY A: HIGH-FIDELITY MULTIMODAL (Gemini 1.5 Flash)
+      addLog('BRAIN', 'Executing Multimodal Analysis (Gemini 1.5 Flash)...');
       try {
         const base64Data = await resolveDocumentDataUri({ cvDataUri, cvMimeType, storagePath });
 
@@ -356,10 +487,10 @@ export const extractCvData = ai.defineFlow(
         addLog('WARN', `Gemini Multimodal failed: ${e.message || 'Unknown Error'}`); 
       }
 
-      // STRATEGY B: TEXT-ONLY FALLBACK (Gemini 2.5 Flash)
+      // STRATEGY B: TEXT-ONLY FALLBACK (Gemini 1.5 Flash)
       // If Pro fails or we have high-quality text but low multimodal confidence
       if (results.length === 0 || primaryScore > 0.8) {
-         addLog('BRAIN', 'Executing Text Fallback (Gemini 2.5 Flash)...');
+         addLog('BRAIN', 'Executing Text Fallback (Gemini 1.5 Flash)...');
          try {
             const textCandidates: ResumeData[] = [];
             for (const segment of segments) {
@@ -451,7 +582,7 @@ export const extractCvData = ai.defineFlow(
 
       // Final Validation & Scrubbing
       const cleanedValues = cleanParsedData(mapped);
-      const finalResumeData: ResumeData = {
+      const normalizedResumeData = tightenSectionPlacement({
         ...best.data,
         personalDetails: {
           ...best.data.personalDetails,
@@ -461,15 +592,15 @@ export const extractCvData = ai.defineFlow(
           location: cleanedValues.location,
         },
         summary: cleanedValues.summary,
-      };
+      });
 
       // Logic: Weighted section checks including confidence filtering
       const checks = [
-        { key: 'name', val: finalResumeData.personalDetails?.name, weight: 0.2 },
-        { key: 'email', val: finalResumeData.personalDetails?.email, weight: 0.1 },
-        { key: 'experience', val: finalResumeData.workExperience?.length, weight: 0.4 },
-        { key: 'education', val: finalResumeData.education?.length, weight: 0.2 },
-        { key: 'skills', val: finalResumeData.skills?.length, weight: 0.1 },
+        { key: 'name', val: normalizedResumeData.personalDetails?.name, weight: 0.2 },
+        { key: 'email', val: normalizedResumeData.personalDetails?.email, weight: 0.1 },
+        { key: 'experience', val: normalizedResumeData.workExperience?.length, weight: 0.4 },
+        { key: 'education', val: normalizedResumeData.education?.length, weight: 0.2 },
+        { key: 'skills', val: normalizedResumeData.skills?.length, weight: 0.1 },
       ];
 
       checks.forEach(c => {
@@ -481,7 +612,7 @@ export const extractCvData = ai.defineFlow(
       });
 
       const finalOutput: CvDataExtractionOutput = {
-        ...finalResumeData,
+        ...normalizedResumeData,
         metadata: {
           confidence: totalConfidence,
           sectionConfidence,

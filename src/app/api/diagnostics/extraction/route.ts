@@ -5,8 +5,14 @@ import { runGuardedCvExtraction } from "@/lib/extraction-guardian";
 import { runCvExtractionPipeline } from "@/lib/extraction-service";
 import { parseDocument } from "@/lib/document-parser";
 import { extractPdfText } from "@/lib/pdf-text";
+import { requireActiveAdmin } from "@/lib/server/route-auth";
 
-export async function GET() {
+export async function GET(request: Request) {
+  const authResult = await requireActiveAdmin(request);
+  if (!authResult.ok) {
+    return authResult.response;
+  }
+
   const sampleResume = `Alex Morgan
 alex.morgan@example.com
 +44 7700 900123

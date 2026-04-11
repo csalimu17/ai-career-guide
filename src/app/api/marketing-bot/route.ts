@@ -6,80 +6,89 @@ import { PRODUCT_CTA_MAP, normalizeProduct, type ProductKey } from "@/lib/market
 import { postLeadToWebhook } from "@/lib/marketing-bot/leadWebhook";
 import { getBotPrompt } from "@/lib/marketing-bot/prompt";
 import { checkRateLimit } from "@/lib/marketing-bot/rateLimiter";
+import { ai } from "@/ai/genkit";
+import { generateWithFallback } from "@/ai/generate-helper";
+import { getGeminiModel, getFallbackGeminiModel } from "@/ai/model-router";
+import { z } from "genkit";
 
 const getOpenAI = () => {
-  // Use a dummy key during build phase to prevent static analysis failure.
-  // Real key is required only during runtime.
   const apiKey = process.env.OPENAI_API_KEY || "sk-build-time-dummy";
   return new OpenAI({
     apiKey,
   });
 };
 
-const tools: any[] = [
+// -- GENKIT TOOLS --
+
+const recommendProductTool = ai.defineTool(
   {
-    type: "function",
     name: "recommend_product",
     description: "Recommend the best next product page or signup step for the visitor.",
-    strict: true,
-    parameters: {
-      type: "object",
-      properties: {
-        product: {
-          type: "string",
-          enum: ["resume_builder", "ats_optimizer", "career_workspace", "general_signup"],
-        },
-        reason: {
-          type: "string",
-          description: "Why this product is the best next step for this visitor.",
-        },
-        segment: {
-          type: "string",
-          description: "Visitor segment, for example student, career_switcher, or active_job_seeker.",
-        },
-      },
-      required: ["product", "reason", "segment"],
-      additionalProperties: false,
-    },
+    inputSchema: z.object({
+      product: z.enum(["resume_builder", "ats_optimizer", "career_workspace", "general_signup"]),
+      reason: z.string().describe("Why this product is the best next step for this visitor."),
+      segment: z.string().describe("Visitor segment, for example student, career_switcher, or active_job_seeker."),
+    }),
+    outputSchema: z.object({
+      ok: z.boolean(),
+      product: z.string(),
+      label: z.string(),
+      url: z.string(),
+      description: z.string().optional(),
+    }),
   },
+  async (args) => {
+    const product = normalizeProduct(args.product);
+    const cta = PRODUCT_CTA_MAP[product];
+    return {
+      ok: true,
+      product,
+      label: cta.label,
+      url: cta.url,
+      description: cta.description,
+    };
+  }
+);
+
+const saveLeadTool = ai.defineTool(
   {
-    type: "function",
     name: "save_lead",
     description: "Store a lead only after the visitor has explicitly opted in to receive follow-up or marketing emails.",
-    strict: true,
-    parameters: {
-      type: "object",
-      properties: {
-        email: {
-          type: "string",
-          description: "Visitor email address.",
-        },
-        first_name: {
-          type: ["string", "null"],
-          description: "Visitor first name when known.",
-        },
-        goal: {
-          type: "string",
-          description: "What the visitor wants help with.",
-        },
-        segment: {
-          type: ["string", "null"],
-          description: "Visitor segment when known.",
-        },
-        consent_marketing: {
-          type: "boolean",
-          description: "Must be true before this function is called.",
-        },
-        notes: {
-          type: ["string", "null"],
-          description: "Optional notes for the CRM or email tool.",
-        },
-      },
-      required: ["email", "first_name", "goal", "segment", "consent_marketing", "notes"],
-      additionalProperties: false,
-    },
+    inputSchema: z.object({
+      email: z.string().describe("Visitor email address."),
+      first_name: z.string().nullable().optional().describe("Visitor first name when known."),
+      goal: z.string().describe("What the visitor wants help with."),
+      segment: z.string().nullable().optional().describe("Visitor segment when known."),
+      consent_marketing: z.literal(true).describe("Must be true before this function is called."),
+      notes: z.string().nullable().optional().describe("Optional notes for the CRM or email tool."),
+    }),
+    outputSchema: z.object({
+      ok: z.boolean(),
+      message: z.string().optional(),
+    }),
   },
+  async (args) => {
+    const result = await postLeadToWebhook({
+      email: args.email,
+      first_name: args.first_name || undefined,
+      goal: args.goal,
+      segment: args.segment || undefined,
+      consent_marketing: args.consent_marketing,
+      notes: args.notes || undefined,
+    });
+    return {
+      ok: !!result.ok,
+      message: 'error' in result ? result.error : undefined,
+    };
+  }
+);
+
+
+// tools array is kept for legacy compatibility if needed, but we prefer defineTool
+const legacyTools: any[] = [
+  // ... (keeping symbols just in case, but primary logic moved to Genkit tools)
 ];
+
 
 function safeJsonParse(value: any) {
   if (!value) return {};
@@ -163,6 +172,7 @@ function buildFallbackResponse(message: string) {
 }
 
 async function isFlagged(message: string) {
+  // If no key is configured, skip moderation
   if (!process.env.OPENAI_API_KEY) {
     return false;
   }
@@ -174,11 +184,19 @@ async function isFlagged(message: string) {
     });
 
     return Boolean(moderation.results?.[0]?.flagged);
-  } catch (error) {
-    console.warn("[marketing-bot:moderation]", error);
+  } catch (error: any) {
+    // If we hit a 429 (Too Many Requests) on moderation, we don't want to block the user.
+    // We'll log the warning and allow the request to proceed (best-effort resilience).
+    if (error.status === 429) {
+      console.warn("[marketing-bot:moderation] OpenAI 429 throttling detected. Proceeding without moderation check.");
+      return false;
+    }
+    
+    console.warn("[marketing-bot:moderation] Unexpected moderation failure:", error.message || error);
     return false;
   }
 }
+
 
 export async function POST(req: NextRequest) {
   const forwarded = req.headers.get("x-forwarded-for");
@@ -228,7 +246,9 @@ export async function POST(req: NextRequest) {
     }
 
     const instructions = getBotPrompt();
-    const model = String(process.env.MARKETING_BOT_MODEL || "gpt-4o-mini").trim();
+    const model = await getGeminiModel("marketingChat");
+    const fallbackModel = getFallbackGeminiModel("marketingChat");
+
     const userEnvelope = {
       user_message: message,
       page: body?.page ?? {},
@@ -236,103 +256,42 @@ export async function POST(req: NextRequest) {
       timestamp: new Date().toISOString(),
     };
 
-    // Use the newer responses.create API if available in this SDK version
-    let response: any = await (getOpenAI() as any).responses.create({
+    const response = await generateWithFallback({
       model,
-      instructions,
-      previous_response_id: body?.previousResponseId || undefined,
-      parallel_tool_calls: false,
-      tools,
-      input: [
-        {
-          role: "user",
-          content: [
-            {
-              type: "input_text",
-              text: JSON.stringify(userEnvelope),
-            },
-          ],
-        },
-      ],
-    });
+      system: instructions,
+      prompt: JSON.stringify(userEnvelope),
+      tools: [recommendProductTool, save_lead_tool_legacy_compatible_alias],
+    }, fallbackModel || undefined);
 
     const actions: any[] = [];
     let leadSaved = false;
-    let toolPasses = 0;
 
-    while (toolPasses < 4) {
-      const functionCalls = (response.output ?? []).filter((item: any) => item.type === "function_call");
-      if (!functionCalls.length) break;
+    // Process Genkit tool outputs to populate response actions
+    if (response.message) {
+      for (const part of response.message.content) {
+        if (part.toolResponse) {
+          const toolName = part.toolResponse.name;
+          const toolOutput = part.toolResponse.output as any;
 
-      const functionOutputs: any[] = [];
-
-      for (const call of functionCalls) {
-        const args = safeJsonParse(call.arguments);
-
-        if (call.name === "recommend_product") {
-          const product = normalizeProduct(String(args.product ?? "general_signup"));
-          const cta = PRODUCT_CTA_MAP[product];
-
-          actions.push({
-            type: "cta",
-            label: cta.label,
-            url: cta.url,
-            reason: String(args.reason ?? ""),
-            product,
-            segment: String(args.segment ?? ""),
-          });
-
-          functionOutputs.push({
-            type: "function_call_output",
-            call_id: call.call_id,
-            output: JSON.stringify({
-              ok: true,
-              product,
-              label: cta.label,
-              url: cta.url,
-              description: cta.description,
-            }),
-          });
-          continue;
-        }
-
-        if (call.name === "save_lead") {
-          const result = await postLeadToWebhook({
-            email: String(args.email ?? ""),
-            first_name: args.first_name == null ? undefined : String(args.first_name),
-            goal: String(args.goal ?? "General career help"),
-            segment: args.segment == null ? undefined : String(args.segment),
-            consent_marketing: Boolean(args.consent_marketing),
-            source_page: body?.page?.path,
-            session_id: body?.sessionId,
-            notes: args.notes == null ? undefined : String(args.notes),
-          });
-
-          leadSaved = leadSaved || Boolean(result.ok);
-
-          functionOutputs.push({
-            type: "function_call_output",
-            call_id: call.call_id,
-            output: JSON.stringify(result),
-          });
+          if (toolName === "recommend_product" && toolOutput?.ok) {
+            actions.push({
+              type: "cta",
+              label: toolOutput.label,
+              url: toolOutput.url,
+              product: toolOutput.product,
+              segment: "visitor", // derived from tool context if needed
+            });
+          }
+          if (toolName === "save_lead" && toolOutput?.ok) {
+            leadSaved = true;
+          }
         }
       }
-
-      response = await (getOpenAI() as any).responses.create({
-        model,
-        instructions,
-        previous_response_id: response.id,
-        parallel_tool_calls: false,
-        tools,
-        input: functionOutputs,
-      });
-
-      toolPasses += 1;
     }
 
     return NextResponse.json({
-      reply: getReplyText(response),
-      responseId: response.id,
+      reply: response.text,
+      responseId: null,
       actions: dedupeActions(actions),
       leadSaved,
     });
@@ -341,3 +300,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json(buildFallbackResponse(userMessage || "general help"));
   }
 }
+
+// Support for slightly different naming in the loops above
+const save_lead_tool_legacy_compatible_alias = saveLeadTool;
+

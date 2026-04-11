@@ -4,7 +4,6 @@ import { useEffect, useMemo, useState } from "react"
 import Link from "next/link"
 import { addDoc, collection, doc, increment, limit, orderBy, query, serverTimestamp, setDoc, updateDoc } from "firebase/firestore"
 import { AlertTriangle, ArrowRight, FileSearch, FileText, History, Loader2, Search, Sparkles, Target, Zap } from "lucide-react"
-import { atsOptimizationScoring } from "@/ai/flows/ats-optimization-scoring-flow"
 
 import { useCollection, useDoc, useFirestore, useMemoFirebase, useUser } from "@/firebase"
 import type { AtsOptimizationScoringOutput } from "@/ai/flows/ats-optimization-scoring-flow"
@@ -14,6 +13,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Progress } from "@/components/ui/progress"
 import { Textarea } from "@/components/ui/textarea"
 import { toast } from "@/hooks/use-toast"
+import { fetchAuthedJson } from "@/lib/client/fetch-json"
 import { getPlanLimits } from "@/lib/plans"
 import { buildResumePlainText } from "@/lib/resume-to-text"
 import { cn } from "@/lib/utils"
@@ -126,7 +126,10 @@ export default function AtsOptimizerPage() {
 
     setIsRunning(true)
     try {
-      const result = await atsOptimizationScoring({ cvContent, jobDescription })
+      const { result } = await fetchAuthedJson<{ result: AtsOptimizationScoringOutput }>(user, "/api/ats/scan", {
+        method: "POST",
+        body: JSON.stringify({ cvContent, jobDescription }),
+      })
       const payload = {
         ...result,
         score: result.atsScore,
@@ -184,133 +187,453 @@ export default function AtsOptimizerPage() {
 
   return (
     <div className="mobile-app-page md:mx-auto md:max-w-7xl md:space-y-8 md:px-8 md:pb-16 md:pt-8">
-      <section className="section-shell space-y-3 px-4 py-4 sm:space-y-4 sm:px-5 sm:py-6 md:px-8">
-        <div className="eyebrow-chip"><Target className="h-3.5 w-3.5" /> ATS Optimizer</div>
-        <div className="flex flex-col gap-5 xl:flex-row xl:items-end xl:justify-between">
-          <div className="min-w-0 space-y-3 xl:flex-1">
-            <h1 className="text-[1.65rem] font-black leading-[0.98] tracking-[-0.05em] text-primary sm:text-[2rem] lg:text-5xl">Make ATS feedback clearer, more specific, and easier to act on.</h1>
-            <p className="max-w-3xl text-[0.92rem] leading-relaxed text-muted-foreground sm:text-base md:text-lg">Load a saved resume or paste one manually, compare it against a real role, and get matched keywords, missing language, section-level feedback, and practical next steps.</p>
-            <div className="flex flex-wrap gap-2">
-              <Badge variant="outline" className="rounded-full px-3 py-1 text-[0.68rem] font-semibold uppercase tracking-[0.2em]">{plan.toUpperCase()} plan</Badge>
-              <Badge variant="outline" className="rounded-full border-secondary/20 bg-secondary/5 px-3 py-1 text-[0.68rem] font-semibold uppercase tracking-[0.2em] text-secondary">{remainingChecks} scans remaining</Badge>
-              <Badge variant="outline" className="rounded-full border-accent/20 bg-accent/5 px-3 py-1 text-[0.68rem] font-semibold uppercase tracking-[0.2em] text-accent">{reports?.length || 0} saved reports</Badge>
+      <section className="section-shell relative overflow-hidden p-6 sm:p-8 md:p-10 mb-8 border-none">
+        {/* Subtle background glow */}
+        <div className="absolute -top-24 -right-24 h-96 w-96 bg-blue-500/10 blur-[100px] pointer-events-none" />
+        <div className="absolute -bottom-24 -left-24 h-96 w-96 bg-purple-500/10 blur-[100px] pointer-events-none" />
+
+        <div className="relative z-10 space-y-6">
+          <div className="flex items-center gap-3">
+            <div className="eyebrow-chip px-4 py-1.5 shadow-sm border-primary/20">
+              <Target className="h-4 w-4" /> 
+              ATS Optimizer
+            </div>
+            <div className="hidden sm:flex items-center gap-2 text-[10px] font-bold text-muted-foreground uppercase tracking-widest bg-slate-100/50 px-3 py-1.5 rounded-full border border-slate-200/50">
+              <Sparkles className="w-3 h-3 text-amber-500" />
+              AI-Powered Match
             </div>
           </div>
-          <div className="grid w-full gap-2 sm:grid-cols-2 xl:flex xl:w-auto xl:shrink-0">
-            <Button variant="outline" className="tap-bounce h-11 rounded-2xl font-bold md:h-12" onClick={() => latestResume && loadResumeIntoWorkspace(latestResume)} disabled={!latestResume}><FileText className="mr-2 h-4 w-4" />{latestResume ? "Use latest" : "No resume"}</Button>
-            <Button className="tap-bounce h-11 rounded-2xl font-bold md:h-12" asChild><Link href={builderHref}>Open builder<ArrowRight className="ml-2 h-4 w-4" /></Link></Button>
+
+          <div className="flex flex-col gap-8 xl:flex-row xl:items-end xl:justify-between">
+            <div className="min-w-0 space-y-4 xl:flex-1">
+              <h1 className="text-4xl sm:text-5xl lg:text-6xl font-black leading-[0.95] tracking-tighter headline-gradient-vivid max-w-4xl">
+                Make ATS feedback clearer, more specific, and easier to act on.
+              </h1>
+              <p className="max-w-2xl text-base sm:text-lg md:text-xl font-medium leading-relaxed text-slate-500/90">
+                Load a saved resume or paste one manually, compare it against a real role, and get matched keywords, missing language, and actionable next steps.
+              </p>
+              
+              <div className="flex flex-wrap gap-2 pt-2">
+                <div className="flex items-center gap-2 rounded-xl bg-white/80 border border-slate-100 px-4 py-2 shadow-sm">
+                  <span className="text-[10px] font-black uppercase tracking-widest text-slate-400">Plan:</span>
+                  <span className="text-[11px] font-black uppercase text-blue-600 tracking-wider bg-blue-50 px-2 py-0.5 rounded-md">{plan}</span>
+                </div>
+                <div className="flex items-center gap-2 rounded-xl bg-white/80 border border-slate-100 px-4 py-2 shadow-sm">
+                  <span className="text-[10px] font-black uppercase tracking-widest text-slate-400">Allowance:</span>
+                  <span className="text-[11px] font-black uppercase text-secondary tracking-wider bg-sky-50 px-2 py-0.5 rounded-md">{remainingChecks} Scans left</span>
+                </div>
+                <div className="flex items-center gap-2 rounded-xl bg-white/80 border border-slate-100 px-4 py-2 shadow-sm">
+                  <span className="text-[10px] font-black uppercase tracking-widest text-slate-400">Reports:</span>
+                  <span className="text-[11px] font-black uppercase text-amber-600 tracking-wider bg-amber-50 px-2 py-0.5 rounded-md">{reports?.length || 0} Saved</span>
+                </div>
+              </div>
+            </div>
+
+            <div className="flex flex-col sm:flex-row gap-3 xl:shrink-0">
+              <Button 
+                variant="outline" 
+                className="tap-bounce h-14 px-8 rounded-2xl font-black text-sm uppercase tracking-widest border-2 border-slate-100 hover:bg-slate-50 hover:border-slate-200 bg-white" 
+                onClick={() => latestResume && loadResumeIntoWorkspace(latestResume)} 
+                disabled={!latestResume}
+              >
+                <FileText className="mr-2 h-5 w-5 text-slate-400" />
+                {latestResume ? "Use latest" : "No resume"}
+              </Button>
+              <Button 
+                className="tap-bounce h-14 px-8 rounded-2xl font-black text-sm uppercase tracking-widest btn-premium border-none text-white shadow-xl shadow-blue-500/20" 
+                asChild
+              >
+                <Link href={builderHref}>
+                  Open builder
+                  <ArrowRight className="ml-2 h-5 w-5" />
+                </Link>
+              </Button>
+            </div>
           </div>
         </div>
       </section>
 
       <div className="grid gap-4 xl:grid-cols-[1.08fr_0.92fr] xl:gap-6">
-        <Card className="border-none bg-white">
-          <CardHeader className="space-y-2 p-4 md:p-7">
-            <CardTitle className="flex items-center gap-3 text-lg font-black md:text-2xl"><div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-secondary/10 text-secondary md:h-11 md:w-11"><FileSearch className="h-5 w-5" /></div>Scan workspace</CardTitle>
-            <CardDescription>Pick a saved resume or paste your own text, then add the exact job description you want to match.</CardDescription>
+        <Card className="surface-card border-none overflow-hidden">
+          <CardHeader className="space-y-2 p-6 md:p-10 pb-4">
+            <CardTitle className="flex items-center gap-4 text-xl font-black md:text-3xl tracking-tight">
+              <div className="flex h-12 w-12 items-center justify-center rounded-[1.25rem] bg-indigo-50 text-indigo-600 shadow-sm border border-indigo-100/50">
+                <FileSearch className="h-6 w-6" />
+              </div>
+              Scan workspace
+            </CardTitle>
+            <CardDescription className="text-slate-500 font-medium">Pick a saved resume or paste your own text, then add the exact job description you want to match.</CardDescription>
           </CardHeader>
-          <CardContent className="space-y-4 p-4 pt-0 md:space-y-6 md:p-7 md:pt-0">
-            <div className="grid gap-3 sm:grid-cols-2">
+          <CardContent className="space-y-6 p-6 md:p-10 pt-0">
+            <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
               {resumes?.length ? resumes.map((resume) => (
-                <button key={resume.id} type="button" onClick={() => loadResumeIntoWorkspace(resume)} className={cn("tap-bounce rounded-[1.1rem] border bg-[#FAFBFD] p-3 text-left transition-all hover:border-primary/20 hover:bg-white hover:shadow-md md:rounded-[1.3rem] md:p-4", selectedResumeId === resume.id && "border-primary/20 bg-primary/5 shadow-sm")}>
-                  <p className="truncate text-sm font-black text-primary">{resume.name}</p>
-                  <p className="mt-1 text-xs text-muted-foreground">{formatDate(resume.updatedAt)}</p>
+                <button 
+                  key={resume.id} 
+                  type="button" 
+                  onClick={() => loadResumeIntoWorkspace(resume)} 
+                  className={cn(
+                    "tap-bounce group relative rounded-[1.25rem] border p-4 text-left transition-all duration-300",
+                    selectedResumeId === resume.id 
+                      ? "border-indigo-500/30 bg-indigo-50/50 shadow-inner ring-1 ring-indigo-500/20" 
+                      : "border-slate-100 bg-slate-50/50 hover:bg-white hover:border-slate-200 hover:shadow-md"
+                  )}
+                >
+                  <p className="truncate text-xs font-black uppercase tracking-wider text-slate-400 group-hover:text-indigo-400 transition-colors">Saved Resume</p>
+                  <p className={cn("mt-1 truncate text-sm font-black", selectedResumeId === resume.id ? "text-indigo-700" : "text-slate-700")}>{resume.name}</p>
+                  <div className="mt-3 flex items-center justify-between">
+                    <p className="text-[10px] font-bold text-slate-400">{formatDate(resume.updatedAt)}</p>
+                    {selectedResumeId === resume.id && <div className="h-1.5 w-1.5 rounded-full bg-indigo-500 animate-pulse" />}
+                  </div>
                 </button>
-              )) : <div className="rounded-[1.3rem] border border-dashed border-border/80 bg-muted/20 p-4 text-sm text-muted-foreground sm:col-span-2">No saved resumes yet.</div>}
+              )) : <div className="rounded-[1.3rem] border border-dashed border-slate-200 bg-slate-50/50 p-6 text-sm text-center font-medium text-slate-400 sm:col-span-2 lg:col-span-3 italic">No saved resumes found.</div>}
             </div>
 
-            <div className="grid gap-4 lg:grid-cols-2">
-              <div className="space-y-2">
-                <p className="text-[0.72rem] font-semibold uppercase tracking-[0.22em] text-muted-foreground">Resume content</p>
-                <Textarea value={cvContent} onChange={(event) => setCvContent(event.target.value)} placeholder="Paste the full CV or resume text here..." className="min-h-[220px] rounded-[1.25rem] border-border/80 bg-[#FCFCFE] px-4 py-3 text-sm leading-relaxed shadow-sm md:min-h-[320px] md:rounded-[1.4rem] md:py-4" />
+            <div className="grid gap-6 lg:grid-cols-2">
+              <div className="space-y-3">
+                <div className="flex items-center justify-between">
+                  <p className="text-[10px] font-black uppercase tracking-[0.22em] text-slate-400">Resume content</p>
+                  {cvContent.length > 0 && <span className="text-[10px] font-bold text-slate-300">{cvContent.split(/\s+/).length} words</span>}
+                </div>
+                <Textarea 
+                  value={cvContent} 
+                  onChange={(event) => setCvContent(event.target.value)} 
+                  placeholder="Paste your CV text here..." 
+                  className="min-h-[260px] md:min-h-[380px] rounded-[1.5rem] border-slate-100 bg-[#FAFBFD] px-5 py-4 text-sm leading-relaxed shadow-sm focus:bg-white focus:ring-indigo-500/20 transition-all placeholder:text-slate-300" 
+                />
               </div>
-              <div className="space-y-2">
-                <p className="text-[0.72rem] font-semibold uppercase tracking-[0.22em] text-muted-foreground">Job description</p>
-                <Textarea value={jobDescription} onChange={(event) => setJobDescription(event.target.value)} placeholder="Paste the target job description here..." className="min-h-[220px] rounded-[1.25rem] border-border/80 bg-[#FCFCFE] px-4 py-3 text-sm leading-relaxed shadow-sm md:min-h-[320px] md:rounded-[1.4rem] md:py-4" />
+              <div className="space-y-3">
+                <div className="flex items-center justify-between">
+                  <p className="text-[10px] font-black uppercase tracking-[0.22em] text-slate-400">Job description</p>
+                  {jobDescription.length > 0 && <span className="text-[10px] font-bold text-slate-300">{jobDescription.split(/\s+/).length} words</span>}
+                </div>
+                <Textarea 
+                  value={jobDescription} 
+                  onChange={(event) => setJobDescription(event.target.value)} 
+                  placeholder="Paste the target job description here..." 
+                  className="min-h-[260px] md:min-h-[380px] rounded-[1.5rem] border-slate-100 bg-[#FAFBFD] px-5 py-4 text-sm leading-relaxed shadow-sm focus:bg-white focus:ring-indigo-500/20 transition-all placeholder:text-slate-300" 
+                />
               </div>
             </div>
 
-            <div className="flex flex-col gap-3 rounded-[1.25rem] border border-border/70 bg-muted/25 p-4 sm:flex-row sm:items-center sm:justify-between md:rounded-[1.4rem]">
-              <div className="space-y-1">
-                <p className="text-sm font-black text-primary">What this scan improves</p>
-                <p className="text-[0.8rem] text-muted-foreground">Clearer keyword coverage, section diagnosis, and next-step guidance.</p>
+            <div className="relative group overflow-hidden rounded-[1.75rem] border border-slate-100 bg-white p-6 md:p-8 shadow-sm">
+              <div className="absolute top-0 right-0 p-8 opacity-5 group-hover:opacity-10 transition-opacity">
+                <Search className="w-24 h-24 text-slate-900" />
               </div>
-              <Button className={cn("tap-bounce h-11 rounded-2xl font-bold md:h-12", isRunning && "animate-pulse-subtle")} onClick={runScan} disabled={isRunning}>{isRunning ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Search className="mr-2 h-4 w-4" />}{visibleReport ? "Run fresh scan" : "Run scan"}</Button>
+              <div className="relative z-10 flex flex-col gap-6 sm:flex-row sm:items-center sm:justify-between">
+                <div className="space-y-2">
+                  <p className="text-lg font-black tracking-tight text-slate-900">Configure Analysis Depth</p>
+                  <p className="text-sm font-medium text-slate-500 max-w-md leading-relaxed">Runs a full diagnostic on role requirements, keyword density, and structural integrity.</p>
+                </div>
+                <Button 
+                  className={cn(
+                    "tap-bounce h-14 md:h-16 px-10 rounded-2xl font-black text-xs md:text-sm uppercase tracking-widest shadow-xl transition-all",
+                    isRunning 
+                      ? "bg-slate-100 text-slate-400" 
+                      : "bg-slate-900 text-white hover:bg-slate-800 hover:translate-y-[-2px] active:translate-y-[0px] shadow-slate-200"
+                  )} 
+                  onClick={runScan} 
+                  disabled={isRunning}
+                >
+                  {isRunning ? <Loader2 className="mr-2 h-5 w-5 animate-spin" /> : <Search className="mr-2 h-5 w-5" />}
+                  {visibleReport ? "Refresh Diagnostic" : "Initialize Scan"}
+                </Button>
+              </div>
             </div>
           </CardContent>
         </Card>
 
-        <Card className="border-none bg-white">
-          <CardHeader className="space-y-2 p-4 md:p-7">
-            <CardTitle className="flex items-center gap-3 text-lg font-black md:text-2xl"><div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-accent/10 text-accent md:h-11 md:w-11"><Sparkles className="h-5 w-5" /></div>{visibleReport ? "ATS diagnosis" : "What you'll see here"}</CardTitle>
-            <CardDescription>{visibleReport ? "Your latest ATS diagnosis stays visible here so you can keep iterating without losing context." : "Run a scan to see a sharper verdict, keyword gaps, strengths, and a ranked action list."}</CardDescription>
+        <Card className="surface-card border-none overflow-hidden">
+          <CardHeader className="space-y-4 p-6 md:p-10 pb-0">
+            <div className="flex items-center justify-between">
+              <CardTitle className="flex items-center gap-4 text-xl font-black md:text-3xl tracking-tight">
+                <div className="flex h-12 w-12 items-center justify-center rounded-[1.25rem] bg-amber-50 text-amber-600 shadow-sm border border-amber-100/50">
+                  <Sparkles className="h-6 w-6" />
+                </div>
+                {visibleReport ? "ATS diagnosis" : "What you'll see here"}
+              </CardTitle>
+              {visibleReport && (
+                <div className="flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-slate-400">
+                  <History className="w-3 h-3" />
+                  {formatDate(visibleReport.createdAt)}
+                </div>
+              )}
+            </div>
+            <CardDescription className="text-slate-500 font-medium">
+              {visibleReport ? "Your active report remains locked for comparison while you iterate." : "Run a scan to see a sharper verdict, keyword gaps, strengths, and a ranked action list."}
+            </CardDescription>
           </CardHeader>
-          <CardContent className="space-y-4 p-4 pt-0 md:space-y-5 md:p-7 md:pt-0">
+          <CardContent className="space-y-8 p-6 md:p-10">
             {visibleReport ? <>
-              <div className="rounded-[1.35rem] bg-[#F8FAFF] p-4 md:rounded-[1.6rem] md:p-5">
-                <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
-                  <div className="space-y-2">
-                    <p className="text-[0.68rem] font-semibold uppercase tracking-[0.2em] text-accent">Verdict</p>
-                    <h2 className="text-xl font-black tracking-tight text-primary md:text-2xl">{visibleReport.headline || "ATS review complete"}</h2>
-                    <p className="text-sm leading-relaxed text-muted-foreground">{visibleReport.matchSummary}</p>
-                  </div>
-                  <div className="rounded-[1.2rem] border bg-white px-4 py-3 text-center shadow-sm md:rounded-[1.4rem] md:px-5 md:py-4">
-                    <p className="text-[0.62rem] font-semibold uppercase tracking-[0.18em] text-muted-foreground">Match</p>
-                    <p className={cn("mt-1 text-[2rem] font-black tracking-tight md:text-4xl", scoreTone(visibleReport.atsScore))}>{Math.round(visibleReport.atsScore || 0)}%</p>
-                  </div>
+              {/* Verdict Hero Score */}
+              <div className="relative overflow-hidden rounded-[2.5rem] bg-slate-900 p-8 md:p-12 text-white shadow-2xl">
+                <div className="absolute top-0 right-0 p-12 opacity-10 pointer-events-none">
+                  <Target className="w-48 h-48 rotate-12" />
                 </div>
-                <div className="mt-4 grid gap-2 sm:grid-cols-3 md:gap-3">
-                  <div className="rounded-[1.1rem] border bg-white px-4 py-3 shadow-sm"><p className="text-[0.62rem] font-semibold uppercase tracking-[0.18em] text-muted-foreground">Keyword coverage</p><p className="mt-1 text-xl font-black text-primary">{Math.round(visibleReport.keywordCoverage || 0)}%</p></div>
-                  <div className="rounded-[1.1rem] border bg-white px-4 py-3 shadow-sm"><p className="text-[0.62rem] font-semibold uppercase tracking-[0.18em] text-muted-foreground">Missing keywords</p><p className="mt-1 text-xl font-black text-primary">{visibleReport.missingKeywords?.length || 0}</p></div>
-                  <div className="rounded-[1.1rem] border bg-white px-4 py-3 shadow-sm"><p className="text-[0.62rem] font-semibold uppercase tracking-[0.18em] text-muted-foreground">Saved</p><p className="mt-1 text-xl font-black text-primary">{formatDate(visibleReport.createdAt)}</p></div>
+                <div className="relative z-10 flex flex-col md:flex-row items-center gap-8 md:gap-12 text-center md:text-left">
+                  <div className="shrink-0 relative">
+                    <div className="h-32 w-32 md:h-40 md:w-40 rounded-full border-4 border-white/20 flex items-center justify-center relative">
+                      <div className="text-4xl md:text-5xl font-black">{Math.round(visibleReport.atsScore || 0)}%</div>
+                      <div className="absolute -bottom-2 px-3 py-1 rounded-full bg-white text-slate-900 text-[10px] font-black uppercase tracking-widest shadow-lg">Match</div>
+                    </div>
+                    {/* Tiny decorative arcs */}
+                    <svg className="absolute -inset-2 w-[calc(100%+16px)] h-[calc(100%+16px)] rotate-[-90deg]">
+                       <circle cx="50%" cy="50%" r="48%" fill="none" stroke="currentColor" strokeWidth="2" strokeDasharray={`${visibleReport.atsScore}, 100`} pathLength="100" className="text-blue-400 drop-shadow-[0_0_8px_rgba(96,165,250,0.5)]" />
+                    </svg>
+                  </div>
+                  <div className="space-y-3">
+                    <p className="text-[10px] font-black uppercase tracking-[0.3em] text-blue-400">Analysis Verdict</p>
+                    <h2 className="text-2xl md:text-4xl font-black tracking-tighter leading-none">{visibleReport.headline || "ATS review complete"}</h2>
+                    <p className="text-sm md:text-base text-slate-300 font-medium leading-relaxed max-w-xl">{visibleReport.matchSummary}</p>
+                  </div>
                 </div>
               </div>
 
-              <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
-                {categoryLabels.map(({ key, label }) => <div key={key} className="rounded-[1.3rem] border border-border/70 bg-[#FAFBFD] p-4"><div className="flex items-center justify-between gap-2"><p className="text-sm font-bold text-primary">{label}</p><span className={cn("text-sm font-black", scoreTone(visibleReport.categories?.[key]))}>{Math.round(visibleReport.categories?.[key] || 0)}%</span></div><Progress value={Math.round(visibleReport.categories?.[key] || 0)} className="mt-3 h-2 bg-muted/60" /></div>)}
+              {/* Stats Bar */}
+              <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+                <div className="rounded-3xl border border-slate-100 bg-white p-6 shadow-sm">
+                  <p className="text-[10px] font-black uppercase tracking-[0.18em] text-slate-400 mb-1">Keyword Coverage</p>
+                  <div className="flex items-end gap-2">
+                    <span className="text-3xl font-black text-slate-900">{Math.round(visibleReport.keywordCoverage || 0)}%</span>
+                    <div className="mb-1.5 h-1.5 w-12 rounded-full bg-slate-100 overflow-hidden">
+                      <div className="h-full bg-blue-500" style={{ width: `${visibleReport.keywordCoverage}%` }} />
+                    </div>
+                  </div>
+                </div>
+                <div className="rounded-3xl border border-slate-100 bg-white p-6 shadow-sm">
+                  <p className="text-[10px] font-black uppercase tracking-[0.18em] text-slate-400 mb-1">Gaps Identified</p>
+                  <div className="text-3xl font-black text-slate-900">{visibleReport.missingKeywords?.length || 0}</div>
+                </div>
+                <div className="col-span-2 md:col-span-1 rounded-3xl border border-slate-100 bg-white p-6 shadow-sm">
+                  <p className="text-[10px] font-black uppercase tracking-[0.18em] text-slate-400 mb-1">Formatting Check</p>
+                  <p className="text-sm font-black text-indigo-600 uppercase tracking-widest">Optimized</p>
+                </div>
               </div>
 
-              <div className="grid gap-4 lg:grid-cols-2">
-                <div className="rounded-[1.4rem] border border-border/70 bg-[#FAFBFD] p-4"><p className="flex items-center gap-2 text-sm font-black text-primary"><Zap className="h-4 w-4 text-accent" />Fastest improvements</p><div className="mt-3 space-y-3">{visibleReport.quickWins?.length ? visibleReport.quickWins.map((item) => <div key={item} className="flex items-start gap-2 text-sm text-muted-foreground"><span className="mt-1.5 h-1.5 w-1.5 rounded-full bg-primary/40" /><span>{item}</span></div>) : <p className="text-sm text-muted-foreground">Quick wins will appear here after a scan.</p>}</div></div>
-                <div className="rounded-[1.4rem] border border-border/70 bg-[#FAFBFD] p-4"><p className="flex items-center gap-2 text-sm font-black text-primary"><AlertTriangle className="h-4 w-4 text-amber-600" />ATS warnings</p><div className="mt-3 space-y-3">{visibleReport.warnings?.length ? visibleReport.warnings.map((item) => <div key={item} className="flex items-start gap-2 text-sm text-muted-foreground"><span className="mt-1.5 h-1.5 w-1.5 rounded-full bg-primary/40" /><span>{item}</span></div>) : <p className="text-sm text-muted-foreground">No ATS-format warnings were flagged in this report.</p>}</div></div>
+              {/* Category Breakdown */}
+              <div className="space-y-4">
+                <div className="flex items-center justify-between">
+                  <p className="text-[10px] font-black uppercase tracking-widest text-slate-400">Score Breakdown</p>
+                </div>
+                <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+                  {categoryLabels.map(({ key, label }) => (
+                    <div key={key} className="group rounded-3xl border border-slate-100 bg-white p-5 transition-all hover:shadow-md hover:border-indigo-100/50">
+                      <div className="flex items-center justify-between mb-3">
+                        <p className="text-xs font-black text-slate-900 uppercase tracking-wider">{label}</p>
+                        <span className={cn("text-sm font-black", scoreTone(visibleReport.categories?.[key]))}>
+                          {Math.round(visibleReport.categories?.[key] || 0)}%
+                        </span>
+                      </div>
+                      <div className="h-2 w-full rounded-full bg-slate-50 overflow-hidden">
+                        <div 
+                          className={cn("h-full transition-all duration-1000", (visibleReport.categories?.[key] || 0) >= 80 ? "bg-emerald-500" : (visibleReport.categories?.[key] || 0) >= 60 ? "bg-blue-500" : "bg-amber-500")} 
+                          style={{ width: `${visibleReport.categories?.[key] || 0}%` }} 
+                        />
+                      </div>
+                    </div>
+                  ))}
+                </div>
               </div>
-            </> : <div className="rounded-[1.5rem] border border-dashed border-border/80 bg-muted/20 p-6 text-sm text-muted-foreground">Run your first ATS scan to see a stronger verdict, keyword coverage, strengths, warnings, and section-by-section improvement advice.</div>}
+
+              {/* Wins vs Warnings */}
+              <div className="grid gap-6 md:grid-cols-2">
+                <div className="rounded-[2rem] border border-blue-50 bg-blue-50/30 p-8 space-y-4">
+                  <p className="flex items-center gap-3 text-sm font-black uppercase tracking-widest text-blue-700">
+                    <Zap className="h-4 w-4 fill-current" />
+                    Strategic Wins
+                  </p>
+                  <div className="space-y-4">
+                    {visibleReport.quickWins?.length ? visibleReport.quickWins.map((item) => (
+                      <div key={item} className="flex items-start gap-4">
+                        <div className="mt-1 flex h-4 w-4 shrink-0 items-center justify-center rounded-full bg-blue-100 text-blue-600 text-[10px] font-bold">✓</div>
+                        <p className="text-sm font-medium text-slate-600 leading-relaxed">{item}</p>
+                      </div>
+                    )) : <p className="text-sm text-slate-400 italic">No strategic wins identified yet.</p>}
+                  </div>
+                </div>
+                <div className="rounded-[2rem] border border-amber-50 bg-amber-50/30 p-8 space-y-4">
+                  <p className="flex items-center gap-3 text-sm font-black uppercase tracking-widest text-amber-700">
+                    <AlertTriangle className="h-4 w-4 fill-current" />
+                    Critical Warnings
+                  </p>
+                  <div className="space-y-4">
+                    {visibleReport.warnings?.length ? visibleReport.warnings.map((item) => (
+                      <div key={item} className="flex items-start gap-4">
+                        <div className="mt-1 flex h-4 w-4 shrink-0 items-center justify-center rounded-full bg-amber-100 text-amber-600 text-[10px] font-bold">!</div>
+                        <p className="text-sm font-medium text-slate-600 leading-relaxed">{item}</p>
+                      </div>
+                    )) : <p className="text-sm text-slate-400 italic">No formatting or compatibility warnings detected.</p>}
+                  </div>
+                </div>
+              </div>
+            </> : (
+              <div className="rounded-[2.5rem] border-2 border-dashed border-slate-100 bg-slate-50/50 p-12 md:p-20 text-center space-y-4">
+                <div className="mx-auto w-16 h-16 rounded-full bg-white flex items-center justify-center shadow-sm text-slate-300">
+                   <Target className="w-8 h-8" />
+                </div>
+                <div className="space-y-2 max-w-sm mx-auto">
+                  <h3 className="text-lg font-black text-slate-900">Awaiting Search Initialisation</h3>
+                  <p className="text-sm font-medium text-slate-400">Run your first ATS diagnostic to see keyword mapping, structural strengths, and ranked action feedback.</p>
+                </div>
+              </div>
+            )}
           </CardContent>
         </Card>
       </div>
 
-      {visibleReport && <div className="grid gap-4 xl:grid-cols-[1.1fr_0.9fr] xl:gap-6">
-        <Card className="border-none bg-white">
-          <CardHeader className="space-y-2 p-4 md:p-7"><CardTitle className="text-lg font-black md:text-2xl">Keywords and strengths</CardTitle><CardDescription>Use these to decide what to preserve and what to add before you apply.</CardDescription></CardHeader>
-          <CardContent className="space-y-4 p-4 pt-0 md:space-y-5 md:p-7 md:pt-0">
-            <div><p className="text-[0.72rem] font-semibold uppercase tracking-[0.22em] text-muted-foreground">Matched keywords</p><div className="mt-3 flex flex-wrap gap-2">{visibleReport.matchedKeywords?.length ? visibleReport.matchedKeywords.map((keyword) => <Badge key={keyword} variant="outline" className="rounded-full border-emerald-200 bg-emerald-500/10 px-3 py-1 text-[0.7rem] font-semibold text-emerald-700">{keyword}</Badge>) : <p className="text-sm text-muted-foreground">Matched keywords will appear here after a scan.</p>}</div></div>
-            <div><p className="text-[0.72rem] font-semibold uppercase tracking-[0.22em] text-muted-foreground">Missing keywords</p><div className="mt-3 flex flex-wrap gap-2">{visibleReport.missingKeywords?.length ? visibleReport.missingKeywords.map((keyword) => <Badge key={keyword} variant="outline" className="rounded-full border-amber-200 bg-amber-500/10 px-3 py-1 text-[0.7rem] font-semibold text-amber-700">{keyword}</Badge>) : <p className="text-sm text-muted-foreground">No missing keywords were flagged.</p>}</div></div>
-            <div><p className="text-[0.72rem] font-semibold uppercase tracking-[0.22em] text-muted-foreground">What is already helping</p><div className="mt-3 space-y-3">{visibleReport.strengths?.length ? visibleReport.strengths.map((item) => <div key={item} className="flex items-start gap-2 text-sm text-muted-foreground"><span className="mt-1.5 h-1.5 w-1.5 rounded-full bg-primary/40" /><span>{item}</span></div>) : <p className="text-sm text-muted-foreground">Strengths will appear here after a scan.</p>}</div></div>
+      {visibleReport && <div className="grid gap-4 xl:grid-cols-[1.1fr_0.9fr] xl:gap-6 mt-8">
+        <Card className="surface-card border-none overflow-hidden">
+          <CardHeader className="space-y-2 p-6 md:p-10 pb-4">
+            <CardTitle className="text-xl font-black md:text-3xl tracking-tight">Keywords and strengths</CardTitle>
+            <CardDescription className="text-slate-500 font-medium">Use these to decide what to preserve and what to add before you apply.</CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-8 p-6 md:p-10 pt-0">
+            <div className="space-y-4">
+              <p className="text-[10px] font-black uppercase tracking-[0.22em] text-slate-400">Matched keywords</p>
+              <div className="flex flex-wrap gap-2">
+                {visibleReport.matchedKeywords?.length ? visibleReport.matchedKeywords.map((keyword) => (
+                  <Badge key={keyword} variant="outline" className="rounded-xl border-emerald-100 bg-emerald-50 px-3 py-1.5 text-[11px] font-black text-emerald-700 shadow-sm">
+                    {keyword}
+                  </Badge>
+                )) : <p className="text-sm text-slate-400 italic">No exact keyword matches found.</p>}
+              </div>
+            </div>
+            <div className="space-y-4">
+              <p className="text-[10px] font-black uppercase tracking-[0.22em] text-slate-400">Missing keywords</p>
+              <div className="flex flex-wrap gap-2">
+                {visibleReport.missingKeywords?.length ? visibleReport.missingKeywords.map((keyword) => (
+                  <Badge key={keyword} variant="outline" className="rounded-xl border-amber-100 bg-amber-50 px-3 py-1.5 text-[11px] font-black text-amber-700 shadow-sm">
+                    {keyword}
+                  </Badge>
+                )) : <p className="text-sm text-slate-400 italic">No missing keywords flagged.</p>}
+              </div>
+            </div>
+            <div className="space-y-4 pt-4 border-t border-slate-50">
+              <p className="text-[10px] font-black uppercase tracking-[0.22em] text-slate-400">Core Strengths</p>
+              <div className="space-y-3">
+                {visibleReport.strengths?.length ? visibleReport.strengths.map((item) => (
+                  <div key={item} className="flex items-start gap-4">
+                    <div className="mt-1 flex h-4 w-4 shrink-0 items-center justify-center rounded-full bg-blue-50 text-blue-500 text-[10px] font-bold">★</div>
+                    <p className="text-sm font-medium text-slate-600 leading-relaxed">{item}</p>
+                  </div>
+                )) : <p className="text-sm text-slate-400 italic">Strengths will appear here after a scan.</p>}
+              </div>
+            </div>
           </CardContent>
         </Card>
 
-        <Card className="border-none bg-white">
-          <CardHeader className="space-y-2 p-4 md:p-7"><CardTitle className="text-lg font-black md:text-2xl">Section feedback</CardTitle><CardDescription>Fix the weakest sections first for the fastest ATS lift.</CardDescription></CardHeader>
-          <CardContent className="space-y-3 p-4 pt-0 md:p-7 md:pt-0">
-            {visibleReport.sectionFeedback?.length ? visibleReport.sectionFeedback.map((section) => <div key={section.section} className="rounded-[1.3rem] border border-border/70 bg-[#FAFBFD] p-4"><div className="flex flex-wrap items-center justify-between gap-2"><p className="text-sm font-black text-primary">{section.section}</p><Badge variant="outline" className={cn("rounded-full px-3 py-1 text-[0.65rem] font-semibold uppercase tracking-[0.2em]", section.status === "strong" ? "border-emerald-200 bg-emerald-500/10 text-emerald-700" : section.status === "needs-work" ? "border-amber-200 bg-amber-500/10 text-amber-700" : "border-rose-200 bg-rose-500/10 text-rose-700")}>{section.status.replace("-", " ")}</Badge></div><p className="mt-2 text-sm text-muted-foreground">{section.summary}</p><div className="mt-3 space-y-2">{section.fixes?.map((fix) => <div key={fix} className="flex items-start gap-2 text-sm text-muted-foreground"><span className="mt-1.5 h-1.5 w-1.5 rounded-full bg-primary/40" /><span>{fix}</span></div>)}</div></div>) : <p className="text-sm text-muted-foreground">Section feedback will appear here after a scan.</p>}
+        <Card className="surface-card border-none overflow-hidden">
+          <CardHeader className="space-y-2 p-6 md:p-10 pb-4">
+            <CardTitle className="text-xl font-black md:text-3xl tracking-tight">Section feedback</CardTitle>
+            <CardDescription className="text-slate-500 font-medium">Fix the weakest sections first for the fastest ATS lift.</CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4 p-6 md:p-10 pt-0">
+            {visibleReport.sectionFeedback?.length ? visibleReport.sectionFeedback.map((section) => (
+              <div key={section.section} className="rounded-[1.75rem] border border-slate-100 bg-[#FAFBFD]/50 p-6 space-y-4">
+                <div className="flex flex-wrap items-center justify-between gap-2">
+                  <p className="text-sm font-black text-slate-900 uppercase tracking-tight">{section.section}</p>
+                  <Badge 
+                    variant="outline" 
+                    className={cn(
+                      "rounded-full px-3 py-1 text-[9px] font-black uppercase tracking-widest border shadow-sm",
+                      section.status === "strong" ? "border-emerald-200 bg-emerald-50 text-emerald-700" : section.status === "needs-work" ? "border-amber-200 bg-amber-50 text-amber-700" : "border-rose-200 bg-rose-50 text-rose-700"
+                    )}
+                  >
+                    {section.status.replace("-", " ")}
+                  </Badge>
+                </div>
+                <p className="text-sm font-medium text-slate-500 leading-relaxed">{section.summary}</p>
+                {section.fixes?.length ? (
+                  <div className="space-y-2 pt-2">
+                    {section.fixes.map((fix) => (
+                      <div key={fix} className="flex items-start gap-3">
+                        <div className="mt-1.5 h-1.5 w-1.5 rounded-full bg-slate-300" />
+                        <p className="text-xs font-medium text-slate-600 leading-relaxed">{fix}</p>
+                      </div>
+                    ))}
+                  </div>
+                ) : null}
+              </div>
+            )) : <p className="text-sm text-slate-400 italic">Section analysis ready to generate.</p>}
           </CardContent>
         </Card>
       </div>}
 
-      {visibleReport?.recommendations?.length ? <Card className="border-none bg-white">
-        <CardHeader className="space-y-2 p-4 md:p-7"><CardTitle className="text-lg font-black md:text-2xl">Priority recommendations</CardTitle><CardDescription>A cleaner checklist for what to change next, in order.</CardDescription></CardHeader>
-        <CardContent className="space-y-3 p-4 pt-0 md:p-7 md:pt-0">
-          {visibleReport.recommendations.map((item) => <div key={`${item.priority}-${item.title}`} className="rounded-[1.3rem] border border-border/70 bg-[#FAFBFD] p-4"><div className="flex flex-wrap items-center gap-2"><p className="text-sm font-black text-primary">{item.title}</p><Badge variant="outline" className={cn("rounded-full px-3 py-1 text-[0.65rem] font-semibold uppercase tracking-[0.2em]", item.priority === "high" ? "border-rose-200 bg-rose-500/10 text-rose-700" : item.priority === "medium" ? "border-amber-200 bg-amber-500/10 text-amber-700" : "border-sky-200 bg-sky-500/10 text-sky-700")}>{item.priority}</Badge></div><p className="mt-2 text-sm text-muted-foreground">{item.description}</p></div>)}
+      {visibleReport?.recommendations?.length ? <Card className="surface-card border-none overflow-hidden mt-8">
+        <CardHeader className="space-y-2 p-6 md:p-10 pb-4">
+          <CardTitle className="text-xl font-black md:text-3xl tracking-tight text-gradient from-slate-900 to-slate-600">Priority recommendations</CardTitle>
+          <CardDescription className="text-slate-500 font-medium">A cleaner checklist for what to change next, in order.</CardDescription>
+        </CardHeader>
+        <CardContent className="grid gap-4 p-6 md:p-10 pt-0 sm:grid-cols-2">
+          {visibleReport.recommendations.map((item) => (
+            <div key={`${item.priority}-${item.title}`} className="rounded-[1.75rem] border border-slate-100 bg-[#FAFBFD]/50 p-6 flex flex-col justify-between">
+              <div className="space-y-2">
+                <div className="flex items-center gap-3 mb-2">
+                  <Badge 
+                    className={cn(
+                      "rounded-lg px-2 py-0.5 text-[8px] font-black uppercase tracking-widest",
+                      item.priority === "high" ? "bg-rose-500 text-white" : item.priority === "medium" ? "bg-amber-500 text-white" : "bg-blue-500 text-white"
+                    )}
+                  >
+                    {item.priority}
+                  </Badge>
+                  <p className="text-sm font-black text-slate-900 leading-tight">{item.title}</p>
+                </div>
+                <p className="text-xs font-medium text-slate-500 leading-relaxed">{item.description}</p>
+              </div>
+            </div>
+          ))}
         </CardContent>
       </Card> : null}
 
-      <Card className="border-none bg-white">
-        <CardHeader className="flex flex-col gap-3 p-4 md:flex-row md:items-center md:justify-between md:p-7">
-          <div className="space-y-1"><CardTitle className="flex items-center gap-3 text-lg font-black md:text-2xl"><History className="h-5 w-5 text-primary" />Recent ATS reports</CardTitle><CardDescription>Reload a saved role analysis and keep working from where you left off.</CardDescription></div>
-          <Button variant="outline" className="rounded-2xl font-bold" asChild><Link href={builderHref}>Improve in builder<ArrowRight className="ml-2 h-4 w-4" /></Link></Button>
+      <Card className="surface-card border-none overflow-hidden mt-8">
+        <CardHeader className="flex flex-col gap-6 p-6 md:flex-row md:items-center md:justify-between md:p-10">
+          <div className="space-y-1">
+            <CardTitle className="flex items-center gap-4 text-xl font-black md:text-3xl tracking-tight">
+              <div className="flex h-12 w-12 items-center justify-center rounded-[1.25rem] bg-slate-50 text-slate-900 shadow-sm border border-slate-100/50">
+                <History className="h-6 w-6" />
+              </div>
+              Recent ATS reports
+            </CardTitle>
+            <CardDescription className="text-slate-500 font-medium font-medium">Revisit past scans and track your improvement over time.</CardDescription>
+          </div>
+          <Button variant="outline" className="tap-bounce h-12 px-6 rounded-2xl font-black text-xs uppercase tracking-widest border-2 border-slate-100 bg-white" asChild>
+            <Link href={builderHref}>
+              Improve in builder
+              <ArrowRight className="ml-2 h-4 w-4" />
+            </Link>
+          </Button>
         </CardHeader>
-        <CardContent className="space-y-3 p-4 pt-0 md:p-7 md:pt-0">
-          {reports?.length ? reports.map((report) => <button key={report.id} type="button" onClick={() => loadReport(report)} className={cn("w-full rounded-[1.3rem] border bg-[#FAFBFD] p-4 text-left transition-all hover:border-primary/20 hover:bg-white hover:shadow-md", activeReport?.id === report.id && "border-primary/20 bg-primary/5 shadow-sm")}><div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between"><div className="min-w-0"><p className="truncate text-sm font-black text-primary">{report.headline || "ATS report"}</p><p className="mt-1 line-clamp-2 text-sm text-muted-foreground">{report.matchSummary || "Saved ATS analysis ready to reopen."}</p></div><div className="shrink-0 text-right"><p className={cn("text-2xl font-black", scoreTone(report.atsScore || report.totalScore || report.score))}>{Math.round(report.atsScore || report.totalScore || report.score || 0)}%</p><p className="mt-1 text-xs uppercase tracking-[0.18em] text-muted-foreground">{formatDate(report.createdAt)}</p></div></div></button>) : <div className="rounded-[1.4rem] border border-dashed border-border/80 bg-muted/20 p-5 text-sm text-muted-foreground">No ATS reports saved yet. Run a scan above and your recent analyses will appear here.</div>}
+        <CardContent className="space-y-4 p-6 md:p-10 pt-0">
+          {reports?.length ? reports.map((report) => (
+            <button 
+              key={report.id} 
+              type="button" 
+              onClick={() => loadReport(report)} 
+              className={cn(
+                "w-full rounded-[2rem] border p-6 text-left transition-all duration-300",
+                activeReport?.id === report.id 
+                  ? "border-indigo-500/30 bg-indigo-50/30 shadow-inner" 
+                  : "border-slate-50 bg-[#FAFBFD]/50 hover:bg-white hover:border-slate-200 hover:shadow-md"
+              )}
+            >
+              <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+                <div className="min-w-0 flex items-center gap-4">
+                  <div className={cn("h-12 w-12 shrink-0 rounded-2xl flex items-center justify-center text-lg font-black", scoreTone(report.atsScore || report.totalScore || report.score))}>
+                    {Math.round(report.atsScore || report.totalScore || report.score || 0)}%
+                  </div>
+                  <div className="min-w-0">
+                    <p className="truncate text-sm font-black text-slate-900 uppercase tracking-tight">{report.headline || "Unheaded Report"}</p>
+                    <p className="mt-1 truncate text-xs font-bold text-slate-400 tracking-wider">
+                      {formatDate(report.createdAt)} • {report.resumeName || "Manual Input"}
+                    </p>
+                  </div>
+                </div>
+                <div className="hidden sm:block shrink-0 px-4 py-2 rounded-xl bg-white border border-slate-100 text-[10px] font-black uppercase text-slate-400 tracking-widest group-hover:text-indigo-500 transition-colors">
+                  Reopen Report
+                </div>
+              </div>
+            </button>
+          )) : <div className="rounded-[2rem] border-2 border-dashed border-slate-100 bg-slate-50/50 p-10 text-sm italic text-center font-medium text-slate-400">No diagnostic history available.</div>}
         </CardContent>
       </Card>
     </div>

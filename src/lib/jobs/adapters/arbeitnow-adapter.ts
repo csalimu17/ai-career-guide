@@ -10,11 +10,18 @@ export class ArbeitnowAdapter implements JobApiAdapter {
     const { keywords, location, workplace, page = 1 } = params
     
     const url = new URL(this.endpoint)
-    if (keywords) url.searchParams.set("search", keywords)
+    
+    // If location is a broad country name, integrate it into keywords for better global search results
+    let searchTerms = keywords || ""
+    if (location && (location.toLowerCase().includes("uk") || location.toLowerCase().includes("united kingdom"))) {
+      if (!searchTerms.toLowerCase().includes("uk") && !searchTerms.toLowerCase().includes("london")) {
+        searchTerms = `${searchTerms} UK`.trim()
+      }
+    }
+    
+    if (searchTerms) url.searchParams.set("search", searchTerms)
     if (location) url.searchParams.set("location", location)
-    // Arbeitnow doesn't have a direct workplace filter in the same way, 
-    // but the API documentation (or common usage) often uses it in the search or as a separate param if supported.
-    // For now, we'll try to find it in the search term if workplace is remote.
+    
     if (workplace === "remote") {
       url.searchParams.set("remote", "true")
     }
@@ -63,6 +70,23 @@ export class ArbeitnowAdapter implements JobApiAdapter {
       postedLabel: this.formatDate(raw.created_at),
       tags: raw.tags || [],
       listingOrigin: "api_search",
+    }
+  }
+
+  async fetchJobDetails(externalId: string): Promise<string | null> {
+    const url = new URL(this.endpoint)
+    url.searchParams.set("search", externalId) // In Arbeitnow, slug search works well
+    try {
+      const res = await fetch(url.toString(), {
+        headers: { Accept: "application/json" },
+      })
+      if (!res.ok) return null
+      const data = await res.json()
+      const job = (data.data || []).find((j: any) => String(j.slug || j.id) === externalId)
+      return job ? job.description : null
+    } catch (error) {
+      console.error("Arbeitnow details error:", error)
+      return null
     }
   }
 

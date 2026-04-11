@@ -56,10 +56,17 @@ export default async function OpenGraphImage() {
                 width: "64px",
               }}
             />
-            <div style={{ display: "flex", alignItems: "center" }}>
-              <span style={{ color: "#5D69F6" }}>Ai</span>
-              <span style={{ color: "#3958D8", marginLeft: "2px" }}>Career</span>
-              <span style={{ color: "#C58745", marginLeft: "2px" }}>Guide.</span>
+            <div
+              style={{
+                display: "flex",
+                alignItems: "center",
+                backgroundImage: "linear-gradient(to right, #7c3aed, #2563eb, #f97316)",
+                lineHeight: 1.2,
+                paddingBottom: "4px",
+                color: "transparent",
+              }}
+            >
+              Ai Career guide.
             </div>
           </div>
 

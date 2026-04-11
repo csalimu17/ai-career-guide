@@ -10,8 +10,9 @@
  */
 
 import { ai } from '@/ai/genkit';
+import { generateWithFallback } from '@/ai/generate-helper';
 import { buildJobResearchContext, formatJobResearchContext } from '@/ai/job-research';
-import { getGeminiModel } from '@/ai/model-router';
+import { getGeminiModel, getFallbackGeminiModel } from '@/ai/model-router';
 import { z } from 'genkit';
 
 const CvContentEnhancementInputSchema = z.object({
@@ -82,10 +83,12 @@ const cvContentEnhancementFlow = ai.defineFlow(
     const researchBrief = await getResearchBrief(input);
     const writingModel = await getGeminiModel('cvWriting');
     const researchModel = await getGeminiModel('jobResearch');
+    const fallbackWritingModel = getFallbackGeminiModel('cvWriting');
+    const fallbackResearchModel = getFallbackGeminiModel('jobResearch');
 
     switch (input.action) {
       case 'generate_content': {
-        const response = await ai.generate({
+        const response = await generateWithFallback({
           model: writingModel,
           config: { temperature: 0.3 },
           system: `You are an expert career advisor and CV writer.
@@ -108,7 +111,7 @@ ${input.additionalContext || '(not provided)'}
 Job research brief:
 ${researchBrief || '(none available)'}`,
           output: { schema: GeneratedContentSchema },
-        });
+        }, fallbackWritingModel || undefined);
         enhancedContent = response.output?.generatedContent;
         break;
       }
@@ -117,7 +120,7 @@ ${researchBrief || '(none available)'}`,
           throw new Error('targetContent is required for rewriting a bullet point.');
         }
 
-        const response = await ai.generate({
+        const response = await generateWithFallback({
           model: writingModel,
           config: { temperature: 0.2 },
           system: `You are an expert CV writer.
@@ -143,7 +146,7 @@ ${input.jobDescription || '(not provided)'}
 Job research brief:
 ${researchBrief || '(none available)'}`,
           output: { schema: RewrittenBulletSchema },
-        });
+        }, fallbackWritingModel || undefined);
         enhancedContent = response.output?.rewrittenBullet;
         break;
       }
@@ -152,7 +155,7 @@ ${researchBrief || '(none available)'}`,
           throw new Error('currentCvContent is required for suggesting skills.');
         }
 
-        const response = await ai.generate({
+        const response = await generateWithFallback({
           model: writingModel,
           config: { temperature: 0.1 },
           system: `You are a Career Intelligence Advisor.
@@ -173,7 +176,7 @@ ${input.jobDescription || '(not provided)'}
 Job research brief:
 ${researchBrief || '(none available)'}`,
           output: { schema: SuggestedSkillsSchema },
-        });
+        }, fallbackWritingModel || undefined);
         suggestions = response.output?.suggestedSkills;
         break;
       }
@@ -182,7 +185,7 @@ ${researchBrief || '(none available)'}`,
           throw new Error('targetContent (summary points) is required for crafting a summary.');
         }
 
-        const response = await ai.generate({
+        const response = await generateWithFallback({
           model: writingModel,
           config: { temperature: 0.4 },
           system: `You are an expert CV writer and positioning strategist.
@@ -208,7 +211,7 @@ ${input.jobDescription || '(not provided)'}
 Job research brief:
 ${researchBrief || '(none available)'}`,
           output: { schema: ProfessionalSummarySchema },
-        });
+        }, fallbackWritingModel || undefined);
         enhancedContent = response.output?.professionalSummary;
         break;
       }
@@ -217,7 +220,7 @@ ${researchBrief || '(none available)'}`,
           throw new Error('targetContent (summary points) is required for suggesting summary variants.');
         }
 
-        const response = await ai.generate({
+        const response = await generateWithFallback({
           model: writingModel,
           config: { temperature: 0.6 },
           system: `You are an expert CV writer and career strategist.
@@ -244,7 +247,7 @@ ${input.jobDescription || '(not provided)'}
 Job research brief:
 ${researchBrief || '(none available)'}`,
           output: { schema: SummaryVariantsSchema },
-        });
+        }, fallbackWritingModel || undefined);
         suggestions = response.output?.summaryVariants;
         enhancedContent = response.output?.summaryVariants?.[0];
         break;
@@ -255,7 +258,7 @@ ${researchBrief || '(none available)'}`,
         }
 
         try {
-          const response = await ai.generate({
+          const response = await generateWithFallback({
             model: researchModel,
             config: { temperature: 0.2 },
             system: `You are an expert resume strategist and job-role researcher.
@@ -280,11 +283,11 @@ ${input.jobDescription || input.additionalContext || '(not provided)'}
 Job research brief:
 ${researchBrief || '(none available)'}`,
             output: { schema: RoleBulletsSchema },
-          });
+          }, fallbackResearchModel || undefined);
 
           const bullets = response.output?.bullets || [];
           suggestions = bullets;
-          enhancedContent = bullets.map(b => `- ${b}`).join('\n');
+          enhancedContent = bullets.map((b: string) => `- ${b}`).join('\n');
         } catch (err) {
           console.error('suggestRoleBulletsPrompt error:', err);
           throw err;

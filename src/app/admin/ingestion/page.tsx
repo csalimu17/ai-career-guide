@@ -17,6 +17,8 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Progress } from "@/components/ui/progress"
+import { useUser } from "@/firebase"
+import { fetchAuthedJson } from "@/lib/client/fetch-json"
 import { cn } from "@/lib/utils"
 
 type SignalTone = "healthy" | "warning" | "critical"
@@ -59,6 +61,7 @@ function metricToPercent(value: string) {
 }
 
 export default function IngestionHealthPage() {
+  const { user, isUserLoading } = useUser()
   const [snapshot, setSnapshot] = useState<QualitySnapshot | null>(null)
   const [status, setStatus] = useState<"loading" | "ready" | "error">("loading")
   const [isRefreshing, setIsRefreshing] = useState(false)
@@ -66,6 +69,8 @@ export default function IngestionHealthPage() {
   const [activeTone, setActiveTone] = useState<"all" | SignalTone>("all")
 
   const loadSnapshot = useCallback(async (showRefresh = false) => {
+    if (!user) return
+
     if (showRefresh) {
       setIsRefreshing(true)
     } else if (!snapshot) {
@@ -73,8 +78,11 @@ export default function IngestionHealthPage() {
     }
 
     try {
-      const response = await fetch("/api/diagnostics/quality-engineer", { cache: "no-store" })
-      const payload = await response.json()
+      const payload = await fetchAuthedJson<{ ok: boolean; snapshot?: QualitySnapshot }>(
+        user,
+        "/api/diagnostics/quality-engineer",
+        { cache: "no-store" }
+      )
 
       if (payload?.ok && payload.snapshot) {
         setSnapshot(payload.snapshot as QualitySnapshot)
@@ -88,9 +96,13 @@ export default function IngestionHealthPage() {
     } finally {
       setIsRefreshing(false)
     }
-  }, [snapshot])
+  }, [snapshot, user])
 
   useEffect(() => {
+    if (isUserLoading || !user) {
+      return
+    }
+
     void loadSnapshot()
 
     const interval = window.setInterval(() => {
@@ -98,7 +110,7 @@ export default function IngestionHealthPage() {
     }, 45000)
 
     return () => window.clearInterval(interval)
-  }, [loadSnapshot])
+  }, [isUserLoading, loadSnapshot, user])
 
   const filteredSignals = useMemo(() => {
     const normalized = search.trim().toLowerCase()

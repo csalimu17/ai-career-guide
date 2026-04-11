@@ -4,8 +4,8 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { ArrowRight, Loader2, Lock, Mail, User } from "lucide-react";
-import { doc } from "firebase/firestore";
-import { useAuth, useDoc, useFirestore, useMemoFirebase, useUser } from "@/firebase";
+import { collection, doc, limit, query } from "firebase/firestore";
+import { useAuth, useCollection, useDoc, useFirestore, useMemoFirebase, useUser } from "@/firebase";
 import { initiateEmailSignUp, initiateGoogleSignIn } from "@/firebase/non-blocking-login";
 import { toast } from "@/hooks/use-toast";
 import { AuthShell } from "@/components/auth/auth-shell";
@@ -13,7 +13,7 @@ import { GoogleSignInButton } from "@/components/auth/google-sign-in-button";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { upsertUserProfile } from "@/lib/user-profile";
+import { getPostAuthDestination, upsertUserProfile } from "@/lib/user-profile";
 
 export default function SignupPageClient() {
   const auth = useAuth();
@@ -34,24 +34,18 @@ export default function SignupPageClient() {
 
   const { data: profile, isLoading: isProfileLoading } = useDoc(userDocRef);
 
+  const resumesQuery = useMemoFirebase(() => {
+    if (!db || !uid) return null;
+    return query(collection(db, "users", uid, "resumes"), limit(1));
+  }, [db, uid]);
+
+  const { data: resumes, isLoading: isResumesLoading } = useCollection(resumesQuery);
+
   useEffect(() => {
-    // Only redirect if auth is ready AND we've attempted to fetch the profile.
-    // If isProfileLoading is false and profile is null, it means the document doesn't exist yet,
-    // which is expected during a fresh signup flow.
-    if (user && !isUserLoading && !isProfileLoading) {
-      if (profile) {
-        // If they already have a profile, check where they should go
-        if (profile.onboardingComplete) {
-          router.push("/dashboard");
-        } else {
-          router.push("/onboarding");
-        }
-      } 
-      // If no profile exists yet, we stay on the page until either:
-      // 1. The user finishes the form and handleSignup/handleGoogleSignup pushes them
-      // 2. The background upsert (for Google) finishes and a second useDoc tick sees the profile.
+    if (user && !isUserLoading) {
+      router.replace("/dashboard");
     }
-  }, [user, isUserLoading, isProfileLoading, profile, router]);
+  }, [user, isUserLoading, router]);
 
   const handleSignup = async (event: React.FormEvent) => {
     event.preventDefault();
@@ -78,7 +72,7 @@ export default function SignupPageClient() {
           photoURL: userCredential.user.photoURL,
           emailVerified: userCredential.user.emailVerified,
         });
-        router.push("/onboarding");
+        router.replace("/dashboard");
       }
     } catch (error: any) {
       setIsSigningUp(false);
@@ -105,7 +99,7 @@ export default function SignupPageClient() {
           photoURL: result.user.photoURL,
           emailVerified: result.user.emailVerified,
         });
-        router.push("/onboarding");
+        router.replace("/dashboard");
       } else {
         setIsSigningUp(false);
       }

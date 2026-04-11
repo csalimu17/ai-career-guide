@@ -8,6 +8,7 @@ import { Loader2, Zap, CheckCircle2, XCircle, AlertTriangle, Activity, ShieldChe
 import { runGovernanceDiagnosticsAndRepair, type GovernanceDiagnosticsResult } from '@/app/actions/admin-diagnostics';
 import { firebaseConfig } from '@/firebase/config';
 import { useUser } from '@/firebase';
+import { fetchAuthedJson } from '@/lib/client/fetch-json';
 import { siteConfig } from '@/lib/site';
 
 type QualityMonitorTone = 'healthy' | 'warning' | 'critical';
@@ -34,7 +35,7 @@ type QualityMonitorSnapshot = {
 };
 
 export default function DiagnosticsPage() {
-  const { user } = useUser();
+  const { user, isUserLoading } = useUser();
   const [aiStatus, setAiStatus] = useState<'idle' | 'loading' | 'success' | 'error'>('idle');
   const [aiResponse, setAiResponse] = useState<string | null>(null);
   const [errorDetails, setErrorDetails] = useState<string | null>(null);
@@ -150,9 +151,14 @@ export default function DiagnosticsPage() {
     let cancelled = false;
 
     const loadQualitySnapshot = async () => {
+      if (!user) return;
+
       try {
-        const response = await fetch('/api/diagnostics/quality-engineer', { cache: 'no-store' });
-        const payload = await response.json();
+        const payload = await fetchAuthedJson<{ ok: boolean; snapshot?: QualityMonitorSnapshot }>(
+          user,
+          '/api/diagnostics/quality-engineer',
+          { cache: 'no-store' }
+        );
 
         if (cancelled) return;
 
@@ -170,6 +176,10 @@ export default function DiagnosticsPage() {
       }
     };
 
+    if (isUserLoading || !user) {
+      return;
+    }
+
     void loadQualitySnapshot();
     const interval = window.setInterval(() => {
       void loadQualitySnapshot();
@@ -179,7 +189,7 @@ export default function DiagnosticsPage() {
       cancelled = true;
       window.clearInterval(interval);
     };
-  }, []);
+  }, [isUserLoading, user]);
 
   return (
     <div className="space-y-5 md:space-y-8">

@@ -12,8 +12,8 @@ import { plainTextToRichTextHtml, richTextToPlainText } from "@/lib/rich-text"
 import { downloadResumePdf } from "@/lib/resume-pdf"
 import { buildResumePlainText } from "@/lib/resume-to-text"
 import type { AtsOptimizationScoringOutput } from "@/ai/flows/ats-optimization-scoring-flow"
-import { atsOptimizationScoring } from "@/ai/flows/ats-optimization-scoring-flow"
 import { enhanceCvContent } from "@/ai/flows/cv-content-enhancement-flow"
+import { fetchAuthedJson } from "@/lib/client/fetch-json"
 import { classifyCareerRouting, getCareerAgentResponse } from "@/services/CareerRoutingActions"
 import { AgentRole, RoutingResult } from "@/services/CareerAgents"
 export function useEditorState() {
@@ -40,6 +40,9 @@ export function useEditorState() {
   const [skillSuggestions, setSkillSuggestions] = useState<string[]>([])
   const [jobDescription, setJobDescription] = useState("")
   const [atsResult, setAtsResult] = useState<AtsOptimizationScoringOutput | null>(null)
+  const [isCropping, setIsCropping] = useState(false)
+  const [cropImage, setCropImage] = useState<string | null>(null)
+  const [croppedAreaPixels, setCroppedAreaPixels] = useState<any>(null)
   
   const [routingLogs, setRoutingLogs] = useState<RoutingResult[]>([])
   const [chatMessages, setChatMessages] = useState<{ role: "user" | "assistant", text: string, agent?: AgentRole, reason?: string }[]>([
@@ -304,35 +307,19 @@ export function useEditorState() {
     return true
   }, [profile])
 
-  const handleDownloadPdf = async () => {
-    if (!resume) return
-    setIsExporting(true)
-    try {
-      await downloadResumePdf(resume)
-      toast({ title: "PDF downloaded" })
-    } catch (error) {
-      console.error("PDF export failed:", error)
-      toast({ variant: "destructive", title: "Export Failed" })
-    } finally {
-      setIsExporting(false)
-    }
-  }
+  const onCropComplete = useCallback((_croppedArea: any, croppedAreaPixels: any) => {
+    setCroppedAreaPixels(croppedAreaPixels)
+  }, [])
 
-  const handlePhotoFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handlePhotoFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
-    if (!file || !user || !storage || !resume) return
-    setIsUploading(true)
-    try {
-      const storageRef = ref(storage, `users/${user.uid}/resumes/${resume.id}/photo`)
-      await uploadBytes(storageRef, file)
-      const url = await getDownloadURL(storageRef)
-      handleUpdate("content.personal.photoUrl", url)
-      toast({ title: "Photo updated" })
-    } catch (err) {
-      console.error("Photo upload failed:", err)
-      toast({ variant: "destructive", title: "Upload Failed" })
-    } finally {
-      setIsUploading(false)
+    if (file) {
+      const reader = new FileReader()
+      reader.onload = () => {
+        setCropImage(reader.result as string)
+        setIsCropping(true)
+      }
+      reader.readAsDataURL(file)
     }
   }
 
@@ -342,12 +329,47 @@ export function useEditorState() {
     toast({ title: "Photo removed" })
   }
 
+  const processCrop = async () => {
+    if (!cropImage || !croppedAreaPixels) return
+    setIsUploading(true)
+    try {
+      const croppedBlob = await getCroppedImg(cropImage, croppedAreaPixels)
+      if (croppedBlob && user && storage && resume) {
+        const storageRef = ref(storage, `users/${user.uid}/resumes/${resume.id}/photo`)
+        await uploadBytes(storageRef, croppedBlob)
+        const url = await getDownloadURL(storageRef)
+        handleUpdate("content.personal.photoUrl", url)
+        setIsCropping(false)
+        setCropImage(null)
+        toast({ title: "Photo updated" })
+      }
+    } catch (err) {
+      console.error("Photo crop/upload failed:", err)
+      toast({ variant: "destructive", title: "Upload Failed" })
+    } finally {
+      setIsUploading(false)
+    }
+  }
+
+  const handleDownloadPdf = async () => {
+    if (!resume) return
+    setIsExporting(true)
+    try {
+      await downloadResumePdf(resume)
+    } finally {
+      setIsExporting(false)
+    }
+  }
+
   const runAtsCheck = async () => {
     if (!resume || !jobDescription || !checkLimit("atsChecks")) return
     setIsEnhancing(true)
     try {
       const plainText = buildResumePlainText(resume)
-      const result = await atsOptimizationScoring({ cvContent: plainText, jobDescription })
+      const { result } = await fetchAuthedJson<{ result: AtsOptimizationScoringOutput }>(user, "/api/ats/scan", {
+        method: "POST",
+        body: JSON.stringify({ cvContent: plainText, jobDescription }),
+      })
       setAtsResult(result)
       await incrementUsage("atsChecks")
       toast({ title: "ATS Scan Complete", description: "Optimization suggestions generated." })
@@ -533,10 +555,23 @@ export function useEditorState() {
     skillSuggestions,
     runSkillSuggestions,
     setSkillSuggestions,
+    jobDescription,
+    setJobDescription,
+    atsResult,
+    runAtsCheck,
     applyTemplate,
     updateStyle,
     resetTemplateStyles,
     profile,
+
+    isUploading,
+    isCropping,
+    setIsCropping,
+    cropImage,
+    onCropComplete,
+    processCrop,
+    handlePhotoFileChange,
+    handleDeletePhoto,
 
     setResume,
     routingLogs,

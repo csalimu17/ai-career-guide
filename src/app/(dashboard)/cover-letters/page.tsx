@@ -15,6 +15,7 @@ import {
   Target,
   Trash2,
   UserRound,
+  Zap,
 } from "lucide-react"
 
 import { generateCoverLetter } from "@/ai/flows/cover-letter-generator-flow"
@@ -258,141 +259,161 @@ export default function CoverLettersPage() {
   }
 
   return (
-    <div className="mx-auto max-w-7xl space-y-6 px-4 pb-20 pt-4 md:space-y-8 md:px-8 md:pt-8">
-      <section className="section-shell space-y-4 px-5 py-6 md:px-8">
-        <div className="eyebrow-chip">
-          <Sparkles className="h-3.5 w-3.5" />
-          Cover letter studio
-        </div>
-        <div className="flex flex-col gap-5 xl:flex-row xl:items-end xl:justify-between">
-          <div className="min-w-0 space-y-3 xl:flex-1">
-            <h1 className="text-[2rem] font-black leading-[0.96] tracking-[-0.05em] text-primary sm:text-4xl lg:text-5xl">
-              Generate stronger letters, then keep refining them like real application assets.
-            </h1>
-            <p className="max-w-3xl text-sm leading-relaxed text-muted-foreground sm:text-base md:text-lg">
-              This flow now creates a full cover letter, a shorter email version, a subject line, and practical editing tips so you can move faster without sending something generic.
-            </p>
-            <div className="flex flex-wrap gap-2">
-              <Badge variant="outline" className="rounded-full px-3 py-1 text-[0.68rem] font-semibold uppercase tracking-[0.2em]">
-                {plan.toUpperCase()} plan
-              </Badge>
-              <Badge variant="outline" className="rounded-full border-secondary/20 bg-secondary/5 px-3 py-1 text-[0.68rem] font-semibold uppercase tracking-[0.2em] text-secondary">
-                {resumes?.length || 0} resume sources
-              </Badge>
-              <Badge variant="outline" className="rounded-full border-accent/20 bg-accent/5 px-3 py-1 text-[0.68rem] font-semibold uppercase tracking-[0.2em] text-accent">
-                {letters?.length || 0} saved letters
-              </Badge>
-            </div>
+    <div className="mx-auto max-w-7xl space-y-8 px-4 pb-20 pt-4 md:px-8 md:pt-8">
+      <section className="section-shell relative overflow-hidden p-6 md:p-12">
+        <div className="absolute -top-24 -right-24 w-96 h-96 bg-indigo-500/10 blur-[100px] rounded-full pointer-events-none" />
+        <div className="absolute -bottom-24 -left-24 w-72 h-72 bg-emerald-500/10 blur-[80px] rounded-full pointer-events-none" />
+        
+        <div className="relative space-y-6">
+          <div className="eyebrow-chip">
+            <Sparkles className="h-3.5 w-3.5 text-indigo-500" />
+            Cover letter studio
           </div>
-
-          <div className="flex w-full flex-col gap-3 sm:w-auto sm:flex-row xl:shrink-0">
-            <div className="relative min-w-[280px]">
-              <Search className="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-              <Input
-                value={searchTerm}
-                onChange={(event) => setSearchTerm(event.target.value)}
-                placeholder="Search company, role, tone, or content..."
-                className="h-12 rounded-2xl border-border/80 bg-white pl-11 font-medium"
-              />
+          
+          <div className="flex flex-col gap-8 xl:flex-row xl:items-end xl:justify-between">
+            <div className="max-w-4xl space-y-4">
+              <h1 className="headline-gradient-vivid text-[2.5rem] font-black leading-[1.05] tracking-[-0.05em] sm:text-5xl lg:text-6xl">
+                Generate stronger letters, then keep refining them like assets.
+              </h1>
+              <p className="max-w-2xl text-sm leading-relaxed text-slate-500 sm:text-base md:text-lg font-medium">
+                This flow creates a full cover letter, a shorter email version, and practical editing tips so you can move faster without sending something generic.
+              </p>
+              
+              <div className="flex flex-wrap gap-3">
+                <div className="flex items-center gap-2 rounded-2xl border border-slate-100 bg-white px-4 py-2 shadow-sm transition-all hover:border-indigo-100 hover:shadow-md">
+                  <div className="h-2 w-2 rounded-full bg-indigo-500 animate-pulse" />
+                  <span className="text-[10px] font-black uppercase tracking-widest text-slate-400">{plan} plan</span>
+                </div>
+                <div className="flex items-center gap-2 rounded-2xl border border-slate-100 bg-white px-4 py-2 shadow-sm transition-all hover:border-emerald-100 hover:shadow-md">
+                  <span className="text-emerald-600 font-black text-xs">{resumes?.length || 0}</span>
+                  <span className="text-[10px] font-black uppercase tracking-widest text-slate-400">Resume sources</span>
+                </div>
+                <div className="flex items-center gap-2 rounded-2xl border border-slate-100 bg-white px-4 py-2 shadow-sm transition-all hover:border-amber-100 hover:shadow-md">
+                  <span className="text-amber-600 font-black text-xs">{letters?.length || 0}</span>
+                  <span className="text-[10px] font-black uppercase tracking-widest text-slate-400">Saved letters</span>
+                </div>
+              </div>
             </div>
 
-            <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-              <DialogTrigger asChild>
-                <Button
-                  className="h-12 rounded-2xl px-6 font-bold"
-                  disabled={!canGenerateCoverLetters || !resumes?.length}
-                >
-                  <Sparkles className="mr-2 h-4 w-4" />
-                  {!canGenerateCoverLetters ? "Upgrade for letters" : !resumes?.length ? "Add resume first" : "New AI letter"}
-                </Button>
-              </DialogTrigger>
-              <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-[720px]">
-                <DialogHeader>
-                  <DialogTitle className="flex items-center gap-2">
-                    <Sparkles className="h-5 w-5 text-accent" />
-                    Build a better cover letter package
+            <div className="flex w-full flex-col gap-4 sm:w-auto sm:flex-row xl:shrink-0">
+              <div className="group relative min-w-[320px]">
+                <Search className="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400 transition-colors group-focus-within:text-indigo-500" />
+                <Input
+                  value={searchTerm}
+                  onChange={(event) => setSearchTerm(event.target.value)}
+                  placeholder="Search company, role, or tone..."
+                  className="h-14 rounded-2xl border-2 border-slate-100 bg-white/50 pl-11 font-bold text-slate-900 shadow-sm transition-all focus:border-indigo-500/50 focus:bg-white focus:ring-0"
+                />
+              </div>
+
+              <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+                <DialogTrigger asChild>
+                  <Button
+                    className="tap-bounce h-14 rounded-2xl bg-slate-900 px-8 font-black text-white shadow-xl transition-all hover:bg-slate-800 hover:scale-[1.02] disabled:opacity-50"
+                    disabled={!canGenerateCoverLetters || !resumes?.length}
+                  >
+                    <Sparkles className="mr-2 h-4 w-4 text-amber-400" />
+                    {!canGenerateCoverLetters ? "Upgrade for letters" : !resumes?.length ? "Add resume first" : "New AI letter"}
+                  </Button>
+                </DialogTrigger>
+              <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-[800px] rounded-[2.5rem] border-none shadow-2xl p-0">
+                <DialogHeader className="p-8 md:p-12 pb-0">
+                  <DialogTitle className="flex items-center gap-4 text-2xl font-black md:text-3xl tracking-tight">
+                    <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-indigo-50 text-indigo-600 shadow-sm border border-indigo-100">
+                      <Sparkles className="h-6 w-6" />
+                    </div>
+                    Build a tailored application package
                   </DialogTitle>
-                  <DialogDescription>
-                    We&apos;ll use your resume, the role, and your extra guidance to create a fuller application draft that is easier to personalize before sending.
+                  <DialogDescription className="text-slate-500 font-medium text-base md:text-lg mt-2">
+                    We&apos;ll use your resume and role details to create a high-converting letter and short email draft.
                   </DialogDescription>
                 </DialogHeader>
 
-                <div className="space-y-6 py-4">
-                  <div className="space-y-2">
-                    <label className="text-xs font-bold uppercase tracking-widest text-muted-foreground">
-                      1. Resume source
-                    </label>
+                <div className="space-y-10 p-8 md:p-12 pt-8">
+                  <div className="space-y-4">
+                    <div className="flex items-center gap-3">
+                      <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-slate-900 text-[10px] font-black text-white">01</div>
+                      <label className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">
+                        Choose anchor resume
+                      </label>
+                    </div>
                     <Select value={genData.resumeId} onValueChange={(value) => setGenData((current) => ({ ...current, resumeId: value }))}>
-                      <SelectTrigger className="h-12 rounded-2xl border-border/80 bg-muted/20">
-                        <SelectValue placeholder="Choose the resume you want to pull evidence from..." />
+                      <SelectTrigger className="h-14 rounded-2xl border-2 border-slate-100 bg-[#FAFBFD]/50 px-5 font-bold text-slate-900 focus:border-indigo-500/50 focus:bg-white focus:ring-0">
+                        <SelectValue placeholder="Select which resume to pull evidence from..." />
                       </SelectTrigger>
-                      <SelectContent>
+                      <SelectContent className="rounded-2xl border-slate-100 shadow-xl">
                         {resumes?.map((resume) => (
-                          <SelectItem key={resume.id} value={resume.id}>
+                          <SelectItem key={resume.id} value={resume.id} className="rounded-xl font-bold py-3">
                             {resume.name}
                           </SelectItem>
                         ))}
                       </SelectContent>
                     </Select>
-                    {latestResume && (
-                      <p className="text-xs text-muted-foreground">
-                        Latest resume: <span className="font-semibold text-primary">{latestResume.name}</span>
-                      </p>
-                    )}
                   </div>
 
-                  <div className="grid gap-4 md:grid-cols-3">
-                    <div className="space-y-2">
-                      <label className="text-xs font-bold uppercase tracking-widest text-muted-foreground">Company</label>
-                      <Input
-                        value={genData.company}
-                        onChange={(event) => setGenData((current) => ({ ...current, company: event.target.value }))}
-                        placeholder="Stripe"
-                        className="h-12 rounded-2xl border-border/80 bg-muted/20"
-                      />
+                  <div className="space-y-4">
+                    <div className="flex items-center gap-3">
+                      <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-slate-900 text-[10px] font-black text-white">02</div>
+                      <label className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">Role & Organization</label>
                     </div>
-                    <div className="space-y-2">
-                      <label className="text-xs font-bold uppercase tracking-widest text-muted-foreground">Role</label>
-                      <Input
-                        value={genData.role}
-                        onChange={(event) => setGenData((current) => ({ ...current, role: event.target.value }))}
-                        placeholder="Senior Product Designer"
-                        className="h-12 rounded-2xl border-border/80 bg-muted/20"
-                      />
-                    </div>
-                    <div className="space-y-2">
-                      <label className="text-xs font-bold uppercase tracking-widest text-muted-foreground">Hiring manager</label>
-                      <Input
-                        value={genData.hiringManager}
-                        onChange={(event) => setGenData((current) => ({ ...current, hiringManager: event.target.value }))}
-                        placeholder="Optional"
-                        className="h-12 rounded-2xl border-border/80 bg-muted/20"
-                      />
+                    <div className="grid gap-4 md:grid-cols-3">
+                      <div className="space-y-2">
+                        <Input
+                          value={genData.company}
+                          onChange={(event) => setGenData((current) => ({ ...current, company: event.target.value }))}
+                          placeholder="Company (e.g. OpenAI)"
+                          className="h-14 rounded-2xl border-2 border-slate-100 bg-[#FAFBFD]/50 px-5 font-bold text-slate-900 focus:border-indigo-500/50 focus:bg-white focus:ring-0"
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Input
+                          value={genData.role}
+                          onChange={(event) => setGenData((current) => ({ ...current, role: event.target.value }))}
+                          placeholder="Role (e.g. Lead Designer)"
+                          className="h-14 rounded-2xl border-2 border-slate-100 bg-[#FAFBFD]/50 px-5 font-bold text-slate-900 focus:border-indigo-500/50 focus:bg-white focus:ring-0"
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Input
+                          value={genData.hiringManager}
+                          onChange={(event) => setGenData((current) => ({ ...current, hiringManager: event.target.value }))}
+                          placeholder="Hiring Manager (Optional)"
+                          className="h-14 rounded-2xl border-2 border-slate-100 bg-[#FAFBFD]/50 px-5 font-bold text-slate-900 focus:border-indigo-500/50 focus:bg-white focus:ring-0"
+                        />
+                      </div>
                     </div>
                   </div>
 
-                  <div className="space-y-2">
-                    <label className="text-xs font-bold uppercase tracking-widest text-muted-foreground">
-                      2. Job description
-                    </label>
+                  <div className="space-y-4">
+                    <div className="flex items-center gap-3">
+                      <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-slate-900 text-[10px] font-black text-white">03</div>
+                      <label className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">
+                        Context & Target Requirements
+                      </label>
+                    </div>
                     <Textarea
                       value={genData.jobDescription}
                       onChange={(event) => setGenData((current) => ({ ...current, jobDescription: event.target.value }))}
-                      placeholder="Paste the full job description so the letter can respond to what the role actually needs..."
-                      className="min-h-[180px] rounded-[1.5rem] border-border/80 bg-muted/20 resize-none"
+                      placeholder="Paste the full job description here so the AI can tailor your letter to specific needs..."
+                      className="min-h-[200px] rounded-[2rem] border-2 border-slate-100 bg-[#FAFBFD]/50 p-6 font-medium text-slate-900 shadow-inner focus:border-indigo-500/50 focus:bg-white focus:ring-0 resize-none leading-relaxed"
                     />
                   </div>
 
-                  <div className="grid gap-4 md:grid-cols-2">
-                    <div className="space-y-2">
-                      <label className="text-xs font-bold uppercase tracking-widest text-muted-foreground">3. Tone</label>
+                  <div className="grid gap-8 md:grid-cols-2">
+                    <div className="space-y-4">
+                      <label className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">Tone Preference</label>
                       <div className="grid grid-cols-3 gap-2">
                         {(["professional", "enthusiastic", "creative"] as const).map((tone) => (
                           <Button
                             key={tone}
                             type="button"
-                            variant={genData.tone === tone ? "default" : "outline"}
-                            className="h-10 rounded-xl text-[10px] font-bold uppercase tracking-[0.18em]"
+                            variant="outline"
+                            className={cn(
+                              "tap-bounce h-12 rounded-2xl border-2 font-black text-[9px] uppercase tracking-widest transition-all",
+                              genData.tone === tone 
+                                ? "border-indigo-500 bg-indigo-50 text-indigo-600" 
+                                : "border-slate-100 bg-white text-slate-500 hover:border-slate-200"
+                            )}
                             onClick={() => setGenData((current) => ({ ...current, tone }))}
                           >
                             {tone}
@@ -400,88 +421,65 @@ export default function CoverLettersPage() {
                         ))}
                       </div>
                     </div>
-                    <div className="space-y-2">
-                      <label className="text-xs font-bold uppercase tracking-widest text-muted-foreground">4. Length</label>
+                    <div className="space-y-4">
+                      <label className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">Draft Length</label>
                       <Select
                         value={genData.length}
                         onValueChange={(value: "concise" | "standard" | "detailed") =>
                           setGenData((current) => ({ ...current, length: value }))
                         }
                       >
-                        <SelectTrigger className="h-12 rounded-2xl border-border/80 bg-muted/20">
+                        <SelectTrigger className="h-12 rounded-2xl border-2 border-slate-100 bg-[#FAFBFD]/50 px-5 font-bold text-slate-900 focus:border-indigo-500/50 focus:bg-white focus:ring-0">
                           <SelectValue />
                         </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="concise">Concise</SelectItem>
-                          <SelectItem value="standard">Standard</SelectItem>
-                          <SelectItem value="detailed">Detailed</SelectItem>
+                        <SelectContent className="rounded-2xl border-slate-100 shadow-xl">
+                          <SelectItem value="concise" className="rounded-xl font-bold py-3">Concise</SelectItem>
+                          <SelectItem value="standard" className="rounded-xl font-bold py-3">Standard</SelectItem>
+                          <SelectItem value="detailed" className="rounded-xl font-bold py-3">Detailed</SelectItem>
                         </SelectContent>
                       </Select>
                     </div>
                   </div>
 
-                  <div className="grid gap-4 md:grid-cols-2">
-                    <div className="space-y-2">
-                      <label className="text-xs font-bold uppercase tracking-widest text-muted-foreground">
-                        5. Must-include wins
-                      </label>
-                      <Textarea
-                        value={genData.keyPoints}
-                        onChange={(event) => setGenData((current) => ({ ...current, keyPoints: event.target.value }))}
-                        placeholder="Mention achievements, leadership moments, products, clients, or outcomes you want the draft to emphasize."
-                        className="min-h-[120px] rounded-[1.5rem] border-border/80 bg-muted/20 resize-none"
-                      />
+                  <div className="rounded-[2rem] border border-slate-100 bg-[#FAFBFD] p-8 space-y-4 shadow-inner overflow-hidden relative">
+                    <div className="absolute top-0 right-0 p-4">
+                      <Zap className="h-12 w-12 text-indigo-500/5" />
                     </div>
-                    <div className="space-y-2">
-                      <label className="text-xs font-bold uppercase tracking-widest text-muted-foreground">
-                        6. Extra guidance
-                      </label>
-                      <Textarea
-                        value={genData.customInstructions}
-                        onChange={(event) => setGenData((current) => ({ ...current, customInstructions: event.target.value }))}
-                        placeholder="Optional: mention relocation, remote preference, startup fit, product interest, or any nuance the AI should respect."
-                        className="min-h-[120px] rounded-[1.5rem] border-border/80 bg-muted/20 resize-none"
-                      />
-                    </div>
-                  </div>
-
-                  <div className="rounded-[1.4rem] border border-border/70 bg-muted/20 p-4">
-                    <p className="text-sm font-black text-primary">What you&apos;ll get back</p>
-                    <div className="mt-3 grid gap-3 sm:grid-cols-2">
-                      <div className="rounded-[1rem] border border-border/70 bg-white/90 p-3 text-sm text-muted-foreground">
-                        A full cover letter draft with clearer role alignment.
-                      </div>
-                      <div className="rounded-[1rem] border border-border/70 bg-white/90 p-3 text-sm text-muted-foreground">
-                        A shorter email version and a suggested subject line.
-                      </div>
-                      <div className="rounded-[1rem] border border-border/70 bg-white/90 p-3 text-sm text-muted-foreground">
-                        Key themes the draft is built around.
-                      </div>
-                      <div className="rounded-[1rem] border border-border/70 bg-white/90 p-3 text-sm text-muted-foreground">
-                        Editing tips so you can personalize before sending.
-                      </div>
+                    <p className="text-sm font-black text-slate-900 uppercase tracking-tight">AI Package contents</p>
+                    <div className="grid gap-4 sm:grid-cols-2">
+                      {[
+                        "Tailored primary cover letter",
+                        "Short-form email version",
+                        "High-impact subject lines",
+                        "Personalization guidance"
+                      ].map((item, idx) => (
+                        <div key={idx} className="flex items-center gap-3">
+                          <div className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
+                          <p className="text-xs font-bold text-slate-500">{item}</p>
+                        </div>
+                      ))}
                     </div>
                   </div>
                 </div>
 
-                <DialogFooter className="sticky bottom-0 bg-background pt-4">
-                  <Button variant="outline" onClick={() => setIsDialogOpen(false)} className="rounded-xl">
-                    Cancel
+                <DialogFooter className="p-8 md:p-12 pt-0 flex gap-3 sm:justify-between items-center border-t border-slate-50">
+                  <Button variant="ghost" onClick={() => setIsDialogOpen(false)} className="rounded-2xl font-black text-[10px] uppercase tracking-widest text-slate-400 hover:bg-slate-50">
+                    Never mind
                   </Button>
                   <Button
                     onClick={handleGenerate}
-                    className="rounded-xl px-8"
+                    className="tap-bounce h-14 rounded-2xl bg-slate-900 px-10 font-black text-white shadow-xl transition-all hover:bg-slate-800 disabled:opacity-50"
                     disabled={isGenerating || !genData.resumeId || !genData.jobDescription.trim() || !canGenerateCoverLetters}
                   >
                     {isGenerating ? (
                       <>
                         <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                        Drafting...
+                        Generating package...
                       </>
                     ) : (
                       <>
-                        <Sparkles className="mr-2 h-4 w-4" />
-                        Generate package
+                        <Sparkles className="mr-2 h-4 w-4 text-amber-400" />
+                        Draft Application
                       </>
                     )}
                   </Button>
@@ -490,39 +488,46 @@ export default function CoverLettersPage() {
             </Dialog>
           </div>
         </div>
-      </section>
+      </div>
+    </section>
 
       {!canGenerateCoverLetters && (
-        <Card className="border-none bg-white">
-          <CardContent className="flex flex-col gap-4 p-5 md:flex-row md:items-center md:justify-between md:p-6">
-            <div className="space-y-1">
-              <p className="text-sm font-black text-primary">Cover letters are currently locked on the free plan.</p>
-              <p className="text-sm text-muted-foreground">
-                Upgrade to Pro or Master to generate tailored letters, short email versions, and reusable application drafts.
+        <Card className="surface-card border-none bg-white p-2">
+          <CardContent className="flex flex-col gap-6 p-8 md:flex-row md:items-center md:justify-between">
+            <div className="space-y-2">
+              <div className="flex items-center gap-3">
+                <Zap className="h-6 w-6 text-amber-500" />
+                <p className="text-xl font-black text-slate-900 tracking-tight">Level up your application game</p>
+              </div>
+              <p className="text-sm font-medium text-slate-500 max-w-2xl leading-relaxed">
+                Unlock the full power of tailored cover letters, short-form email versions, and persistent application tracking by upgrading to a pro plan.
               </p>
             </div>
-            <Button className="rounded-2xl px-6 font-bold" asChild>
-              <Link href="/settings">Upgrade plan</Link>
+            <Button className="tap-bounce h-12 rounded-2xl bg-slate-900 px-8 font-black text-white transition-all hover:bg-slate-800" asChild>
+              <Link href="/settings">View Upgrade Options</Link>
             </Button>
           </CardContent>
         </Card>
       )}
 
       {!resumes?.length && (
-        <Card className="border-none bg-white">
-          <CardContent className="flex flex-col gap-4 p-6 md:flex-row md:items-center md:justify-between">
-            <div className="space-y-1">
-              <p className="text-sm font-black text-primary">You need at least one resume before cover letters become useful.</p>
-              <p className="text-sm text-muted-foreground">
-                Upload or build a resume first so the letter generator can pull real evidence instead of guessing.
+        <Card className="surface-card border-none bg-white p-2">
+          <CardContent className="flex flex-col gap-6 p-8 md:flex-row md:items-center md:justify-between">
+            <div className="space-y-2">
+              <div className="flex items-center gap-3">
+                <Target className="h-6 w-6 text-rose-500" />
+                <p className="text-xl font-black text-slate-900 tracking-tight">Your studio needs a foundation</p>
+              </div>
+              <p className="text-sm font-medium text-slate-500 max-w-2xl leading-relaxed">
+                We need at least one resume to act as the source of truth for your experience. Upload your CV or build one in the platform to begin generating letters.
               </p>
             </div>
             <div className="flex flex-col gap-3 sm:flex-row">
-              <Button variant="outline" className="rounded-2xl font-bold" asChild>
-                <Link href="/onboarding/upload">Upload CV</Link>
+              <Button variant="outline" className="tap-bounce h-12 rounded-2xl border-2 border-slate-100 font-black text-xs uppercase tracking-widest text-slate-900" asChild>
+                <Link href="/onboarding/upload">Upload Existing CV</Link>
               </Button>
-              <Button className="rounded-2xl font-bold" asChild>
-                <Link href="/editor">Open builder</Link>
+              <Button className="tap-bounce h-12 rounded-2xl bg-indigo-600 px-8 font-black text-white hover:bg-indigo-700" asChild>
+                <Link href="/editor">Build New Resume</Link>
               </Button>
             </div>
           </CardContent>
@@ -531,60 +536,58 @@ export default function CoverLettersPage() {
 
       {isLoading ? (
         <div className="flex justify-center py-20">
-          <Loader2 className="h-10 w-10 animate-spin text-primary/20" />
+          <Loader2 className="h-10 w-10 animate-spin text-slate-300" />
         </div>
       ) : filteredLetters.length > 0 ? (
         <div className="grid gap-6 md:grid-cols-2 xl:grid-cols-3">
           {filteredLetters.map((letter) => {
             const previewText = richTextToPlainText(letter.content).slice(0, 240)
             return (
-              <Card key={letter.id} className="flex h-full flex-col overflow-hidden border-none bg-white shadow-sm transition-all hover:-translate-y-1 hover:shadow-xl">
-                <CardHeader className="space-y-4 bg-muted/20 p-6">
+              <Card key={letter.id} className="surface-card group flex h-full flex-col overflow-hidden border-none transition-all duration-300 hover:-translate-y-2">
+                <CardHeader className="space-y-4 p-8 pb-4">
                   <div className="flex items-start justify-between gap-4">
-                    <div className="flex h-11 w-11 items-center justify-center rounded-2xl border bg-white text-primary shadow-sm">
-                      <FileText className="h-5 w-5" />
+                    <div className="flex h-12 w-12 items-center justify-center rounded-[1.25rem] bg-slate-50 text-slate-900 shadow-sm border border-slate-100/50 group-hover:bg-indigo-50 group-hover:text-indigo-600 transition-colors">
+                      <FileText className="h-6 w-6" />
                     </div>
                     <div className="flex flex-wrap justify-end gap-2">
                       {letter.tone && (
-                        <Badge variant="secondary" className="bg-white px-3 py-1 text-[0.65rem] font-black uppercase tracking-[0.2em]">
+                        <Badge variant="secondary" className="rounded-xl border-indigo-100 bg-indigo-50 px-3 py-1 text-[10px] font-black uppercase tracking-widest text-indigo-700 shadow-sm">
                           {letter.tone}
                         </Badge>
                       )}
                       {letter.length && (
-                        <Badge variant="outline" className="bg-white px-3 py-1 text-[0.65rem] font-black uppercase tracking-[0.2em]">
+                        <Badge variant="outline" className="rounded-xl border-slate-200 bg-white px-3 py-1 text-[10px] font-black uppercase tracking-widest text-slate-500 shadow-sm">
                           {letter.length}
                         </Badge>
                       )}
                     </div>
                   </div>
                   <div className="space-y-2">
-                    <CardTitle className="line-clamp-2 text-xl font-black tracking-tight text-primary">
-                      {letter.role || "Untitled cover letter"}
+                    <CardTitle className="line-clamp-2 text-xl font-black tracking-tight text-slate-900 md:text-2xl leading-tight">
+                      {letter.role || "Untitled Role"}
                     </CardTitle>
-                    <CardDescription className="flex items-center gap-2 text-sm font-semibold text-accent">
+                    <div className="flex items-center gap-2 text-sm font-black text-indigo-600 uppercase tracking-tight">
                       <Briefcase className="h-4 w-4" />
-                      {letter.company || "Company not specified"}
-                    </CardDescription>
-                    {letter.subjectLine && (
-                      <p className="line-clamp-2 text-sm text-muted-foreground">
-                        <span className="font-semibold text-primary">Subject:</span> {letter.subjectLine}
-                      </p>
-                    )}
+                      {letter.company || "Awaiting detail"}
+                    </div>
                   </div>
                 </CardHeader>
 
-                <CardContent className="flex-1 space-y-4 p-6">
-                  <p className="line-clamp-5 text-sm leading-relaxed text-muted-foreground">
-                    {previewText || "Open this draft to edit the letter body, email version, and personalization notes."}
-                  </p>
+                <CardContent className="flex-1 space-y-6 p-8 pt-0">
+                  <div className="relative">
+                    <p className="line-clamp-5 text-sm font-medium leading-[1.6] text-slate-500">
+                      {previewText || "Open this draft to edit the letter body, email version, and personalization notes."}
+                    </p>
+                    <div className="absolute inset-x-0 bottom-0 h-8 bg-gradient-to-t from-white to-transparent pointer-events-none" />
+                  </div>
 
                   {letter.keyThemes?.length ? (
-                    <div className="flex flex-wrap gap-2">
+                    <div className="flex flex-wrap gap-1.5">
                       {letter.keyThemes.slice(0, 3).map((theme) => (
                         <Badge
                           key={theme}
                           variant="outline"
-                          className="rounded-full border-accent/20 bg-accent/5 px-3 py-1 text-[0.65rem] font-semibold uppercase tracking-[0.18em] text-accent"
+                          className="rounded-lg border-emerald-50 bg-emerald-50/50 px-2 py-0.5 text-[9px] font-black uppercase tracking-widest text-emerald-700"
                         >
                           {theme}
                         </Badge>
@@ -592,42 +595,46 @@ export default function CoverLettersPage() {
                     </div>
                   ) : null}
 
-                  <div className="space-y-2 rounded-[1.2rem] border border-border/70 bg-muted/20 p-4">
-                    <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-[0.2em] text-muted-foreground">
-                      <UserRound className="h-3.5 w-3.5" />
+                  <div className="space-y-3 rounded-3xl border border-slate-100 bg-[#FAFBFD]/80 p-5 shadow-inner">
+                    <div className="flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-slate-400">
+                      <div className="h-5 w-5 rounded-lg bg-white border border-slate-100 flex items-center justify-center text-slate-900">
+                        <UserRound className="h-3 w-3" />
+                      </div>
                       Letter source
                     </div>
-                    <p className="text-sm font-semibold text-primary">{letter.resumeName || "Selected resume"}</p>
-                    <p className="text-xs text-muted-foreground">
-                      Updated {letter.updatedAt?.toDate ? letter.updatedAt.toDate().toLocaleDateString() : letter.createdAt?.toDate ? letter.createdAt.toDate().toLocaleDateString() : "recently"}
-                    </p>
+                    <div className="space-y-0.5">
+                      <p className="text-sm font-black text-slate-900">{letter.resumeName || "Master Resume"}</p>
+                      <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">
+                        Refreshed {letter.updatedAt?.toDate ? letter.updatedAt.toDate().toLocaleDateString() : letter.createdAt?.toDate ? letter.createdAt.toDate().toLocaleDateString() : "recently"}
+                      </p>
+                    </div>
                   </div>
                 </CardContent>
 
-                <CardFooter className="grid grid-cols-[1fr_auto_auto] gap-2 p-6 pt-0">
-                  <Button variant="outline" size="sm" className="rounded-xl font-bold uppercase tracking-[0.18em]" asChild>
+                <CardFooter className="grid grid-cols-[1fr_auto_auto] gap-3 p-8 pt-0">
+                  <Button variant="outline" size="lg" className="tap-bounce h-12 rounded-2xl border-2 border-slate-100 bg-white font-black text-xs uppercase tracking-widest text-slate-900 transition-all hover:border-indigo-500 hover:text-indigo-600" asChild>
                     <Link href={`/cover-letters/${letter.id}`}>
-                      <Eye className="mr-2 h-3.5 w-3.5" />
-                      View & edit
+                      <Eye className="mr-2 h-4 w-4" />
+                      View & customize
                     </Link>
                   </Button>
                   <Button
                     variant="ghost"
                     size="icon"
-                    className="rounded-xl"
+                    className="tap-bounce h-12 w-12 rounded-2xl bg-slate-50 text-slate-600 transition-all hover:bg-slate-900 hover:text-white"
                     onClick={() => handleCopyEmail(letter)}
-                    title="Copy email version"
+                    title="Copy short draft"
                   >
-                    <Mail className="h-4 w-4" />
+                    <Mail className="h-5 w-5" />
                   </Button>
                   <Button
                     variant="ghost"
                     size="icon"
-                    className="rounded-xl text-muted-foreground hover:bg-destructive/10 hover:text-destructive"
+                    className="tap-bounce h-12 w-12 rounded-2xl bg-rose-50 text-rose-500 transition-all hover:bg-rose-500 hover:text-white"
                     onClick={() => handleDelete(letter.id)}
-                    title="Delete cover letter"
+                    title="Discard letter"
                   >
-                    <Trash2 className="h-4 w-4" />
+                    <Trash2 className="h-5 w-5" />
                   </Button>
                 </CardFooter>
               </Card>
@@ -635,39 +642,42 @@ export default function CoverLettersPage() {
           })}
         </div>
       ) : (
-        <div className="flex flex-col items-center justify-center space-y-5 rounded-[2rem] border-2 border-dashed border-border/80 px-6 py-20 text-center">
-          <div className="flex h-20 w-20 items-center justify-center rounded-full bg-muted">
-            <ClipboardType className="h-10 w-10 text-muted-foreground" />
+        <div className="flex flex-col items-center justify-center space-y-8 rounded-[3rem] border-4 border-dashed border-slate-50 px-6 py-24 text-center">
+          <div className="relative">
+            <div className="absolute inset-0 bg-indigo-500/10 blur-3xl rounded-full" />
+            <div className="relative flex h-28 w-28 items-center justify-center rounded-[2.5rem] bg-indigo-50 text-indigo-600 shadow-inner border border-indigo-100/50">
+              <ClipboardType className="h-12 w-12" />
+            </div>
           </div>
-          <div className="max-w-md space-y-2">
-            <h2 className="text-2xl font-black tracking-tight text-primary">
-              {searchTerm ? "No letters matched that search" : "No cover letters yet"}
+          <div className="max-w-md space-y-3">
+            <h2 className="text-3xl font-black tracking-tight text-slate-900">
+              {searchTerm ? "No matches found" : "Ready to draft your first letter?"}
             </h2>
-            <p className="text-sm leading-relaxed text-muted-foreground">
+            <p className="text-base font-medium leading-relaxed text-slate-500">
               {searchTerm
-                ? "Try another company, role, or keyword. We search across saved letter content, subject lines, and themes."
-                : "Generate your first tailored cover letter package to get a full letter, a shorter email version, and editing guidance in one place."}
+                ? "Try adjusting your search terms. We scan through company names, roles, and identifying themes from your saved letters."
+                : "Tailored applications have a 3x higher response rate. Set up your first letter package to get started."}
             </p>
           </div>
-          <div className="flex flex-col gap-3 sm:flex-row">
+          <div className="flex flex-col gap-4 sm:flex-row">
             {searchTerm ? (
-              <Button variant="outline" className="rounded-xl font-bold" onClick={() => setSearchTerm("")}>
-                Clear search
+              <Button variant="outline" className="tap-bounce h-14 rounded-2xl border-2 border-slate-100 px-8 font-black text-slate-900 transition-all hover:border-slate-300" onClick={() => setSearchTerm("")}>
+                Clear Search
               </Button>
             ) : canGenerateCoverLetters ? (
-              <Button className="rounded-xl font-bold" onClick={() => setIsDialogOpen(true)} disabled={!resumes?.length}>
-                <Sparkles className="mr-2 h-4 w-4" />
-                Create first letter
+              <Button className="tap-bounce h-14 rounded-2xl bg-slate-900 px-10 font-black text-white shadow-xl transition-all hover:bg-slate-800" onClick={() => setIsDialogOpen(true)} disabled={!resumes?.length}>
+                <Sparkles className="mr-2 h-4 w-4 text-amber-400" />
+                Start My First Draft
               </Button>
             ) : (
-              <Button className="rounded-xl font-bold" asChild>
-                <Link href="/settings">Upgrade for letters</Link>
+              <Button className="tap-bounce h-14 rounded-2xl bg-indigo-600 px-10 font-black text-white shadow-xl transition-all hover:bg-indigo-700" asChild>
+                <Link href="/settings">Unlock Generation</Link>
               </Button>
             )}
-            <Button variant="outline" className="rounded-xl font-bold" asChild>
+            <Button variant="outline" className="tap-bounce h-14 rounded-2xl border-2 border-slate-100 px-8 font-black text-slate-900 transition-all hover:border-slate-300" asChild>
               <Link href="/editor">
                 <Target className="mr-2 h-4 w-4" />
-                Improve resume first
+                Refine Resume
               </Link>
             </Button>
           </div>

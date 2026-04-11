@@ -15,7 +15,8 @@ function Log-Error {
 Log-Info "Starting standardized deployment process..."
 
 # 1. Verification Build
-Log-Info "Running verification build..."
+Log-Info "Running verification build with memory optimizations..."
+$env:NODE_OPTIONS = "--max-old-space-size=4096"
 npm run build
 if ($LASTEXITCODE -ne 0) {
     Log-Error "Build failed! Aborting deployment."

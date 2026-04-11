@@ -12,6 +12,7 @@ type ResumeRenderMode = "screen" | "mobile" | "print" | "thumbnail"
 interface ResumeTemplateProps {
   data: any
   isPrint?: boolean
+  noPadding?: boolean
   mode?: ResumeRenderMode
   className?: string
 }
@@ -167,7 +168,9 @@ function ResumeSectionHeading({
       : "text-[0.82em]"
 
   return (
-    <div className="resume-section-heading flex items-center gap-3">
+    <div 
+      className="resume-section-heading flex items-center gap-3"
+    >
       <div
         className={cn(
           "shrink-0 font-bold tracking-[0.22em] text-slate-900",
@@ -178,6 +181,7 @@ function ResumeSectionHeading({
         style={{
           color: accent,
           letterSpacing: template.design.headingVariant === "serif" ? "0.12em" : undefined,
+          breakAfter: "avoid",
         }}
       >
         {template.design.headingVariant === "eyebrow" ? (
@@ -272,7 +276,7 @@ function ResumeTemplateHeader({
   )
 
   return (
-    <header className={headerClassName} style={headerStyle}>
+    <header className={headerClassName} style={{ ...headerStyle, breakAfter: "avoid" }}>
       {template.design.headerBand && (
         <div
           className="absolute inset-x-0 top-0 h-1 rounded-t-[1.4rem]"
@@ -350,7 +354,9 @@ function ResumeSection({
   children: ReactNode
 }) {
   return (
-    <section className="resume-section space-y-3">
+    <section 
+      className="resume-section space-y-3"
+    >
       <ResumeSectionHeading title={title} template={template} accent={accent} mode={mode} />
       {children}
     </section>
@@ -382,6 +388,7 @@ function Description({
 export function ResumeTemplate({
   data,
   isPrint = false,
+  noPadding = false,
   mode = "screen",
   className,
 }: ResumeTemplateProps) {
@@ -400,27 +407,26 @@ export function ResumeTemplate({
   const baseFontSize = Number(styles.fontSize ?? template.defaults.fontSize)
   const baseLineHeight = Number(styles.lineHeight ?? template.defaults.lineHeight)
   const baseMargins = Number(styles.margins ?? template.defaults.margins)
-  const screenPadding = renderMode === "thumbnail" ? Math.max(28, baseMargins - 10) : baseMargins
-  const mobilePadding = Math.min(28, Math.max(18, Math.round(baseMargins * 0.58)))
+  const screenPadding = 48 // 48px padding - 24px mask start = 24px visible top margin
+  const mobilePadding = Math.max(28, Math.round(baseMargins * 0.8))
   const printPadding = Math.max(8, Math.min(14, pxToMm(baseMargins) * 0.88))
 
   const rootStyle: CSSProperties & { WebkitPrintColorAdjust?: "exact"; printColorAdjust?: "exact" } = {
     backgroundColor: "#ffffff",
     color: "#0f172a",
-    width: renderMode === "print" ? "210mm" : "100%",
+    width: noPadding ? "100%" : renderMode === "print" ? "210mm" : "100%",
     minHeight: renderMode === "mobile" ? undefined : "297mm",
-    padding:
-      renderMode === "print"
-        ? `${printPadding}mm`
-        : renderMode === "mobile"
-          ? `${mobilePadding}px`
-          : `${screenPadding}px`,
+    height: renderMode === "print" || renderMode === "mobile" ? "auto" : undefined, // Let total height flow, rounded up in container
+    padding: "0",
+    maskImage: undefined,
+    WebkitMaskImage: undefined,
     fontFamily: fontStack,
     fontSize: `${renderMode === "mobile" ? Math.max(10.5, baseFontSize - 0.3) : baseFontSize}pt`,
     lineHeight: renderMode === "mobile" ? Math.max(1.55, baseLineHeight) : baseLineHeight,
     border: template.design.pageBorder ? `1px solid ${hexToRgba(accent, 0.16)}` : undefined,
     borderRadius: renderMode === "mobile" ? "28px" : renderMode === "print" ? "0" : "8px",
     boxSizing: "border-box",
+    overflow: renderMode === "screen" ? "hidden" : "visible",
     WebkitPrintColorAdjust: "exact",
     printColorAdjust: "exact",
   }
@@ -433,18 +439,21 @@ export function ResumeTemplate({
   const entryShellStyle = getEntryShellStyle(template, accent)
 
   const renderExperience = () => {
-    if (!content?.experience?.length) return null
+    const items = (content?.experience || []).filter((e: any) => e.title || e.company || e.description)
+    if (!items.length) return null
 
     return (
       <ResumeSection title={SECTION_LABELS.experience} template={template} accent={accent} mode={renderMode}>
         <div className="space-y-4">
-          {content.experience.map((experience: any) => (
+          {items.map((experience: any) => (
             <article
               key={experience.id}
               className={cn("resume-entry space-y-1.5", entryShellClassName)}
               style={entryShellStyle}
             >
-              <div className="flex flex-col gap-1 sm:flex-row sm:items-baseline sm:justify-between">
+              <div 
+                className={cn("resume-entry-header flex flex-col gap-1 sm:flex-row sm:items-baseline sm:justify-between")}
+              >
                 <div>
                   <h4 className="text-[1.06em] font-bold text-slate-900">{experience.title}</h4>
                   <p className="text-[0.92em] font-semibold text-slate-600">{experience.company}</p>
@@ -464,18 +473,21 @@ export function ResumeTemplate({
   }
 
   const renderProjects = () => {
-    if (!content?.projects?.length) return null
+    const items = (content?.projects || []).filter((p: any) => p.name || p.description)
+    if (!items.length) return null
 
     return (
       <ResumeSection title={SECTION_LABELS.projects} template={template} accent={accent} mode={renderMode}>
         <div className="space-y-4">
-          {content.projects.map((project: any) => (
+          {items.map((project: any) => (
             <article
               key={project.id}
               className={cn("resume-entry space-y-1.5", entryShellClassName)}
               style={entryShellStyle}
             >
-              <div className="flex flex-col gap-1 sm:flex-row sm:items-baseline sm:justify-between">
+              <div 
+                className="flex flex-col gap-1 sm:flex-row sm:items-baseline sm:justify-between"
+              >
                 <h4 className="text-[1em] font-bold text-slate-900">{project.name}</h4>
                 {project.url ? (
                   <span className="text-[0.82em] font-medium text-slate-500">{project.url}</span>
@@ -490,18 +502,21 @@ export function ResumeTemplate({
   }
 
   const renderEducation = () => {
-    if (!content?.education?.length) return null
+    const items = (content?.education || []).filter((e: any) => e.degree || e.institution)
+    if (!items.length) return null
 
     return (
       <ResumeSection title={SECTION_LABELS.education} template={template} accent={accent} mode={renderMode}>
         <div className="space-y-4">
-          {content.education.map((education: any) => (
+          {items.map((education: any) => (
             <article
               key={education.id}
               className={cn("resume-entry flex flex-col gap-1 sm:flex-row sm:items-baseline sm:justify-between", entryShellClassName)}
               style={entryShellStyle}
             >
-              <div>
+              <div 
+                className="flex flex-col gap-1 sm:flex-row sm:items-baseline sm:justify-between w-full"
+              >
                 <h4 className="text-[1em] font-bold text-slate-900">{education.degree}</h4>
                 <p className="text-[0.92em] text-slate-600">{education.institution}</p>
               </div>
@@ -518,12 +533,13 @@ export function ResumeTemplate({
   }
 
   const renderSkills = () => {
-    if (!content?.skills?.length) return null
+    const items = (content?.skills || []).filter((s: string) => s && s.trim().length > 0)
+    if (!items.length) return null
 
     if (template.design.skillVariant === "inline") {
       return (
         <ResumeSection title={SECTION_LABELS.skills} template={template} accent={accent} mode={renderMode}>
-          <p className="text-[0.95em] leading-relaxed text-slate-700">{content.skills.join(" | ")}</p>
+          <p className="text-[0.95em] leading-relaxed text-slate-700">{items.join(" | ")}</p>
         </ResumeSection>
       )
     }
@@ -532,7 +548,7 @@ export function ResumeTemplate({
       return (
         <ResumeSection title={SECTION_LABELS.skills} template={template} accent={accent} mode={renderMode}>
           <div className="flex flex-wrap gap-x-3 gap-y-2 text-[0.9em] text-slate-700">
-            {content.skills.map((skill: string, index: number) => (
+            {items.map((skill: string, index: number) => (
               <span key={`${skill}-${index}`} className="font-medium">
                 {skill}
               </span>
@@ -545,7 +561,7 @@ export function ResumeTemplate({
     return (
       <ResumeSection title={SECTION_LABELS.skills} template={template} accent={accent} mode={renderMode}>
         <ul className="space-y-1.5 pl-5 text-[0.94em] leading-relaxed text-slate-700">
-          {content.skills.map((skill: string, index: number) => (
+          {items.map((skill: string, index: number) => (
             <li key={`${skill}-${index}`}>{skill}</li>
           ))}
         </ul>
@@ -554,12 +570,13 @@ export function ResumeTemplate({
   }
 
   const renderCertifications = () => {
-    if (!content?.certifications?.length) return null
+    const items = (content?.certifications || []).filter((c: any) => c.name || c.date)
+    if (!items.length) return null
 
     return (
       <ResumeSection title={SECTION_LABELS.certifications} template={template} accent={accent} mode={renderMode}>
         <div className="space-y-3">
-          {content.certifications.map((certification: any) => (
+          {items.map((certification: any) => (
             <article
               key={certification.id}
               className={cn("resume-entry flex flex-col gap-1 sm:flex-row sm:items-baseline sm:justify-between", entryShellClassName)}
@@ -579,12 +596,13 @@ export function ResumeTemplate({
   }
 
   const renderLanguages = () => {
-    if (!content?.languages?.length) return null
+    const items = (content?.languages || []).filter((l: any) => l.language || l.name)
+    if (!items.length) return null
 
     return (
       <ResumeSection title={SECTION_LABELS.languages} template={template} accent={accent} mode={renderMode}>
         <div className="space-y-2 text-[0.94em] text-slate-700">
-          {content.languages.map((language: any, index: number) => (
+          {items.map((language: any, index: number) => (
             <p key={`${language.language || language.name}-${index}`}>
               <span className="font-bold text-slate-900">{language.language || language.name}</span>
               <span className="text-slate-500"> - {language.proficiency}</span>
@@ -645,7 +663,52 @@ export function ResumeTemplate({
       data-template-id={template.id}
       style={rootStyle}
     >
-      <div className="flex flex-col" style={sectionGapStyle}>
+      {/* Visual Page Break Indicators for Screen/Mobile */}
+      {/* Unmasked Visual Page Break Indicators (Overlay) */}
+      {renderMode === "screen" && !isPrint && (
+        <div 
+          className="absolute inset-x-0 top-0 bottom-0 pointer-events-none z-50" 
+          aria-hidden="true"
+        >
+          {[1, 2, 3, 4, 5, 6, 7, 8].map(page => (
+            <div 
+              key={page}
+              className="absolute w-full flex flex-col items-center justify-center h-[40px]"
+              style={{ top: `calc(${page} * (297mm + 40px) - 40px)` }}
+            >
+               {/* Translucent Bar Background with Glow and Blur */}
+               <div className="absolute inset-0 bg-slate-950/90 backdrop-blur-md border-y border-white/10 shadow-[0_0_30px_rgba(0,0,0,0.5)]" />
+               
+               {/* Accent Gradient Lines */}
+               <div className="absolute top-0 inset-x-0 h-[1px] bg-gradient-to-r from-transparent via-indigo-500/30 to-transparent" />
+               <div className="absolute bottom-0 inset-x-0 h-[1px] bg-gradient-to-r from-transparent via-orange-500/20 to-transparent" />
+               
+               {/* Label Badge */}
+               <div className="relative flex items-center gap-4 text-[10px] font-black tracking-[0.3em] text-white/50 uppercase pr-2">
+                 <div className="h-[1px] w-8 bg-gradient-to-r from-transparent to-white/10" />
+                 Page {page} <span className="opacity-20 text-indigo-400 mx-1">/</span> {page + 1}
+                 <div className="h-[1px] w-8 bg-gradient-to-l from-transparent to-white/10" />
+               </div>
+            </div>
+          ))}
+        </div>
+      )}
+
+      <div 
+        className="flex flex-col relative z-0 w-full" 
+        style={{
+          ...sectionGapStyle,
+          padding: 
+            noPadding ? "0" : 
+            renderMode === "print" ? `${printPadding}mm` : 
+            renderMode === "mobile" ? `${mobilePadding}px` : 
+            `${screenPadding}px`,
+          maskImage: renderMode === "screen" ? 
+            "repeating-linear-gradient(to bottom, transparent 0, transparent 24px, black 24px, black calc(297mm - 24px), transparent calc(297mm - 24px), transparent calc(297mm + 40px))" : undefined,
+          WebkitMaskImage: renderMode === "screen" ? 
+            "repeating-linear-gradient(to bottom, transparent 0, transparent 24px, black 24px, black calc(297mm - 24px), transparent calc(297mm - 24px), transparent calc(297mm + 40px))" : undefined,
+        }}
+      >
         <ResumeTemplateHeader
           content={content}
           template={template}
@@ -704,7 +767,12 @@ export function ResumeTemplate({
             </div>
           </div>
         ) : (
-          <main className="flex flex-col" style={sectionGapStyle}>
+          <main 
+            className="block-layout" 
+            style={{ 
+              "--resume-section-gap": `${spacing.sectionGap}px` 
+            } as any}
+          >
             {sectionOrder.map((sectionId, index) => {
               const renderedSection = sectionRenderers[sectionId]?.()
               if (!renderedSection) return null

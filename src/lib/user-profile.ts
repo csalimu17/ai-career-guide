@@ -42,3 +42,48 @@ export async function upsertUserProfile({
     { merge: true }
   );
 }
+
+type MinimalUserProfile = {
+  onboardingComplete?: boolean;
+  careerGoal?: string;
+  experienceLevel?: string;
+  industry?: string;
+  targetRoles?: string;
+  yearsOfExperience?: string;
+  employmentStatus?: string;
+} | null | undefined;
+
+/**
+ * Determines if a user should be directed to the dashboard.
+ * Returning members are those who have either:
+ * 1. Explicitly finished the onboarding flow.
+ * 2. Provided enough profile data to have a personalized experience.
+ * 3. Already have existing workspace data (resumes).
+ */
+export function isReturningMember(profile: MinimalUserProfile, hasWorkspaceData = false) {
+  if (!profile) {
+    return hasWorkspaceData;
+  }
+
+  // Authoritative "done" flag
+  if (profile.onboardingComplete) {
+    return true;
+  }
+
+  const hasOnboardingAnswers = Boolean(
+    profile.careerGoal ||
+      profile.experienceLevel ||
+      profile.industry ||
+      profile.targetRoles ||
+      profile.yearsOfExperience ||
+      profile.employmentStatus
+  );
+
+  // If they have data OR answers, they can technically use the dashboard.
+  // However, the layout should decide whether to force-redirect them AWAY from onboarding.
+  return hasOnboardingAnswers || hasWorkspaceData;
+}
+
+export function getPostAuthDestination(profile: MinimalUserProfile, hasWorkspaceData = false) {
+  return isReturningMember(profile, hasWorkspaceData) ? "/dashboard" : "/onboarding";
+}

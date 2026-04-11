@@ -68,7 +68,7 @@ export async function runAiRuntimeHandshake(options?: { allowRepair?: boolean })
 
     const fallbackModel = getFallbackGeminiModel("default");
 
-    if (fallbackModel === configuredModel) {
+    if (!fallbackModel || fallbackModel === configuredModel) {
       return {
         status: "error",
         configuredModel,
@@ -114,9 +114,10 @@ export async function runAiRuntimeHandshake(options?: { allowRepair?: boolean })
 
 export async function getAiRuntimeStatusSummary() {
   const configuredModel = (await getConfiguredRuntimeModel()) ?? (await getGeminiModel("default"));
+  const fallbackModel = getFallbackGeminiModel("default");
 
   return {
     configuredModel,
-    fallbackModel: getFallbackGeminiModel("default"),
+    fallbackModel,
   };
 }

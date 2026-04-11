@@ -1,0 +1,9 @@
+
+[1m[37m===[39m Deploying to 'studio-3704831244-a5638'...[22m
+
+[36m[1mi [22m[39m deploying [1mapphosting[22m
+[36m[1mi  apphosting:[22m[39m Found backend(s) studio
+[36m[1mi  apphosting:[22m[39m Zipped source for backend studio
+[36m[1mi  apphosting:[22m[39m Uploading source for backend studio...
+
+[1m[31mError:[39m[22m Unable to parse JSON: SyntaxError: Unexpected token '<', "<?xml vers"... is not valid JSON

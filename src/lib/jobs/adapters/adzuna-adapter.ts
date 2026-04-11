@@ -19,7 +19,7 @@ export class AdzunaAdapter implements JobApiAdapter {
     const url = new URL(`${this.baseEndpoint}/${page}`)
     url.searchParams.set("app_id", this.appId)
     url.searchParams.set("app_key", this.appKey)
-    url.searchParams.set("results_per_page", "20")
+    url.searchParams.set("results_per_page", "50")
     url.searchParams.set("content-type", "application/json")
 
     if (keywords) url.searchParams.set("what", keywords)
@@ -44,6 +44,15 @@ export class AdzunaAdapter implements JobApiAdapter {
       console.error("Adzuna fetch error:", error)
       return []
     }
+  }
+
+  async fetchJobDetails(externalId: string): Promise<string | null> {
+    // Adzuna doesn't have a simple "fetch single" API for free users that is different from search.
+    // However, the search result already contains the description.
+    // In our implementation, we'll return null here and let the search-provided shortDescription be used,
+    // OR we could potentially use the Adzuna canonical URL to scrape/fetch, but that's complex.
+    // We'll return the existing description if we can find it, or null.
+    return null 
   }
 
   private mapToJobListing(raw: any): JobListingRecord {

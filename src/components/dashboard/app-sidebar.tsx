@@ -142,14 +142,21 @@ export function AppSidebar({ profile, impersonatedUid, ...props }: AppSidebarPro
                     asChild 
                     isActive={pathname === item.url} 
                     tooltip={item.title}
-                    onClick={() => setOpenMobile(false)}
                     className={`h-12 rounded-2xl px-3 transition-all duration-200 md:h-11 md:rounded-xl ${
                       pathname === item.url 
-                      ? "bg-white/10 text-white shadow-sm ring-1 ring-white/10" 
+                      ? "bg-primary text-white shadow-lg shadow-primary/25" 
                       : "hover:bg-white/5"
                     }`}
                   >
-                    <Link href={item.url} className="flex items-center gap-3">
+                    <Link 
+                      href={item.url} 
+                      className="flex items-center gap-3"
+                      onClick={() => {
+                        if (innerWidth < 768) {
+                          setOpenMobile(false);
+                        }
+                      }}
+                    >
                       <div className={cn(
                         "flex h-8 w-8 items-center justify-center rounded-xl transition-all duration-300",
                         pathname === item.url ? "bg-white text-primary shadow-sm" : "bg-white/5 text-white/40 group-hover:bg-white/10 group-hover:text-white/70"
@@ -219,7 +226,7 @@ export function AppSidebar({ profile, impersonatedUid, ...props }: AppSidebarPro
               <SidebarMenuButton 
                 asChild 
                 isActive={pathname === "/settings"}
-                className={`h-12 rounded-2xl px-3 md:h-11 md:rounded-xl ${pathname === "/settings" ? "bg-white/10 font-bold text-white" : "text-sidebar-foreground/80 hover:bg-white/5"}`}
+                className={`h-12 rounded-2xl px-3 md:h-11 md:rounded-xl ${pathname === "/settings" ? "bg-primary font-bold text-white shadow-lg shadow-primary/25" : "text-sidebar-foreground/80 hover:bg-white/5"}`}
                 onClick={() => setOpenMobile(false)}
               >
                 <Link href="/settings">

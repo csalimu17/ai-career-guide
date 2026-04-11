@@ -1,0 +1,1219 @@
+
+> nextn@0.1.0 dev
+> next dev --turbopack -p 3000 -p 3001
+
+   ▲ Next.js 15.5.14 (Turbopack)
+   - Local:        http://localhost:3001
+   - Network:      http://192.168.1.77:3001
+   - Environments: .env.local
+   - Experiments (use with caution):
+     · serverActions
+
+ ✓ Starting...
+ ○ Compiling middleware ...
+ ✓ Compiled middleware in 892ms
+ ✓ Ready in 4.3s
+ ⚠ Webpack is configured while Turbopack is not, which may cause problems.
+ ⚠ See instructions if you need to configure Turbopack:
+  https://nextjs.org/docs/app/api-reference/next-config-js/turbopack
+
+ ○ Compiling /editor ...
+ ✓ Compiled /editor in 23.2s
+[Genkit] ✅ Initialized with: GoogleAI & OpenAI
+ GET /editor 200 in 29955ms
+ ○ Compiling /login ...
+ ✓ Compiled /login in 3.5s
+ GET /login 200 in 4537ms
+ ○ Compiling /manifest.webmanifest ...
+ ✓ Compiled /manifest.webmanifest in 829ms
+ GET /manifest.webmanifest 200 in 2422ms
+ ○ Compiling /apple-icon ...
+ ✓ Compiled /apple-icon in 1577ms
+ GET /apple-icon 200 in 2813ms
+ ○ Compiling /api/marketing-bot ...
+ ✓ Compiled /api/marketing-bot in 661ms
+[marketing-bot:moderation] Error: 429 Too Many Requests
+    at APIError.generate (../src/core/error.ts:96:14)
+    at OpenAI.makeStatusError (src/client.ts:494:28)
+    at OpenAI.makeRequest (src/client.ts:745:24)
+    at async isFlagged (src\app\api\marketing-bot\route.ts:171:24)
+    at async POST (src\app\api\marketing-bot\route.ts:220:9)
+  169 |
+  170 |   try {
+> 171 |     const moderation = await getOpenAI().moderations.create({
+      |                        ^
+  172 |       model: "omni-moderation-latest",
+  173 |       input: message,
+  174 |     }); {
+  status: 429,
+  headers: Headers {
+    date: 'Fri, 10 Apr 2026 09:34:29 GMT',
+    'content-type': 'application/json',
+    'content-length': '129',
+    connection: 'keep-alive',
+    server: 'cloudflare',
+    'openai-version': '2020-10-01',
+    'openai-organization': 'creanova-kwxhcl',
+    'openai-project': 'proj_b5hwdlofV6rPgQ7uC7aysfCg',
+    'x-request-id': 'req_2f90f7506beb4fcf86d046c7091cd59c',
+    'openai-processing-ms': '17',
+    'x-openai-proxy-wasm': 'v0.1',
+    'cf-cache-status': 'DYNAMIC',
+    'set-cookie': '__cf_bm=LwzcH0v5.RmJzbvpYIrK7uNqnT0YwSvhvZXxsinD3pU-1775813668.899689-1.0.1.1-jxvISY9izNBTlODswDQxTAbC1o2tDf9zkT6zSOS0yqqeIFmUYdqEahHxSr2sKSawxn6PVYsHGq2I4hhDxwRR.P4clY7Tx6J.wo9qLSAm0x70UWKZfwL8O4D9u_mRJdxu; HttpOnly; Secure; Path=/; Domain=api.openai.com; Expires=Fri, 10 Apr 2026 10:04:29 GMT, _cfuvid=o15pYbX62It6OoSxO13MfIB_7Gl40mBsHNNejVlJW9Y-1775813668.899689-1.0.1.1-wkdVvSFVvW6rPoV6qI8FSJlWAk63RVp.oCGnINoBqSU; HttpOnly; SameSite=None; Secure; Path=/; Domain=api.openai.com',
+    'strict-transport-security': 'max-age=31536000; includeSubDomains; preload',
+    'x-content-type-options': 'nosniff',
+    'cf-ray': '9ea0c1869cbfedee-LHR',
+    'alt-svc': 'h3=":443"; ma=86400'
+  },
+  requestID: 'req_2f90f7506beb4fcf86d046c7091cd59c',
+  error: [Object],
+  code: null,
+  param: null,
+  type: 'invalid_request_error'
+}
+ POST /api/marketing-bot 200 in 20013ms
+[marketing-bot:route] Error: 429 You exceeded your current quota, please check your plan and billing details. For more information on this error, read the docs: https://platform.openai.com/docs/guides/error-codes/api-errors.
+    at APIError.generate (../src/core/error.ts:96:14)
+    at OpenAI.makeStatusError (src/client.ts:494:28)
+    at OpenAI.makeRequest (src/client.ts:745:24)
+    at async POST (src\app\api\marketing-bot\route.ts:240:25)
+  238 |
+  239 |     // Use the newer responses.create API if available in this SDK version
+> 240 |     let response: any = await (getOpenAI() as any).responses.create({
+      |                         ^
+  241 |       model,
+  242 |       instructions,
+  243 |       previous_response_id: body?.previousResponseId || undefined, {
+  status: 429,
+  headers: Headers {
+    date: 'Fri, 10 Apr 2026 09:34:46 GMT',
+    'content-type': 'application/json',
+    'content-length': '316',
+    connection: 'keep-alive',
+    server: 'cloudflare',
+    'openai-version': '2020-10-01',
+    'openai-organization': 'creanova-kwxhcl',
+    'openai-project': 'proj_b5hwdlofV6rPgQ7uC7aysfCg',
+    'x-request-id': 'req_ec5488bed994484d89b2be0821b62741',
+    'openai-processing-ms': '5099',
+    'cf-cache-status': 'DYNAMIC',
+    'set-cookie': '__cf_bm=wQNsw5MIHUfhEc3UbBqvJuQ87RHuy3doxke9Vb66im8-1775813681.3355718-1.0.1.1-6HmqIN8Qy83WcoSHXYGD2hzcDxlsAAAp1hmk8Vv1vVy9UEF1zB7xp8U0GvviXw227F3suyPOuAJccSAwSXci0O6qFVTv_23ee4rNWZPYtohVXAhTKRHj8FXKxKNia5iT; HttpOnly; Secure; Path=/; Domain=api.openai.com; Expires=Fri, 10 Apr 2026 10:04:46 GMT, _cfuvid=wDbltaS0qiswHYR1wKMkWxzIzqkw_uCyXWeH96G9XZ4-1775813681.3355718-1.0.1.1-ucu60ZgJMUx_0Cr6DhmvYEwKg1JcxViBnMsgNoq8RT0; HttpOnly; SameSite=None; Secure; Path=/; Domain=api.openai.com',
+    'strict-transport-security': 'max-age=31536000; includeSubDomains; preload',
+    'x-content-type-options': 'nosniff',
+    'cf-ray': '9ea0c1d45dfe652b-LHR',
+    'alt-svc': 'h3=":443"; ma=86400'
+  },
+  requestID: 'req_ec5488bed994484d89b2be0821b62741',
+  error: [Object],
+  code: 'insufficient_quota',
+  param: null,
+  type: 'insufficient_quota'
+}
+ GET /login 200 in 2115ms
+[Genkit] ✅ Initialized with: GoogleAI & OpenAI
+[marketing-bot:moderation] OpenAI 429 throttling detected. Proceeding without moderation check.
+[AI Model Router] Failed to read runtime model override: Error: Unable to detect a Project Id in the current environment. 
+To learn more about authentication and Google APIs, visit: 
+https://cloud.google.com/docs/authentication/getting-started
+    at <unknown> (https://cloud.google.com/docs/authentication/getting-started)
+    at async readConfiguredRuntimeModel (src\ai\model-router.ts:64:22)
+    at async getGeminiModel (src\ai\model-router.ts:91:29)
+    at async POST (src\app\api\marketing-bot\route.ts:249:19)
+    at readConfiguredRuntimeModel (src\ai\model-router.ts:64:73)
+    at getGeminiModel (src\ai\model-router.ts:91:35)
+    at POST (src\app\api\marketing-bot\route.ts:249:39)
+  62 |
+  63 |   try {
+> 64 |     const snapshot = await db.collection("systemConfigs").doc("global").get();
+     |                      ^
+  65 |     const configuredModel = snapshot.exists ? snapshot.data()?.aiModel : null;
+  66 |     cachedConfiguredModel = {
+  67 |       value: isValidGeminiModel(configuredModel) ? configuredModel : null,
+[Genkit] Generating with model: undefined
+Error [GenkitError]: UNKNOWN: Error fetching from https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent: [404 Not Found] models/gemini-1.5-flash is not found for API version v1beta, or is not supported for generateContent. Call ListModels to see the list of available models and their supported methods.
+    at async generateWithFallback (src\ai\generate-helper.ts:20:12)
+    at async POST (src\app\api\marketing-bot\route.ts:259:22)
+  18 |     // Attempt primary call
+  19 |     console.log(`[Genkit] Generating with model: ${options.model}`);
+> 20 |     return await ai.generate(options);
+     |            ^
+  21 |   } catch (error: any) {
+  22 |     const isQuotaError = 
+  23 |       error.status === 'RESOURCE_EXHAUSTED' ||  {
+  source: undefined,
+  status: 'UNKNOWN',
+  detail: [Object],
+  code: 500,
+  originalMessage: 'Error fetching from https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent: [404 Not Found] models/gemini-1.5-flash is not found for API version v1beta, or is not supported for generateContent. Call ListModels to see the list of available models and their supported methods.'
+}
+[marketing-bot:route] Error [GenkitError]: UNKNOWN: Error fetching from https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent: [404 Not Found] models/gemini-1.5-flash is not found for API version v1beta, or is not supported for generateContent. Call ListModels to see the list of available models and their supported methods.
+    at async generateWithFallback (src\ai\generate-helper.ts:20:12)
+    at async POST (src\app\api\marketing-bot\route.ts:259:22)
+  18 |     // Attempt primary call
+  19 |     console.log(`[Genkit] Generating with model: ${options.model}`);
+> 20 |     return await ai.generate(options);
+     |            ^
+  21 |   } catch (error: any) {
+  22 |     const isQuotaError = 
+  23 |       error.status === 'RESOURCE_EXHAUSTED' ||  {
+  source: undefined,
+  status: 'UNKNOWN',
+  detail: [Object],
+  code: 500,
+  originalMessage: 'Error fetching from https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent: [404 Not Found] models/gemini-1.5-flash is not found for API version v1beta, or is not supported for generateContent. Call ListModels to see the list of available models and their supported methods.',
+  traceId: 'e799ef72596a2e47aa945c28b7cf1888',
+  ignoreFailedSpan: true
+}
+ POST /api/marketing-bot 200 in 7873ms
+ ✓ Compiled in 83ms
+ GET /login 200 in 1212ms
+ GET /manifest.webmanifest 200 in 1486ms
+ GET /apple-icon 200 in 1197ms
+ ✓ Compiled in 96ms
+ GET /manifest.webmanifest 200 in 893ms
+ GET /apple-icon 200 in 559ms
+[Genkit] ✅ Initialized with: GoogleAI & OpenAI
+[marketing-bot:moderation] OpenAI 429 throttling detected. Proceeding without moderation check.
+[AI Model Router] Failed to read runtime model override: Error: Unable to detect a Project Id in the current environment. 
+To learn more about authentication and Google APIs, visit: 
+https://cloud.google.com/docs/authentication/getting-started
+    at <unknown> (https://cloud.google.com/docs/authentication/getting-started)
+    at async readConfiguredRuntimeModel (src\ai\model-router.ts:68:3)
+    at async getGeminiModel (src\ai\model-router.ts:96:3)
+    at async POST (src\app\api\marketing-bot\route.ts:246:5)
+    at readConfiguredRuntimeModel (src\ai\model-router.ts:68:3)
+    at getGeminiModel (src\ai\model-router.ts:96:3)
+    at POST (src\app\api\marketing-bot\route.ts:246:5)
+    at readConfiguredRuntimeModel (src\ai\model-router.ts:71:73)
+    at getGeminiModel (src\ai\model-router.ts:98:35)
+    at POST (src\app\api\marketing-bot\route.ts:249:39)
+  66 |   if (!forceRefresh && now - cachedConfiguredModel.fetchedAt < CONFIG_CACHE_TTL_MS) {
+  67 |     return cachedConfiguredModel.value;
+> 68 |   }
+     |   ^
+  69 |
+  70 |   try {
+  71 |     const snapshot = await db.collection("systemConfigs").doc("global").get();
+[Genkit] Generating with model: googleai/gemini-1.5-flash-latest
+Error [GenkitError]: UNKNOWN: Error fetching from https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash-latest:generateContent: [404 Not Found] models/gemini-1.5-flash-latest is not found for API version v1beta, or is not supported for generateContent. Call ListModels to see the list of available models and their supported methods.
+    at async generateWithFallback (src\ai\generate-helper.ts:20:12)
+    at async POST (src\app\api\marketing-bot\route.ts:259:22)
+  18 |     // Attempt primary call
+  19 |     console.log(`[Genkit] Generating with model: ${options.model}`);
+> 20 |     return await ai.generate(options);
+     |            ^
+  21 |   } catch (error: any) {
+  22 |     const isQuotaError = 
+  23 |       error.status === 'RESOURCE_EXHAUSTED' ||  {
+  source: undefined,
+  status: 'UNKNOWN',
+  detail: [Object],
+  code: 500,
+  originalMessage: 'Error fetching from https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash-latest:generateContent: [404 Not Found] models/gemini-1.5-flash-latest is not found for API version v1beta, or is not supported for generateContent. Call ListModels to see the list of available models and their supported methods.'
+}
+[marketing-bot:route] Error [GenkitError]: UNKNOWN: Error fetching from https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash-latest:generateContent: [404 Not Found] models/gemini-1.5-flash-latest is not found for API version v1beta, or is not supported for generateContent. Call ListModels to see the list of available models and their supported methods.
+    at async generateWithFallback (src\ai\generate-helper.ts:20:12)
+    at async POST (src\app\api\marketing-bot\route.ts:259:22)
+  18 |     // Attempt primary call
+  19 |     console.log(`[Genkit] Generating with model: ${options.model}`);
+> 20 |     return await ai.generate(options);
+     |            ^
+  21 |   } catch (error: any) {
+  22 |     const isQuotaError = 
+  23 |       error.status === 'RESOURCE_EXHAUSTED' ||  {
+  source: undefined,
+  status: 'UNKNOWN',
+  detail: [Object],
+  code: 500,
+  originalMessage: 'Error fetching from https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash-latest:generateContent: [404 Not Found] models/gemini-1.5-flash-latest is not found for API version v1beta, or is not supported for generateContent. Call ListModels to see the list of available models and their supported methods.',
+  traceId: '82455fa8759d519b9c68c2d74a55c947',
+  ignoreFailedSpan: true
+}
+ POST /api/marketing-bot 200 in 4934ms
+ ✓ Compiled in 931ms
+ GET /login 200 in 3461ms
+ GET /manifest.webmanifest 200 in 6036ms
+ GET /apple-icon 200 in 2024ms
+ ✓ Compiled in 4.5s
+ GET /login 200 in 1209ms
+ GET /manifest.webmanifest 200 in 2024ms
+ GET /apple-icon 200 in 750ms
+ ✓ Compiled in 867ms
+ ✓ Compiled in 6.5s
+ GET /login 200 in 3410ms
+ GET /manifest.webmanifest 200 in 1393ms
+ GET /apple-icon 200 in 354ms
+ ✓ Compiled in 1374ms
+ ✓ Compiled in 1276ms
+ ○ Compiling middleware ...
+ ✓ Compiled middleware in 3s
+ ✓ Compiled in 9.1s
+ ✓ Compiled in 544ms
+ ✓ Compiled in 56ms
+ ✓ Compiled in 73ms
+ ○ Compiling / ...
+ ✓ Compiled / in 6.6s
+ GET / 200 in 12796ms
+[Genkit] ✅ Initialized with: GoogleAI & OpenAI
+[marketing-bot:moderation] OpenAI 429 throttling detected. Proceeding without moderation check.
+[AI Model Router] Failed to read runtime model override: Error: Unable to detect a Project Id in the current environment. 
+To learn more about authentication and Google APIs, visit: 
+https://cloud.google.com/docs/authentication/getting-started
+    at <unknown> (https://cloud.google.com/docs/authentication/getting-started)
+    at async readConfiguredRuntimeModel (src\ai\model-router.ts:66:5)
+    at async getGeminiModel (src\ai\model-router.ts:94:14)
+    at async POST (src\app\api\marketing-bot\route.ts:216:17)
+    at readConfiguredRuntimeModel (src\ai\model-router.ts:66:74)
+    at getGeminiModel (src\ai\model-router.ts:94:33)
+    at POST (src\app\api\marketing-bot\route.ts:216:17)
+    at readConfiguredRuntimeModel (src\ai\model-router.ts:68:14)
+    at getGeminiModel (src\ai\model-router.ts:96:5)
+    at POST (src\app\api\marketing-bot\route.ts:218:58)
+    at readConfiguredRuntimeModel (src\ai\model-router.ts:91:73)
+    at getGeminiModel (src\ai\model-router.ts:118:35)
+    at POST (src\app\api\marketing-bot\route.ts:249:39)
+  64 | const CONFIG_CACHE_TTL_MS = 60_000;
+  65 |
+> 66 | let cachedConfiguredModel: { value: string | null; fetchedAt: number } = {
+     |     ^
+  67 |   value: null,
+  68 |   fetchedAt: 0,
+  69 | };
+[Genkit] Generating with model: googleai/gemini-1.5-flash
+Error [GenkitError]: INVALID_ARGUMENT: Error fetching from https://generativelanguage.googleapis.com/v1/models/gemini-1.5-flash:generateContent: [400 Bad Request] Invalid JSON payload received. Unknown name "systemInstruction": Cannot find field.
+Invalid JSON payload received. Unknown name "tools": Cannot find field.
+    at async generateWithFallback (src\ai\generate-helper.ts:20:12)
+    at async POST (src\app\api\marketing-bot\route.ts:259:22)
+  18 |     // Attempt primary call
+  19 |     console.log(`[Genkit] Generating with model: ${options.model}`);
+> 20 |     return await ai.generate(options);
+     |            ^
+  21 |   } catch (error: any) {
+  22 |     const isRecoverableFailure = 
+  23 |       error.status === 'RESOURCE_EXHAUSTED' ||  {
+  source: undefined,
+  status: 'INVALID_ARGUMENT',
+  detail: [Object],
+  code: 400,
+  originalMessage: 'Error fetching from https://generativelanguage.googleapis.com/v1/models/gemini-1.5-flash:generateContent: [400 Bad Request] Invalid JSON payload received. Unknown name "systemInstruction": Cannot find field.\n' +
+    'Invalid JSON payload received. Unknown name "tools": Cannot find field.'
+}
+[marketing-bot:route] ReferenceError: isQuotaError is not defined
+    at generateWithFallback (src\ai\generate-helper.ts:46:5)
+    at async POST (src\app\api\marketing-bot\route.ts:259:22)
+  44 |
+  45 |
+> 46 |     if (isQuotaError && !fallbackModel) {
+     |     ^
+  47 |       console.error(`[AI Fallback] Primary model ${options.model} exhausted, but no fallback key (GEMINI_API_KEY) is configured. Please provide a key in .env.local to enable automatic failover.`);
+  48 |     }
+  49 |
+ POST /api/marketing-bot 200 in 13048ms
+[marketing-bot:moderation] OpenAI 429 throttling detected. Proceeding without moderation check.
+[Genkit] Generating with model: googleai/gemini-1.5-flash
+Error [GenkitError]: INVALID_ARGUMENT: Error fetching from https://generativelanguage.googleapis.com/v1/models/gemini-1.5-flash:generateContent: [400 Bad Request] Invalid JSON payload received. Unknown name "systemInstruction": Cannot find field.
+Invalid JSON payload received. Unknown name "tools": Cannot find field.
+    at async generateWithFallback (src\ai\generate-helper.ts:20:12)
+    at async POST (src\app\api\marketing-bot\route.ts:259:22)
+  18 |     // Attempt primary call
+  19 |     console.log(`[Genkit] Generating with model: ${options.model}`);
+> 20 |     return await ai.generate(options);
+     |            ^
+  21 |   } catch (error: any) {
+  22 |     const isRecoverableFailure = 
+  23 |       error.status === 'RESOURCE_EXHAUSTED' ||  {
+  source: undefined,
+  status: 'INVALID_ARGUMENT',
+  detail: [Object],
+  code: 400,
+  originalMessage: 'Error fetching from https://generativelanguage.googleapis.com/v1/models/gemini-1.5-flash:generateContent: [400 Bad Request] Invalid JSON payload received. Unknown name "systemInstruction": Cannot find field.\n' +
+    'Invalid JSON payload received. Unknown name "tools": Cannot find field.'
+}
+[marketing-bot:route] ReferenceError: isQuotaError is not defined
+    at generateWithFallback (src\ai\generate-helper.ts:46:5)
+    at async POST (src\app\api\marketing-bot\route.ts:259:22)
+  44 |
+  45 |
+> 46 |     if (isQuotaError && !fallbackModel) {
+     |     ^
+  47 |       console.error(`[AI Fallback] Primary model ${options.model} exhausted, but no fallback key (GEMINI_API_KEY) is configured. Please provide a key in .env.local to enable automatic failover.`);
+  48 |     }
+  49 |
+ POST /api/marketing-bot 200 in 4703ms
+ ✓ Compiled in 52ms
+ GET / 200 in 1111ms
+ GET /manifest.webmanifest 200 in 780ms
+ GET /apple-icon 200 in 813ms
+ GET /login 200 in 581ms
+ GET /manifest.webmanifest 200 in 742ms
+ GET /apple-icon 200 in 214ms
+ ✓ Compiled in 401ms
+ ○ Compiling /onboarding ...
+ GET /login 200 in 7682ms
+ ✓ Compiled /onboarding in 17.3s
+ GET /dashboard 200 in 24160ms
+ GET /onboarding 200 in 24270ms
+ GET /dashboard 200 in 8557ms
+ ✓ Compiled in 105ms
+ GET /dashboard 200 in 1250ms
+ GET /manifest.webmanifest 200 in 632ms
+ GET /apple-icon 200 in 256ms
+ ○ Compiling /tracker ...
+ ✓ Compiled /tracker in 2.7s
+ GET /tracker 200 in 3692ms
+ GET /manifest.webmanifest 200 in 870ms
+ GET /apple-icon 200 in 245ms
+ ○ Compiling /chat ...
+ ✓ Compiled /chat in 6.4s
+[Genkit] ✅ Initialized with: GoogleAI & OpenAI
+ GET /chat 200 in 12640ms
+ GET /manifest.webmanifest 200 in 2884ms
+ GET /apple-icon 200 in 2434ms
+[Genkit] ✅ Initialized with: GoogleAI & OpenAI
+[marketing-bot:moderation] OpenAI 429 throttling detected. Proceeding without moderation check.
+[AI Model Router] Failed to read runtime model override: Error: Unable to detect a Project Id in the current environment. 
+To learn more about authentication and Google APIs, visit: 
+https://cloud.google.com/docs/authentication/getting-started
+    at <unknown> (https://cloud.google.com/docs/authentication/getting-started)
+    at async readConfiguredRuntimeModel (src\ai\model-router.ts:66:5)
+    at async getGeminiModel (src\ai\model-router.ts:94:14)
+    at async POST (src\app\api\marketing-bot\route.ts:217:18)
+    at readConfiguredRuntimeModel (src\ai\model-router.ts:66:74)
+    at getGeminiModel (src\ai\model-router.ts:94:33)
+    at POST (src\app\api\marketing-bot\route.ts:217:18)
+    at readConfiguredRuntimeModel (src\ai\model-router.ts:68:14)
+    at getGeminiModel (src\ai\model-router.ts:96:5)
+    at POST (src\app\api\marketing-bot\route.ts:219:52)
+    at readConfiguredRuntimeModel (src\ai\model-router.ts:91:73)
+    at getGeminiModel (src\ai\model-router.ts:118:35)
+    at POST (src\app\api\marketing-bot\route.ts:250:27)
+    at readConfiguredRuntimeModel (src\ai\model-router.ts:91:73)
+    at getGeminiModel (src\ai\model-router.ts:118:35)
+    at POST (src\app\api\marketing-bot\route.ts:249:39)
+  64 | const CONFIG_CACHE_TTL_MS = 60_000;
+  65 |
+> 66 | let cachedConfiguredModel: { value: string | null; fetchedAt: number } = {
+     |     ^
+  67 |   value: null,
+  68 |   fetchedAt: 0,
+  69 | };
+[Genkit] Generating with model: googleai/gemini-1.5-flash
+Error [GenkitError]: UNKNOWN: Error fetching from https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent: [404 Not Found] models/gemini-1.5-flash is not found for API version v1beta, or is not supported for generateContent. Call ListModels to see the list of available models and their supported methods.
+    at async generateWithFallback (src\ai\generate-helper.ts:20:12)
+    at async POST (src\app\api\marketing-bot\route.ts:259:22)
+  18 |     // Attempt primary call
+  19 |     console.log(`[Genkit] Generating with model: ${options.model}`);
+> 20 |     return await ai.generate(options);
+     |            ^
+  21 |   } catch (error: any) {
+  22 |     const isRecoverableFailure = 
+  23 |       error.status === 'RESOURCE_EXHAUSTED' ||  {
+  source: undefined,
+  status: 'UNKNOWN',
+  detail: [Object],
+  code: 500,
+  originalMessage: 'Error fetching from https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent: [404 Not Found] models/gemini-1.5-flash is not found for API version v1beta, or is not supported for generateContent. Call ListModels to see the list of available models and their supported methods.'
+}
+[AI Fallback] Primary model googleai/gemini-1.5-flash failed. Attempting fallback to googleai/gemini-2.5-flash-lite...
+ POST /api/marketing-bot 200 in 18288ms
+ ✓ Compiled /editor in 290ms
+[Genkit] ✅ Initialized with: GoogleAI & OpenAI
+ GET /editor 200 in 3041ms
+ GET /onboarding 200 in 3418ms
+ GET /manifest.webmanifest 200 in 2437ms
+ GET /dashboard 200 in 2962ms
+ GET /apple-icon 200 in 1112ms
+ GET /manifest.webmanifest 200 in 1345ms
+ GET /apple-icon 200 in 629ms
+ GET /editor 200 in 1278ms
+ GET /manifest.webmanifest 200 in 1162ms
+ GET /apple-icon 200 in 617ms
+ ✓ Compiled in 2s
+ ✓ Compiled in 1203ms
+[Genkit] ✅ Initialized with: GoogleAI & OpenAI
+ GET /editor 200 in 10129ms
+ GET /onboarding 200 in 1673ms
+ GET /dashboard 200 in 1924ms
+ GET /manifest.webmanifest 200 in 2530ms
+ GET /apple-icon 200 in 401ms
+ GET /editor 200 in 1191ms
+ GET /manifest.webmanifest 200 in 1116ms
+ GET /apple-icon 200 in 681ms
+ ✓ Compiled in 1615ms
+[Genkit] ✅ Initialized with: GoogleAI & OpenAI
+(node:26028) MaxListenersExceededWarning: Possible EventEmitter memory leak detected. 11 SIGTERM listeners added to [process]. MaxListeners is 10. Use emitter.setMaxListeners() to increase limit
+(Use `node --trace-warnings ...` to show where the warning was created)
+ GET /editor 200 in 6355ms
+ GET /onboarding 200 in 3571ms
+ GET /dashboard 200 in 3203ms
+ GET /manifest.webmanifest 200 in 2490ms
+ GET /apple-icon 200 in 861ms
+ GET /tracker 200 in 1134ms
+ GET /manifest.webmanifest 200 in 1148ms
+ GET /apple-icon 200 in 674ms
+ GET /editor 200 in 3269ms
+ GET /onboarding 200 in 1946ms
+ GET /manifest.webmanifest 200 in 3745ms
+ GET /dashboard 200 in 4496ms
+ GET /apple-icon 200 in 2590ms
+ GET /manifest.webmanifest 200 in 2753ms
+ GET /apple-icon 200 in 745ms
+ GET /editor 200 in 2926ms
+ GET /manifest.webmanifest 200 in 6661ms
+ GET /apple-icon 200 in 2198ms
+ ✓ Compiled in 1142ms
+[Genkit] ✅ Initialized with: GoogleAI & OpenAI
+(node:26028) MaxListenersExceededWarning: Possible EventEmitter memory leak detected. 11 SIGINT listeners added to [process]. MaxListeners is 10. Use emitter.setMaxListeners() to increase limit
+ GET /editor 200 in 4295ms
+ GET /onboarding 200 in 2050ms
+ GET /dashboard 200 in 1984ms
+ GET /manifest.webmanifest 200 in 1946ms
+ GET /manifest.webmanifest 200 in 1164ms
+ GET /apple-icon 200 in 498ms
+ GET /editor 200 in 2760ms
+ GET /onboarding 200 in 2112ms
+ GET /dashboard 200 in 1770ms
+ GET /manifest.webmanifest 200 in 1871ms
+ GET /apple-icon 200 in 568ms
+ GET /editor 200 in 2746ms
+ GET /manifest.webmanifest 200 in 1061ms
+ GET /apple-icon 200 in 575ms
+ ✓ Compiled in 1730ms
+ ✓ Compiled in 6.9s
+ ○ Compiling /editor ...
+ ✓ Compiled /editor in 781ms
+[Genkit] ✅ Initialized with: GoogleAI & OpenAI
+ GET /editor 200 in 3468ms
+ GET /manifest.webmanifest 200 in 597ms
+ GET /apple-icon 200 in 376ms
+ GET /editor 200 in 5754ms
+ GET /onboarding 200 in 3332ms
+ GET /dashboard 200 in 1083ms
+ GET /manifest.webmanifest 200 in 1216ms
+ GET /apple-icon 200 in 504ms
+ GET /manifest.webmanifest 200 in 993ms
+ GET /apple-icon 200 in 631ms
+ GET /editor 200 in 1236ms
+ GET /manifest.webmanifest 200 in 861ms
+ GET /apple-icon 200 in 612ms
+ GET /editor 200 in 3801ms
+ GET /onboarding 200 in 1697ms
+ GET /manifest.webmanifest 200 in 1001ms
+ GET /apple-icon 200 in 545ms
+ GET /dashboard 200 in 918ms
+ GET /manifest.webmanifest 200 in 1020ms
+ GET /apple-icon 200 in 432ms
+ GET /editor 200 in 3558ms
+ GET /onboarding 200 in 1090ms
+ GET /dashboard 200 in 1012ms
+ GET /manifest.webmanifest 200 in 1145ms
+ GET /apple-icon 200 in 395ms
+ GET /manifest.webmanifest 200 in 957ms
+ GET /apple-icon 200 in 468ms
+ GET /editor 200 in 1083ms
+ GET /manifest.webmanifest 200 in 811ms
+ GET /apple-icon 200 in 438ms
+ ✓ Compiled in 664ms
+ ✓ Compiled in 952ms
+ ✓ Compiled in 550ms
+ ✓ Compiled in 802ms
+[Genkit] ✅ Initialized with: GoogleAI & OpenAI
+ GET /editor 200 in 3840ms
+ GET /onboarding 200 in 3409ms
+ GET /manifest.webmanifest 200 in 2137ms
+ GET /dashboard 200 in 2506ms
+ GET /apple-icon 200 in 1224ms
+ GET /manifest.webmanifest 200 in 1656ms
+ GET /apple-icon 200 in 617ms
+ GET /editor 200 in 1396ms
+ GET /manifest.webmanifest 200 in 1395ms
+ GET /apple-icon 200 in 591ms
+ ✓ Compiled in 411ms
+[Genkit] ✅ Initialized with: GoogleAI & OpenAI
+ GET /editor 200 in 3942ms
+ GET /onboarding 200 in 1411ms
+ GET /dashboard 200 in 2268ms
+ GET /manifest.webmanifest 200 in 2130ms
+ GET /apple-icon 200 in 621ms
+ GET /editor 200 in 1346ms
+ GET /manifest.webmanifest 200 in 1096ms
+ GET /apple-icon 200 in 611ms
+ ✓ Compiled in 705ms
+ ✓ Compiled in 465ms
+ ⨯ ./src/components/editor/resume-template.tsx:509:3
+Parsing ecmascript source code failed
+[0m [90m 507 |[39m       [33m<[39m[33m/[39m[33mResumeSection[39m[33m>[39m
+ [90m 508 |[39m     )
+[31m[1m>[22m[39m[90m 509 |[39m   }
+ [90m     |[39m   [31m[1m^[22m[39m
+ [90m 510 |[39m
+ [90m 511 |[39m     [36mconst[39m items [33m=[39m (content[33m?[39m[33m.[39meducation [33m||[39m [])[33m.[39mfilter((e[33m:[39m any) [33m=>[39m e[33m.[39mdegree [33m||[39m e[33m.[39minstitution)
+ [90m 512 |[39m     [36mif[39m ([33m![39mitems[33m.[39mlength) [36mreturn[39m [36mnull[39m[0m
+
+Expression expected
+
+Import traces:
+  Client Component Browser:
+    ./src/components/editor/resume-template.tsx [Client Component Browser]
+    ./src/components/editor/MobileEditor.tsx [Client Component Browser]
+    ./src/app/(dashboard)/editor/page.tsx [Client Component Browser]
+    ./src/app/(dashboard)/editor/page.tsx [Server Component]
+
+  Client Component SSR:
+    ./src/components/editor/resume-template.tsx [Client Component SSR]
+    ./src/components/editor/MobileEditor.tsx [Client Component SSR]
+    ./src/app/(dashboard)/editor/page.tsx [Client Component SSR]
+    ./src/app/(dashboard)/editor/page.tsx [Server Component]
+
+
+ ○ Compiling /_error ...
+ ✓ Compiled /_error in 8.2s
+ GET /editor 500 in 9088ms
+ GET / 200 in 3504ms
+ ⨯ ./src/components/editor/resume-template.tsx:509:3
+Parsing ecmascript source code failed
+[0m [90m 507 |[39m       [33m<[39m[33m/[39m[33mResumeSection[39m[33m>[39m
+ [90m 508 |[39m     )
+[31m[1m>[22m[39m[90m 509 |[39m   }
+ [90m     |[39m   [31m[1m^[22m[39m
+ [90m 510 |[39m
+ [90m 511 |[39m     [36mconst[39m items [33m=[39m (content[33m?[39m[33m.[39meducation [33m||[39m [])[33m.[39mfilter((e[33m:[39m any) [33m=>[39m e[33m.[39mdegree [33m||[39m e[33m.[39minstitution)
+ [90m 512 |[39m     [36mif[39m ([33m![39mitems[33m.[39mlength) [36mreturn[39m [36mnull[39m[0m
+
+Expression expected
+
+Import traces:
+  Client Component Browser:
+    ./src/components/editor/resume-template.tsx [Client Component Browser]
+    ./src/components/editor/MobileEditor.tsx [Client Component Browser]
+    ./src/app/(dashboard)/editor/page.tsx [Client Component Browser]
+    ./src/app/(dashboard)/editor/page.tsx [Server Component]
+
+  Client Component SSR:
+    ./src/components/editor/resume-template.tsx [Client Component SSR]
+    ./src/components/editor/MobileEditor.tsx [Client Component SSR]
+    ./src/app/(dashboard)/editor/page.tsx [Client Component SSR]
+    ./src/app/(dashboard)/editor/page.tsx [Server Component]
+
+
+ GET /editor 500 in 1093ms
+ ✓ Compiled in 425ms
+ ⚠ Fast Refresh had to perform a full reload due to a runtime error.
+ ○ Compiling /editor ...
+ ✓ Compiled /editor in 859ms
+[Genkit] ✅ Initialized with: GoogleAI & OpenAI
+ GET /editor 200 in 3970ms
+ GET /editor 200 in 3931ms
+ GET /editor 200 in 5033ms
+ GET /onboarding 200 in 2360ms
+ GET /manifest.webmanifest 200 in 833ms
+ GET /apple-icon 200 in 553ms
+ GET /dashboard 200 in 878ms
+ GET /manifest.webmanifest 200 in 883ms
+ GET /apple-icon 200 in 237ms
+ GET /manifest.webmanifest 200 in 549ms
+ GET /apple-icon 200 in 211ms
+ GET /editor 200 in 1127ms
+ GET /onboarding 200 in 1528ms
+ GET /dashboard 200 in 1670ms
+ GET /manifest.webmanifest 200 in 1631ms
+ GET /apple-icon 200 in 382ms
+ GET /editor 200 in 1450ms
+ GET /manifest.webmanifest 200 in 680ms
+ GET /apple-icon 200 in 325ms
+ GET /editor 200 in 781ms
+ GET /onboarding 200 in 532ms
+ GET /dashboard 200 in 597ms
+ GET /manifest.webmanifest 200 in 668ms
+ GET /apple-icon 200 in 182ms
+ GET /editor 200 in 1006ms
+ GET /manifest.webmanifest 200 in 1081ms
+ GET /apple-icon 200 in 351ms
+ ✓ Compiled in 465ms
+ ✓ Compiled in 747ms
+ ✓ Compiled in 961ms
+ ✓ Compiled in 7.7s
+[Genkit] ✅ Initialized with: GoogleAI & OpenAI
+ GET /editor 200 in 10241ms
+ GET /onboarding 200 in 2184ms
+ GET /manifest.webmanifest 200 in 2897ms
+ GET /dashboard 200 in 3232ms
+ GET /apple-icon 200 in 1650ms
+ GET /manifest.webmanifest 200 in 1299ms
+ GET /apple-icon 200 in 522ms
+ GET /editor 200 in 830ms
+ GET /manifest.webmanifest 200 in 802ms
+ GET /apple-icon 200 in 432ms
+ ✓ Compiled in 998ms
+[Genkit] ✅ Initialized with: GoogleAI & OpenAI
+ GET /editor 200 in 12029ms
+ GET /onboarding 200 in 7468ms
+ GET /manifest.webmanifest 200 in 5656ms
+ GET /dashboard 200 in 8020ms
+ GET /apple-icon 200 in 3878ms
+ GET /manifest.webmanifest 200 in 5219ms
+ GET /editor 200 in 12264ms
+ GET /onboarding 200 in 6189ms
+ GET /manifest.webmanifest 200 in 4198ms
+ GET /apple-icon 200 in 2338ms
+ GET /onboarding 200 in 13915ms
+ GET / 200 in 17029ms
+ GET /editor 200 in 6575ms
+ GET /onboarding 200 in 2775ms
+ GET /dashboard 200 in 2783ms
+ GET /manifest.webmanifest 200 in 2671ms
+ GET /apple-icon 200 in 615ms
+ GET /editor 200 in 3576ms
+ GET /manifest.webmanifest 200 in 2140ms
+ GET /apple-icon 200 in 1414ms
+ GET /editor 200 in 5366ms
+ GET /onboarding 200 in 3294ms
+ GET /manifest.webmanifest 200 in 1555ms
+ GET /apple-icon 200 in 881ms
+ GET /dashboard 200 in 2511ms
+ GET /manifest.webmanifest 200 in 1221ms
+ GET /apple-icon 200 in 771ms
+ GET /editor 200 in 5921ms
+ GET /onboarding 200 in 3420ms
+ GET /manifest.webmanifest 200 in 1544ms
+ GET /apple-icon 200 in 1064ms
+ GET /dashboard 200 in 2691ms
+ GET /manifest.webmanifest 200 in 1345ms
+ GET /apple-icon 200 in 834ms
+ GET /editor 200 in 1994ms
+ GET /manifest.webmanifest 200 in 1863ms
+ GET /apple-icon 200 in 1364ms
+ ✓ Compiled in 1229ms
+[Genkit] ✅ Initialized with: GoogleAI & OpenAI
+ GET /editor 200 in 8685ms
+ GET /onboarding 200 in 6944ms
+ GET /manifest.webmanifest 200 in 7888ms
+ GET /dashboard 200 in 10425ms
+ GET /apple-icon 200 in 6927ms
+ GET /manifest.webmanifest 200 in 5964ms
+ GET /apple-icon 200 in 3038ms
+ GET /editor 200 in 5063ms
+ GET /manifest.webmanifest 200 in 5768ms
+ GET /apple-icon 200 in 3101ms
+ ✓ Compiled in 841ms
+[Genkit] ✅ Initialized with: GoogleAI & OpenAI
+ GET /editor 200 in 4940ms
+ GET /onboarding 200 in 3873ms
+ GET /dashboard 200 in 3306ms
+ GET /manifest.webmanifest 200 in 3196ms
+ GET /manifest.webmanifest 200 in 1585ms
+ GET /apple-icon 200 in 2203ms
+ GET /editor 200 in 1970ms
+ GET /manifest.webmanifest 200 in 1427ms
+ GET /apple-icon 200 in 986ms
+ GET /editor 200 in 6817ms
+ GET /onboarding 200 in 3894ms
+ GET /manifest.webmanifest 200 in 1506ms
+ GET /dashboard 200 in 2433ms
+ GET /apple-icon 200 in 1282ms
+ GET /manifest.webmanifest 200 in 1487ms
+ GET /apple-icon 200 in 662ms
+ GET /editor 200 in 785ms
+ GET /manifest.webmanifest 200 in 977ms
+ GET /apple-icon 200 in 893ms
+ GET /editor 200 in 2503ms
+ GET /onboarding 200 in 4236ms
+ GET /login 200 in 5200ms
+ GET /manifest.webmanifest 200 in 1719ms
+ GET /apple-icon 200 in 1107ms
+ GET /onboarding 200 in 708ms
+ GET /manifest.webmanifest 200 in 903ms
+ GET /dashboard 200 in 541ms
+ GET /apple-icon 200 in 257ms
+ GET /dashboard 200 in 465ms
+ GET /manifest.webmanifest 200 in 808ms
+ GET /apple-icon 200 in 169ms
+ GET /editor 200 in 5065ms
+ GET /onboarding 200 in 13391ms
+ GET /manifest.webmanifest 200 in 20201ms
+ GET /dashboard 200 in 26469ms
+ GET /apple-icon 200 in 10307ms
+ GET /manifest.webmanifest 200 in 8648ms
+ GET /apple-icon 200 in 3783ms
+ GET /editor 200 in 5359ms
+ GET /onboarding 200 in 23885ms
+ GET /login 200 in 23867ms
+ GET /manifest.webmanifest 200 in 13942ms
+ GET /login 200 in 16859ms
+ GET / 200 in 11725ms
+ ○ Compiling /signup ...
+ ✓ Compiled /signup in 42.9s
+ GET /signup 200 in 51867ms
+ GET /editor 200 in 8966ms
+ GET /onboarding 200 in 16145ms
+ GET /login 200 in 14789ms
+ GET /manifest.webmanifest 200 in 9363ms
+ GET / 200 in 23819ms
+ ✓ Compiled in 16.5s
+ ✓ Compiled in 14.9s
+ ⨯ [Error: ENOENT: no such file or directory, open 'C:\Users\csali\.gemini\antigravity\scratch\aicareerguide\.next\server\app\(dashboard)\editor\page\app-build-manifest.json'] {
+  errno: -4058,
+  code: 'ENOENT',
+  syscall: 'open',
+  path: 'C:\\Users\\csali\\.gemini\\antigravity\\scratch\\aicareerguide\\.next\\server\\app\\(dashboard)\\editor\\page\\app-build-manifest.json'
+}
+ ⨯ [Error: ENOENT: no such file or directory, open 'C:\Users\csali\.gemini\antigravity\scratch\aicareerguide\.next\server\pages\_app\build-manifest.json'] {
+  errno: -4058,
+  code: 'ENOENT',
+  syscall: 'open',
+  path: 'C:\\Users\\csali\\.gemini\\antigravity\\scratch\\aicareerguide\\.next\\server\\pages\\_app\\build-manifest.json'
+}
+[Error: ENOENT: no such file or directory, open 'C:\Users\csali\.gemini\antigravity\scratch\aicareerguide\.next\server\app\(dashboard)\editor\page\app-build-manifest.json'] {
+  errno: -4058,
+  code: 'ENOENT',
+  syscall: 'open',
+  path: 'C:\\Users\\csali\\.gemini\\antigravity\\scratch\\aicareerguide\\.next\\server\\app\\(dashboard)\\editor\\page\\app-build-manifest.json'
+}
+ ⨯ [Error: ENOENT: no such file or directory, open 'C:\Users\csali\.gemini\antigravity\scratch\aicareerguide\.next\server\pages\_app\build-manifest.json'] {
+  errno: -4058,
+  code: 'ENOENT',
+  syscall: 'open',
+  path: 'C:\\Users\\csali\\.gemini\\antigravity\\scratch\\aicareerguide\\.next\\server\\pages\\_app\\build-manifest.json'
+}
+[Error: ENOENT: no such file or directory, open 'C:\Users\csali\.gemini\antigravity\scratch\aicareerguide\.next\server\pages\_app\build-manifest.json'] {
+  errno: -4058,
+  code: 'ENOENT',
+  syscall: 'open',
+  path: 'C:\\Users\\csali\\.gemini\\antigravity\\scratch\\aicareerguide\\.next\\server\\pages\\_app\\build-manifest.json'
+}
+ ⨯ [Error: ENOENT: no such file or directory, open 'C:\Users\csali\.gemini\antigravity\scratch\aicareerguide\.next\server\app\(dashboard)\editor\page\app-build-manifest.json'] {
+  errno: -4058,
+  code: 'ENOENT',
+  syscall: 'open',
+  path: 'C:\\Users\\csali\\.gemini\\antigravity\\scratch\\aicareerguide\\.next\\server\\app\\(dashboard)\\editor\\page\\app-build-manifest.json'
+}
+ ⨯ [Error: ENOENT: no such file or directory, open 'C:\Users\csali\.gemini\antigravity\scratch\aicareerguide\.next\server\pages\_app\build-manifest.json'] {
+  errno: -4058,
+  code: 'ENOENT',
+  syscall: 'open',
+  path: 'C:\\Users\\csali\\.gemini\\antigravity\\scratch\\aicareerguide\\.next\\server\\pages\\_app\\build-manifest.json'
+}
+[Error: ENOENT: no such file or directory, open 'C:\Users\csali\.gemini\antigravity\scratch\aicareerguide\.next\server\app\(dashboard)\editor\page\app-build-manifest.json'] {
+  errno: -4058,
+  code: 'ENOENT',
+  syscall: 'open',
+  path: 'C:\\Users\\csali\\.gemini\\antigravity\\scratch\\aicareerguide\\.next\\server\\app\\(dashboard)\\editor\\page\\app-build-manifest.json'
+}
+ ⨯ [Error: ENOENT: no such file or directory, open 'C:\Users\csali\.gemini\antigravity\scratch\aicareerguide\.next\server\pages\_app\build-manifest.json'] {
+  errno: -4058,
+  code: 'ENOENT',
+  syscall: 'open',
+  path: 'C:\\Users\\csali\\.gemini\\antigravity\\scratch\\aicareerguide\\.next\\server\\pages\\_app\\build-manifest.json'
+}
+[Error: ENOENT: no such file or directory, open 'C:\Users\csali\.gemini\antigravity\scratch\aicareerguide\.next\server\pages\_app\build-manifest.json'] {
+  errno: -4058,
+  code: 'ENOENT',
+  syscall: 'open',
+  path: 'C:\\Users\\csali\\.gemini\\antigravity\\scratch\\aicareerguide\\.next\\server\\pages\\_app\\build-manifest.json'
+}
+ ⨯ [Error: ENOENT: no such file or directory, open 'C:\Users\csali\.gemini\antigravity\scratch\aicareerguide\.next\server\app\(dashboard)\editor\page\app-build-manifest.json'] {
+  errno: -4058,
+  code: 'ENOENT',
+  syscall: 'open',
+  path: 'C:\\Users\\csali\\.gemini\\antigravity\\scratch\\aicareerguide\\.next\\server\\app\\(dashboard)\\editor\\page\\app-build-manifest.json'
+}
+ ⨯ [Error: ENOENT: no such file or directory, open 'C:\Users\csali\.gemini\antigravity\scratch\aicareerguide\.next\server\pages\_app\build-manifest.json'] {
+  errno: -4058,
+  code: 'ENOENT',
+  syscall: 'open',
+  path: 'C:\\Users\\csali\\.gemini\\antigravity\\scratch\\aicareerguide\\.next\\server\\pages\\_app\\build-manifest.json'
+}
+[Error: ENOENT: no such file or directory, open 'C:\Users\csali\.gemini\antigravity\scratch\aicareerguide\.next\server\app\(dashboard)\editor\page\app-build-manifest.json'] {
+  errno: -4058,
+  code: 'ENOENT',
+  syscall: 'open',
+  path: 'C:\\Users\\csali\\.gemini\\antigravity\\scratch\\aicareerguide\\.next\\server\\app\\(dashboard)\\editor\\page\\app-build-manifest.json'
+}
+ ⨯ [Error: ENOENT: no such file or directory, open 'C:\Users\csali\.gemini\antigravity\scratch\aicareerguide\.next\server\pages\_app\build-manifest.json'] {
+  errno: -4058,
+  code: 'ENOENT',
+  syscall: 'open',
+  path: 'C:\\Users\\csali\\.gemini\\antigravity\\scratch\\aicareerguide\\.next\\server\\pages\\_app\\build-manifest.json'
+}
+[Error: ENOENT: no such file or directory, open 'C:\Users\csali\.gemini\antigravity\scratch\aicareerguide\.next\server\pages\_app\build-manifest.json'] {
+  errno: -4058,
+  code: 'ENOENT',
+  syscall: 'open',
+  path: 'C:\\Users\\csali\\.gemini\\antigravity\\scratch\\aicareerguide\\.next\\server\\pages\\_app\\build-manifest.json'
+}
+ ⨯ [Error: ENOENT: no such file or directory, open 'C:\Users\csali\.gemini\antigravity\scratch\aicareerguide\.next\server\app\(dashboard)\editor\page\app-build-manifest.json'] {
+  errno: -4058,
+  code: 'ENOENT',
+  syscall: 'open',
+  path: 'C:\\Users\\csali\\.gemini\\antigravity\\scratch\\aicareerguide\\.next\\server\\app\\(dashboard)\\editor\\page\\app-build-manifest.json'
+}
+ ⨯ [Error: ENOENT: no such file or directory, open 'C:\Users\csali\.gemini\antigravity\scratch\aicareerguide\.next\server\pages\_app\build-manifest.json'] {
+  errno: -4058,
+  code: 'ENOENT',
+  syscall: 'open',
+  path: 'C:\\Users\\csali\\.gemini\\antigravity\\scratch\\aicareerguide\\.next\\server\\pages\\_app\\build-manifest.json'
+}
+[Error: ENOENT: no such file or directory, open 'C:\Users\csali\.gemini\antigravity\scratch\aicareerguide\.next\server\app\(dashboard)\editor\page\app-build-manifest.json'] {
+  errno: -4058,
+  code: 'ENOENT',
+  syscall: 'open',
+  path: 'C:\\Users\\csali\\.gemini\\antigravity\\scratch\\aicareerguide\\.next\\server\\app\\(dashboard)\\editor\\page\\app-build-manifest.json'
+}
+ ⨯ [Error: ENOENT: no such file or directory, open 'C:\Users\csali\.gemini\antigravity\scratch\aicareerguide\.next\server\pages\_app\build-manifest.json'] {
+  errno: -4058,
+  code: 'ENOENT',
+  syscall: 'open',
+  path: 'C:\\Users\\csali\\.gemini\\antigravity\\scratch\\aicareerguide\\.next\\server\\pages\\_app\\build-manifest.json'
+}
+[Error: ENOENT: no such file or directory, open 'C:\Users\csali\.gemini\antigravity\scratch\aicareerguide\.next\server\pages\_app\build-manifest.json'] {
+  errno: -4058,
+  code: 'ENOENT',
+  syscall: 'open',
+  path: 'C:\\Users\\csali\\.gemini\\antigravity\\scratch\\aicareerguide\\.next\\server\\pages\\_app\\build-manifest.json'
+}
+ ✓ Compiled in 6s
+ ✓ Compiled in 11.1s
+ ✓ Compiled in 4.1s
+ ✓ Compiled in 1508ms
+ ✓ Compiled in 4s
+ ✓ Compiled in 1002ms
+ ✓ Compiled in 3.8s
+ ✓ Compiled in 1031ms
+ ✓ Compiled in 20.5s
+[Genkit] ✅ Initialized with: GoogleAI & OpenAI
+ GET /editor 200 in 7938ms
+ GET /onboarding 200 in 16437ms
+ GET /login 200 in 16184ms
+ GET /manifest.webmanifest 200 in 1519ms
+ GET /apple-icon 200 in 709ms
+ ○ Compiling middleware ...
+ ✓ Compiled middleware in 2.5s
+ ○ Compiling /test-mobile ...
+ GET /login 200 in 30001ms
+ GET /login 200 in 10492ms
+ GET /manifest.webmanifest 200 in 9297ms
+ GET /apple-icon 200 in 11399ms
+ GET /dashboard 200 in 3509ms
+ GET /dashboard 200 in 2303ms
+ ✓ Compiled /test-mobile in 73.8s
+ GET /manifest.webmanifest 200 in 2337ms
+ GET /apple-icon 200 in 3018ms
+ GET /test-mobile 200 in 82162ms
+ ✓ Compiled middleware in 57ms
+ ○ Compiling /_not-found/page ...
+ GET /dashboard 200 in 5110ms
+ GET /dashboard 200 in 2320ms
+ ✓ Compiled /_not-found/page in 8.6s
+ ⨯ [Error: ENOENT: no such file or directory, open 'C:\Users\csali\.gemini\antigravity\scratch\aicareerguide\.next\server\pages\_app\build-manifest.json'] {
+  errno: -4058,
+  code: 'ENOENT',
+  syscall: 'open',
+  path: 'C:\\Users\\csali\\.gemini\\antigravity\\scratch\\aicareerguide\\.next\\server\\pages\\_app\\build-manifest.json'
+}
+[Error: ENOENT: no such file or directory, open 'C:\Users\csali\.gemini\antigravity\scratch\aicareerguide\.next\server\pages\_app\build-manifest.json'] {
+  errno: -4058,
+  code: 'ENOENT',
+  syscall: 'open',
+  path: 'C:\\Users\\csali\\.gemini\\antigravity\\scratch\\aicareerguide\\.next\\server\\pages\\_app\\build-manifest.json'
+}
+ ⨯ [Error: ENOENT: no such file or directory, open 'C:\Users\csali\.gemini\antigravity\scratch\aicareerguide\.next\server\pages\_app\build-manifest.json'] {
+  errno: -4058,
+  code: 'ENOENT',
+  syscall: 'open',
+  path: 'C:\\Users\\csali\\.gemini\\antigravity\\scratch\\aicareerguide\\.next\\server\\pages\\_app\\build-manifest.json'
+}
+[Error: ENOENT: no such file or directory, open 'C:\Users\csali\.gemini\antigravity\scratch\aicareerguide\.next\server\pages\_app\build-manifest.json'] {
+  errno: -4058,
+  code: 'ENOENT',
+  syscall: 'open',
+  path: 'C:\\Users\\csali\\.gemini\\antigravity\\scratch\\aicareerguide\\.next\\server\\pages\\_app\\build-manifest.json'
+}
+ ⨯ [Error: ENOENT: no such file or directory, open 'C:\Users\csali\.gemini\antigravity\scratch\aicareerguide\.next\server\pages\_app\build-manifest.json'] {
+  errno: -4058,
+  code: 'ENOENT',
+  syscall: 'open',
+  path: 'C:\\Users\\csali\\.gemini\\antigravity\\scratch\\aicareerguide\\.next\\server\\pages\\_app\\build-manifest.json'
+}
+[Error: ENOENT: no such file or directory, open 'C:\Users\csali\.gemini\antigravity\scratch\aicareerguide\.next\server\pages\_app\build-manifest.json'] {
+  errno: -4058,
+  code: 'ENOENT',
+  syscall: 'open',
+  path: 'C:\\Users\\csali\\.gemini\\antigravity\\scratch\\aicareerguide\\.next\\server\\pages\\_app\\build-manifest.json'
+}
+ ⨯ [Error: ENOENT: no such file or directory, open 'C:\Users\csali\.gemini\antigravity\scratch\aicareerguide\.next\server\pages\_app\build-manifest.json'] {
+  errno: -4058,
+  code: 'ENOENT',
+  syscall: 'open',
+  path: 'C:\\Users\\csali\\.gemini\\antigravity\\scratch\\aicareerguide\\.next\\server\\pages\\_app\\build-manifest.json'
+}
+[Error: ENOENT: no such file or directory, open 'C:\Users\csali\.gemini\antigravity\scratch\aicareerguide\.next\server\pages\_app\build-manifest.json'] {
+  errno: -4058,
+  code: 'ENOENT',
+  syscall: 'open',
+  path: 'C:\\Users\\csali\\.gemini\\antigravity\\scratch\\aicareerguide\\.next\\server\\pages\\_app\\build-manifest.json'
+}
+ GET /test-mobile 404 in 7117ms
+ GET /manifest.webmanifest 200 in 4231ms
+ GET /apple-icon 200 in 1051ms
+ GET / 200 in 1143ms
+ GET /manifest.webmanifest 200 in 1789ms
+ GET /apple-icon 200 in 729ms
+ ✓ Compiled in 2.9s
+ ✓ Compiled in 1547ms
+ ✓ Compiled in 2.3s
+ GET /dashboard 200 in 3040ms
+ GET / 200 in 3286ms
+ GET /manifest.webmanifest 200 in 1750ms
+ GET /manifest.webmanifest 200 in 1650ms
+ GET /apple-icon 200 in 551ms
+ GET /apple-icon 200 in 544ms
+ ✓ Compiled in 40.4s
+ ✓ Compiled in 23.8s
+ ✓ Compiled in 7.9s
+ ⨯ [Error: ENOENT: no such file or directory, open 'C:\Users\csali\.gemini\antigravity\scratch\aicareerguide\.next\server\app\page\app-build-manifest.json'] {
+  errno: -4058,
+  code: 'ENOENT',
+  syscall: 'open',
+  path: 'C:\\Users\\csali\\.gemini\\antigravity\\scratch\\aicareerguide\\.next\\server\\app\\page\\app-build-manifest.json'
+}
+ ⨯ [Error: ENOENT: no such file or directory, open 'C:\Users\csali\.gemini\antigravity\scratch\aicareerguide\.next\static\development\_buildManifest.js.tmp.t239md9jyt'] {
+  errno: -4058,
+  code: 'ENOENT',
+  syscall: 'open',
+  path: 'C:\\Users\\csali\\.gemini\\antigravity\\scratch\\aicareerguide\\.next\\static\\development\\_buildManifest.js.tmp.t239md9jyt'
+}
+[Error: ENOENT: no such file or directory, open 'C:\Users\csali\.gemini\antigravity\scratch\aicareerguide\.next\server\app\page\app-build-manifest.json'] {
+  errno: -4058,
+  code: 'ENOENT',
+  syscall: 'open',
+  path: 'C:\\Users\\csali\\.gemini\\antigravity\\scratch\\aicareerguide\\.next\\server\\app\\page\\app-build-manifest.json'
+}
+ ⨯ [Error: ENOENT: no such file or directory, open 'C:\Users\csali\.gemini\antigravity\scratch\aicareerguide\.next\static\development\_buildManifest.js.tmp.13ekonkmk8dq'] {
+  errno: -4058,
+  code: 'ENOENT',
+  syscall: 'open',
+  path: 'C:\\Users\\csali\\.gemini\\antigravity\\scratch\\aicareerguide\\.next\\static\\development\\_buildManifest.js.tmp.13ekonkmk8dq'
+}
+[Error: ENOENT: no such file or directory, open 'C:\Users\csali\.gemini\antigravity\scratch\aicareerguide\.next\static\development\_buildManifest.js.tmp.hg0pcn0podr'] {
+  errno: -4058,
+  code: 'ENOENT',
+  syscall: 'open',
+  path: 'C:\\Users\\csali\\.gemini\\antigravity\\scratch\\aicareerguide\\.next\\static\\development\\_buildManifest.js.tmp.hg0pcn0podr'
+}
+ ⨯ [Error: ENOENT: no such file or directory, open 'C:\Users\csali\.gemini\antigravity\scratch\aicareerguide\.next\server\app\page\app-build-manifest.json'] {
+  errno: -4058,
+  code: 'ENOENT',
+  syscall: 'open',
+  path: 'C:\\Users\\csali\\.gemini\\antigravity\\scratch\\aicareerguide\\.next\\server\\app\\page\\app-build-manifest.json'
+}
+ ⨯ [Error: ENOENT: no such file or directory, open 'C:\Users\csali\.gemini\antigravity\scratch\aicareerguide\.next\static\development\_buildManifest.js.tmp.re9q2vz68zk'] {
+  errno: -4058,
+  code: 'ENOENT',
+  syscall: 'open',
+  path: 'C:\\Users\\csali\\.gemini\\antigravity\\scratch\\aicareerguide\\.next\\static\\development\\_buildManifest.js.tmp.re9q2vz68zk'
+}
+[Error: ENOENT: no such file or directory, open 'C:\Users\csali\.gemini\antigravity\scratch\aicareerguide\.next\server\app\page\app-build-manifest.json'] {
+  errno: -4058,
+  code: 'ENOENT',
+  syscall: 'open',
+  path: 'C:\\Users\\csali\\.gemini\\antigravity\\scratch\\aicareerguide\\.next\\server\\app\\page\\app-build-manifest.json'
+}
+ ⨯ [Error: ENOENT: no such file or directory, open 'C:\Users\csali\.gemini\antigravity\scratch\aicareerguide\.next\static\development\_buildManifest.js.tmp.wbuucfqigm'] {
+  errno: -4058,
+  code: 'ENOENT',
+  syscall: 'open',
+  path: 'C:\\Users\\csali\\.gemini\\antigravity\\scratch\\aicareerguide\\.next\\static\\development\\_buildManifest.js.tmp.wbuucfqigm'
+}
+[Error: ENOENT: no such file or directory, open 'C:\Users\csali\.gemini\antigravity\scratch\aicareerguide\.next\static\development\_buildManifest.js.tmp.fuoo41u0pw6'] {
+  errno: -4058,
+  code: 'ENOENT',
+  syscall: 'open',
+  path: 'C:\\Users\\csali\\.gemini\\antigravity\\scratch\\aicareerguide\\.next\\static\\development\\_buildManifest.js.tmp.fuoo41u0pw6'
+}
+ ✓ Compiled in 12.9s
+ ✓ Compiled in 7.8s
+ ⨯ [Error: ENOENT: no such file or directory, open 'C:\Users\csali\.gemini\antigravity\scratch\aicareerguide\.next\server\app\page\app-build-manifest.json'] {
+  errno: -4058,
+  code: 'ENOENT',
+  syscall: 'open',
+  path: 'C:\\Users\\csali\\.gemini\\antigravity\\scratch\\aicareerguide\\.next\\server\\app\\page\\app-build-manifest.json'
+}
+ ✓ Compiled in 39.5s
+ ⨯ [Error: ENOENT: no such file or directory, open 'C:\Users\csali\.gemini\antigravity\scratch\aicareerguide\.next\server\app\(dashboard)\dashboard\page\app-build-manifest.json'] {
+  errno: -4058,
+  code: 'ENOENT',
+  syscall: 'open',
+  path: 'C:\\Users\\csali\\.gemini\\antigravity\\scratch\\aicareerguide\\.next\\server\\app\\(dashboard)\\dashboard\\page\\app-build-manifest.json'
+}
+ ⨯ [Error: ENOENT: no such file or directory, open 'C:\Users\csali\.gemini\antigravity\scratch\aicareerguide\.next\static\development\_buildManifest.js.tmp.g0bfr9d79f'] {
+  errno: -4058,
+  code: 'ENOENT',
+  syscall: 'open',
+  path: 'C:\\Users\\csali\\.gemini\\antigravity\\scratch\\aicareerguide\\.next\\static\\development\\_buildManifest.js.tmp.g0bfr9d79f'
+}
+ ⨯ [Error: ENOENT: no such file or directory, open 'C:\Users\csali\.gemini\antigravity\scratch\aicareerguide\.next\static\development\_buildManifest.js.tmp.it4wwny3xv'] {
+  errno: -4058,
+  code: 'ENOENT',
+  syscall: 'open',
+  path: 'C:\\Users\\csali\\.gemini\\antigravity\\scratch\\aicareerguide\\.next\\static\\development\\_buildManifest.js.tmp.it4wwny3xv'
+}
+[Error: ENOENT: no such file or directory, open 'C:\Users\csali\.gemini\antigravity\scratch\aicareerguide\.next\server\app\page\app-build-manifest.json'] {
+  errno: -4058,
+  code: 'ENOENT',
+  syscall: 'open',
+  path: 'C:\\Users\\csali\\.gemini\\antigravity\\scratch\\aicareerguide\\.next\\server\\app\\page\\app-build-manifest.json'
+}
+[Error: ENOENT: no such file or directory, open 'C:\Users\csali\.gemini\antigravity\scratch\aicareerguide\.next\server\app\(dashboard)\dashboard\page\app-build-manifest.json'] {
+  errno: -4058,
+  code: 'ENOENT',
+  syscall: 'open',
+  path: 'C:\\Users\\csali\\.gemini\\antigravity\\scratch\\aicareerguide\\.next\\server\\app\\(dashboard)\\dashboard\\page\\app-build-manifest.json'
+}
+ ⨯ [Error: ENOENT: no such file or directory, open 'C:\Users\csali\.gemini\antigravity\scratch\aicareerguide\.next\static\development\_buildManifest.js.tmp.qzrn3sjs8p'] {
+  errno: -4058,
+  code: 'ENOENT',
+  syscall: 'open',
+  path: 'C:\\Users\\csali\\.gemini\\antigravity\\scratch\\aicareerguide\\.next\\static\\development\\_buildManifest.js.tmp.qzrn3sjs8p'
+}
+ ⨯ [Error: ENOENT: no such file or directory, open 'C:\Users\csali\.gemini\antigravity\scratch\aicareerguide\.next\static\development\_buildManifest.js.tmp.gzq2ijo09n'] {
+  errno: -4058,
+  code: 'ENOENT',
+  syscall: 'open',
+  path: 'C:\\Users\\csali\\.gemini\\antigravity\\scratch\\aicareerguide\\.next\\static\\development\\_buildManifest.js.tmp.gzq2ijo09n'
+}
+[Error: ENOENT: no such file or directory, open 'C:\Users\csali\.gemini\antigravity\scratch\aicareerguide\.next\static\development\_buildManifest.js.tmp.fknr99ml4qi'] {
+  errno: -4058,
+  code: 'ENOENT',
+  syscall: 'open',
+  path: 'C:\\Users\\csali\\.gemini\\antigravity\\scratch\\aicareerguide\\.next\\static\\development\\_buildManifest.js.tmp.fknr99ml4qi'
+}
+[Error: ENOENT: no such file or directory, open 'C:\Users\csali\.gemini\antigravity\scratch\aicareerguide\.next\static\development\_buildManifest.js.tmp.a06r7ofydm'] {
+  errno: -4058,
+  code: 'ENOENT',
+  syscall: 'open',
+  path: 'C:\\Users\\csali\\.gemini\\antigravity\\scratch\\aicareerguide\\.next\\static\\development\\_buildManifest.js.tmp.a06r7ofydm'
+}
+ ⨯ [Error: ENOENT: no such file or directory, open 'C:\Users\csali\.gemini\antigravity\scratch\aicareerguide\.next\server\app\page\app-build-manifest.json'] {
+  errno: -4058,
+  code: 'ENOENT',
+  syscall: 'open',
+  path: 'C:\\Users\\csali\\.gemini\\antigravity\\scratch\\aicareerguide\\.next\\server\\app\\page\\app-build-manifest.json'
+}
+ ⨯ [Error: ENOENT: no such file or directory, open 'C:\Users\csali\.gemini\antigravity\scratch\aicareerguide\.next\server\app\(dashboard)\dashboard\page\app-build-manifest.json'] {
+  errno: -4058,
+  code: 'ENOENT',
+  syscall: 'open',
+  path: 'C:\\Users\\csali\\.gemini\\antigravity\\scratch\\aicareerguide\\.next\\server\\app\\(dashboard)\\dashboard\\page\\app-build-manifest.json'
+}
+ ⨯ [Error: ENOENT: no such file or directory, open 'C:\Users\csali\.gemini\antigravity\scratch\aicareerguide\.next\static\development\_buildManifest.js.tmp.ziequ8ovaxb'] {
+  errno: -4058,
+  code: 'ENOENT',
+  syscall: 'open',
+  path: 'C:\\Users\\csali\\.gemini\\antigravity\\scratch\\aicareerguide\\.next\\static\\development\\_buildManifest.js.tmp.ziequ8ovaxb'
+}
+ ⨯ [Error: ENOENT: no such file or directory, open 'C:\Users\csali\.gemini\antigravity\scratch\aicareerguide\.next\static\development\_buildManifest.js.tmp.g3dyolj6lml'] {
+  errno: -4058,
+  code: 'ENOENT',
+  syscall: 'open',
+  path: 'C:\\Users\\csali\\.gemini\\antigravity\\scratch\\aicareerguide\\.next\\static\\development\\_buildManifest.js.tmp.g3dyolj6lml'
+}
+[Error: ENOENT: no such file or directory, open 'C:\Users\csali\.gemini\antigravity\scratch\aicareerguide\.next\server\app\page\app-build-manifest.json'] {
+  errno: -4058,
+  code: 'ENOENT',
+  syscall: 'open',
+  path: 'C:\\Users\\csali\\.gemini\\antigravity\\scratch\\aicareerguide\\.next\\server\\app\\page\\app-build-manifest.json'
+}
+[Error: ENOENT: no such file or directory, open 'C:\Users\csali\.gemini\antigravity\scratch\aicareerguide\.next\server\app\(dashboard)\dashboard\page\app-build-manifest.json'] {
+  errno: -4058,
+  code: 'ENOENT',
+  syscall: 'open',
+  path: 'C:\\Users\\csali\\.gemini\\antigravity\\scratch\\aicareerguide\\.next\\server\\app\\(dashboard)\\dashboard\\page\\app-build-manifest.json'
+}
+ ⨯ [Error: ENOENT: no such file or directory, open 'C:\Users\csali\.gemini\antigravity\scratch\aicareerguide\.next\static\development\_buildManifest.js.tmp.e7c5bhzklev'] {
+  errno: -4058,
+  code: 'ENOENT',
+  syscall: 'open',
+  path: 'C:\\Users\\csali\\.gemini\\antigravity\\scratch\\aicareerguide\\.next\\static\\development\\_buildManifest.js.tmp.e7c5bhzklev'
+}
+ ⨯ [Error: ENOENT: no such file or directory, open 'C:\Users\csali\.gemini\antigravity\scratch\aicareerguide\.next\static\development\_buildManifest.js.tmp.1t6oyxnxd64'] {
+  errno: -4058,
+  code: 'ENOENT',
+  syscall: 'open',
+  path: 'C:\\Users\\csali\\.gemini\\antigravity\\scratch\\aicareerguide\\.next\\static\\development\\_buildManifest.js.tmp.1t6oyxnxd64'
+}
+[Error: ENOENT: no such file or directory, open 'C:\Users\csali\.gemini\antigravity\scratch\aicareerguide\.next\static\development\_buildManifest.js.tmp.tldxrffv65'] {
+  errno: -4058,
+  code: 'ENOENT',
+  syscall: 'open',
+  path: 'C:\\Users\\csali\\.gemini\\antigravity\\scratch\\aicareerguide\\.next\\static\\development\\_buildManifest.js.tmp.tldxrffv65'
+}
+[Error: ENOENT: no such file or directory, open 'C:\Users\csali\.gemini\antigravity\scratch\aicareerguide\.next\static\development\_buildManifest.js.tmp.27wigpgjmql'] {
+  errno: -4058,
+  code: 'ENOENT',
+  syscall: 'open',
+  path: 'C:\\Users\\csali\\.gemini\\antigravity\\scratch\\aicareerguide\\.next\\static\\development\\_buildManifest.js.tmp.27wigpgjmql'
+}
+ ⨯ [Error: ENOENT: no such file or directory, open 'C:\Users\csali\.gemini\antigravity\scratch\aicareerguide\.next\server\app\(dashboard)\dashboard\page\app-build-manifest.json'] {
+  errno: -4058,
+  code: 'ENOENT',
+  syscall: 'open',
+  path: 'C:\\Users\\csali\\.gemini\\antigravity\\scratch\\aicareerguide\\.next\\server\\app\\(dashboard)\\dashboard\\page\\app-build-manifest.json'
+}
+ ⨯ [Error: ENOENT: no such file or directory, open 'C:\Users\csali\.gemini\antigravity\scratch\aicareerguide\.next\static\development\_buildManifest.js.tmp.8nyk8zk9ch'] {
+  errno: -4058,
+  code: 'ENOENT',
+  syscall: 'open',
+  path: 'C:\\Users\\csali\\.gemini\\antigravity\\scratch\\aicareerguide\\.next\\static\\development\\_buildManifest.js.tmp.8nyk8zk9ch'
+}
+[Error: ENOENT: no such file or directory, open 'C:\Users\csali\.gemini\antigravity\scratch\aicareerguide\.next\server\app\(dashboard)\dashboard\page\app-build-manifest.json'] {
+  errno: -4058,
+  code: 'ENOENT',
+  syscall: 'open',
+  path: 'C:\\Users\\csali\\.gemini\\antigravity\\scratch\\aicareerguide\\.next\\server\\app\\(dashboard)\\dashboard\\page\\app-build-manifest.json'
+}
+ ⨯ [Error: ENOENT: no such file or directory, open 'C:\Users\csali\.gemini\antigravity\scratch\aicareerguide\.next\static\development\_buildManifest.js.tmp.e4wj3n4ytie'] {
+  errno: -4058,
+  code: 'ENOENT',
+  syscall: 'open',
+  path: 'C:\\Users\\csali\\.gemini\\antigravity\\scratch\\aicareerguide\\.next\\static\\development\\_buildManifest.js.tmp.e4wj3n4ytie'
+}
+[Error: ENOENT: no such file or directory, open 'C:\Users\csali\.gemini\antigravity\scratch\aicareerguide\.next\static\development\_buildManifest.js.tmp.2niofpj9cpx'] {
+  errno: -4058,
+  code: 'ENOENT',
+  syscall: 'open',
+  path: 'C:\\Users\\csali\\.gemini\\antigravity\\scratch\\aicareerguide\\.next\\static\\development\\_buildManifest.js.tmp.2niofpj9cpx'
+}
+ ✓ Compiled /editor in 335ms
+ ⨯ [Error: ENOENT: no such file or directory, open 'C:\Users\csali\.gemini\antigravity\scratch\aicareerguide\.next\server\app\(dashboard)\editor\page\build-manifest.json'] {
+  errno: -4058,
+  code: 'ENOENT',
+  syscall: 'open',
+  path: 'C:\\Users\\csali\\.gemini\\antigravity\\scratch\\aicareerguide\\.next\\server\\app\\(dashboard)\\editor\\page\\build-manifest.json'
+}
+ ⨯ [Error: ENOENT: no such file or directory, open 'C:\Users\csali\.gemini\antigravity\scratch\aicareerguide\.next\static\development\_buildManifest.js.tmp.ai1326ysmxq'] {
+  errno: -4058,
+  code: 'ENOENT',
+  syscall: 'open',
+  path: 'C:\\Users\\csali\\.gemini\\antigravity\\scratch\\aicareerguide\\.next\\static\\development\\_buildManifest.js.tmp.ai1326ysmxq'
+}
+[Error: ENOENT: no such file or directory, open 'C:\Users\csali\.gemini\antigravity\scratch\aicareerguide\.next\server\app\(dashboard)\editor\page\build-manifest.json'] {
+  errno: -4058,
+  code: 'ENOENT',
+  syscall: 'open',
+  path: 'C:\\Users\\csali\\.gemini\\antigravity\\scratch\\aicareerguide\\.next\\server\\app\\(dashboard)\\editor\\page\\build-manifest.json'
+}
+ ⨯ [Error: ENOENT: no such file or directory, open 'C:\Users\csali\.gemini\antigravity\scratch\aicareerguide\.next\static\development\_buildManifest.js.tmp.0cbl2r26282u'] {
+  errno: -4058,
+  code: 'ENOENT',
+  syscall: 'open',
+  path: 'C:\\Users\\csali\\.gemini\\antigravity\\scratch\\aicareerguide\\.next\\static\\development\\_buildManifest.js.tmp.0cbl2r26282u'
+}
+[Error: ENOENT: no such file or directory, open 'C:\Users\csali\.gemini\antigravity\scratch\aicareerguide\.next\static\development\_buildManifest.js.tmp.prjkxfavxl'] {
+  errno: -4058,
+  code: 'ENOENT',
+  syscall: 'open',
+  path: 'C:\\Users\\csali\\.gemini\\antigravity\\scratch\\aicareerguide\\.next\\static\\development\\_buildManifest.js.tmp.prjkxfavxl'
+}
+ ✓ Compiled in 6.3s
+ ✓ Compiled in 3.5s
+ ✓ Compiled in 2.1s

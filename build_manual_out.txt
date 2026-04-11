@@ -1,0 +1,10 @@
+
+> nextn@0.1.0 build
+> next build
+
+   Ôû▓ Next.js 15.5.14
+   - Experiments (use with caution):
+     ┬À serverActions
+
+   Creating an optimized production build ...
+   Linting and checking validity of types ...

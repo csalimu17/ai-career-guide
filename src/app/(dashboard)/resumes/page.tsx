@@ -527,7 +527,27 @@ function ResumeCard({
           </Button>
         </div>
 
-        <div className="absolute top-3 right-3 z-10 flex gap-1">
+        <div className="absolute top-3 right-3 z-10 flex gap-2">
+          <TooltipProvider>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button 
+                  size="icon" 
+                  variant="secondary" 
+                  className="h-8 w-8 rounded-full border border-muted/50 bg-background/80 shadow-sm hover:bg-background hover:text-primary transition-all"
+                  onClick={(e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    onRename(resume);
+                  }}
+                >
+                  <Pencil className="h-3.5 w-3.5" />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent side="bottom">Rename Resume</TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
+
            <DropdownMenu modal={false}>
             <DropdownMenuTrigger asChild>
               <Button size="icon" variant="secondary" className="h-8 w-8 rounded-full border border-muted/50 bg-background/80 shadow-sm hover:bg-background">
@@ -642,6 +662,26 @@ function ResumeListItem({
              ATS Ready
            </div>
         </div>
+
+        <TooltipProvider>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button 
+                size="icon" 
+                variant="ghost" 
+                className="h-9 w-9 rounded-full hover:bg-primary/10 hover:text-primary"
+                onClick={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  onRename(resume);
+                }}
+              >
+                <Pencil className="h-4 w-4" />
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent>Rename Resume</TooltipContent>
+          </Tooltip>
+        </TooltipProvider>
 
         <TooltipProvider>
           <Tooltip>

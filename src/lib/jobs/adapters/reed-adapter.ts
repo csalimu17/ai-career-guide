@@ -20,7 +20,7 @@ export class ReedAdapter implements JobApiAdapter {
     if (location) url.searchParams.set("locationName", location)
     
     // Pagination: Reed uses resultsToSkip
-    const resultsPerPage = 20
+    const resultsPerPage = 50
     const resultsToSkip = (page - 1) * resultsPerPage
     url.searchParams.set("resultsToTake", String(resultsPerPage))
     url.searchParams.set("resultsToSkip", String(resultsToSkip))
@@ -79,6 +79,26 @@ export class ReedAdapter implements JobApiAdapter {
       postedLabel: raw.date || "Recently",
       tags: [(raw.employerName || "Employer")].concat(raw.locationName ? [raw.locationName] : []),
       listingOrigin: "api_search",
+    }
+  }
+
+  async fetchJobDetails(externalId: string): Promise<string | null> {
+    const url = `https://www.reed.co.uk/api/1.0/jobs/${externalId}`
+    try {
+      const authHeader = `Basic ${Buffer.from(`${this.apiKey}:`).toString("base64")}`
+      const res = await fetch(url, {
+        headers: {
+          Authorization: authHeader,
+          Accept: "application/json",
+        },
+      })
+
+      if (!res.ok) return null
+      const data = await res.json()
+      return data.jobDescription || null
+    } catch (error) {
+      console.error("Reed details fetch error:", error)
+      return null
     }
   }
 

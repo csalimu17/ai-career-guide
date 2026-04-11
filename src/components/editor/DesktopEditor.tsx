@@ -32,8 +32,12 @@ import {
   Cpu,
   SendHorizontal,
   Settings,
-  ListPlus
+  ListPlus,
+  Pencil,
+  Check,
+  Upload
 } from "lucide-react"
+import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { Card } from "@/components/ui/card"
@@ -41,13 +45,16 @@ import { Input } from "@/components/ui/input"
 import { Badge } from "@/components/ui/badge"
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { Dialog, DialogContent, DialogTrigger } from "@/components/ui/dialog"
+import { Dialog, DialogContent, DialogDescription, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
 import { getTemplateConfig, getTemplateTierLabel } from "@/lib/templates-config"
 import { ResumeTemplate } from "./resume-template"
+import { PrintPreviewContainer } from "./print-preview-container"
 import { EditorDesignStudio } from "./editor-design-studio"
+import { PhotoUpload } from "./PhotoUpload"
 import { RichTextField } from "./rich-text-field"
 import { cn } from "@/lib/utils"
 import { useToast } from "@/hooks/use-toast"
+import { BrandWordmark } from "@/components/brand/brand-wordmark"
 
 interface DesktopEditorProps {
   editor: any 
@@ -57,6 +64,8 @@ export function DesktopEditor({ editor }: DesktopEditorProps) {
   const { toast } = useToast()
   const [activeSection, setActiveSection] = useState<string>("personal")
   const [activeStudioTab, setActiveStudioTab] = useState<"preview" | "settings" | "templates">("preview")
+  const [isEditingName, setIsEditingName] = useState(false)
+  const [tempName, setTempName] = useState(editor.resume?.name || "")
   const { 
     resume, 
     handleUpdate, 
@@ -85,6 +94,15 @@ export function DesktopEditor({ editor }: DesktopEditorProps) {
     routingLogs,
     chatMessages,
     sendAdvisoryMessage,
+
+    isUploading,
+    isCropping,
+    setIsCropping,
+    cropImage,
+    onCropComplete,
+    processCrop,
+    handlePhotoFileChange,
+    handleDeletePhoto,
   } = editor
 
   const [isSidebarOpen, setIsSidebarOpen] = useState(false)
@@ -129,7 +147,7 @@ export function DesktopEditor({ editor }: DesktopEditorProps) {
   }
 
   return (
-    <div className="relative min-h-[calc(100vh-64px)] overflow-hidden bg-[#f4f5f8] px-4 py-4 lg:p-6 flex items-center justify-center font-sans text-slate-800">
+    <div className="relative min-h-screen bg-[#f4f5f8] px-4 py-4 lg:p-6 flex items-center justify-center font-sans text-slate-800">
       
       {/* Background Soft Blobs */}
       <div className="pointer-events-none absolute left-[-15%] top-[-10%] h-[60%] w-[40%] rounded-[100%] bg-purple-400/20 blur-[120px]" />
@@ -137,14 +155,61 @@ export function DesktopEditor({ editor }: DesktopEditorProps) {
       <div className="pointer-events-none absolute right-[-10%] bottom-[-10%] h-[50%] w-[40%] rounded-[100%] bg-orange-400/15 blur-[120px]" />
 
       {/* Main App Container */}
-      <div className="relative mx-auto flex h-[calc(100vh-80px)] w-full max-w-[1700px] flex-col overflow-hidden rounded-[1.5rem] border border-white bg-white shadow-[0_20px_50px_-12px_rgba(15,23,42,0.1)] backdrop-blur-3xl">
+      <div className="relative mx-auto flex min-h-[calc(100vh-80px)] w-full max-w-[1700px] flex-col rounded-[1.5rem] border border-white bg-white shadow-[0_20px_50px_-12px_rgba(15,23,42,0.1)] backdrop-blur-3xl">
         
         {/* Top Navbar */}
         <header className="flex h-14 shrink-0 items-center justify-between border-b border-slate-100/60 bg-white/40 px-6">
-          <div className="flex items-center gap-2">
-            <div className="flex h-6 w-6 items-center justify-center rounded-md bg-gradient-to-br from-indigo-500 to-purple-500 text-[10px] font-black text-white shadow-sm">
-              Ai
+          <div className="flex items-center gap-2 overflow-hidden">
+            <BrandWordmark className="scale-[0.55] origin-left -mr-16 flex-shrink-0" />
+            
+            <div className="flex items-center gap-3 ml-4 max-w-[300px] xl:max-w-[450px]">
+              <div className="h-4 w-[1px] bg-slate-200 mx-1 hidden sm:block" />
+              
+              {isEditingName ? (
+                <div className="flex items-center gap-2">
+                  <Input 
+                    value={tempName}
+                    onChange={(e) => setTempName(e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter") {
+                        handleUpdate("name", tempName)
+                        setIsEditingName(false)
+                      }
+                      if (e.key === "Escape") {
+                        setTempName(resume.name)
+                        setIsEditingName(false)
+                      }
+                    }}
+                    autoFocus
+                    className="h-8 py-0 px-2 text-[13px] font-bold text-slate-700 bg-white border-indigo-200 focus-visible:ring-indigo-100 min-w-[200px]"
+                  />
+                  <Button 
+                    size="icon" 
+                    variant="ghost" 
+                    className="h-8 w-8 text-indigo-500 hover:bg-indigo-50"
+                    onClick={() => {
+                      handleUpdate("name", tempName)
+                      setIsEditingName(false)
+                    }}
+                  >
+                    <Check className="h-4 w-4" />
+                  </Button>
+                </div>
+              ) : (
+                <div 
+                  className="flex items-center gap-2 px-3 py-1.5 rounded-lg hover:bg-slate-100/60 transition-all group cursor-pointer border border-transparent hover:border-slate-200/50 min-w-0"
+                  onClick={() => {
+                    setTempName(resume.name)
+                    setIsEditingName(true)
+                  }}
+                >
+                  <FileText className="h-4 w-4 text-slate-400 group-hover:text-indigo-500 transition-colors flex-shrink-0" />
+                  <span className="text-[13px] font-bold text-slate-700 truncate">{resume.name}</span>
+                  <Pencil className="h-3 w-3 text-slate-300 opacity-0 group-hover:opacity-100 transition-all flex-shrink-0" />
+                </div>
+              )}
             </div>
+
             <Dialog>
               <DialogTrigger asChild>
                 <Button variant="outline" size="sm" className="h-8 ml-2 rounded-lg border-indigo-200 bg-indigo-50 text-indigo-600 hover:bg-indigo-100 hover:text-indigo-700 font-semibold shadow-sm">
@@ -152,13 +217,26 @@ export function DesktopEditor({ editor }: DesktopEditorProps) {
                   Preview
                 </Button>
               </DialogTrigger>
-              <DialogContent className="max-w-[850px] max-h-[95vh] overflow-y-auto p-8 rounded-[2rem] bg-[#f4f5f8] flex justify-center [&>button]:!bg-white [&>button]:!opacity-100 [&>button]:hover:!opacity-80 [&>button]:shadow-sm">
-                <div className="w-[210mm] min-h-[297mm] transform origin-top shadow-2xl rounded-lg bg-white overflow-hidden ring-1 ring-slate-100/50">
-                  <ResumeTemplate data={resume} isPrint={false} />
+              <DialogContent className="max-w-[1200px] w-[95vw] h-[92vh] p-0 overflow-hidden border-none bg-[#1e293b] rounded-[2.5rem] shadow-2xl [&>button]:!bg-white/10 [&>button]:!z-30 [&>button]:!top-6 [&>button]:!right-8 [&>button]:!opacity-100 [&>button]:hover:!bg-white/20 [&>button]:!text-white [&>button]:!border-white/20 [&>button]:backdrop-blur-md [&>button]:rounded-full [&>button]:p-2">
+                <div className="sr-only">
+                  <DialogTitle>Resume Preview</DialogTitle>
+                  <DialogDescription>
+                    Full-screen print-accurate preview with auto-scaling.
+                  </DialogDescription>
                 </div>
+                
+                <PrintPreviewContainer resume={resume} className="bg-transparent" />
               </DialogContent>
             </Dialog>
-            <Button onClick={() => setIsChatOpen(true)} className="hidden xl:flex h-9 rounded-full bg-slate-900 border-slate-800 text-white gap-2 px-4 hover:bg-slate-800 shadow-lg">
+
+            <Button variant="outline" size="sm" asChild className="h-8 ml-2 rounded-lg border-slate-200 bg-white text-slate-600 hover:bg-slate-50 hover:text-slate-900 font-semibold shadow-sm">
+              <Link href="/onboarding/upload">
+                <Upload className="mr-1.5 h-3.5 w-3.5 text-accent" />
+                Import CV
+              </Link>
+            </Button>
+
+            <Button onClick={() => setIsChatOpen(true)} className="hidden xl:flex h-9 rounded-full bg-slate-900 border-slate-800 text-white gap-2 px-4 hover:bg-slate-800 shadow-lg ml-2">
               <Sparkles className="h-3.5 w-3.5" />
               Career Intelligence Advisor
             </Button>
@@ -201,30 +279,30 @@ export function DesktopEditor({ editor }: DesktopEditorProps) {
         </header>
 
         {/* 3-Column Layout Workspace */}
-        <div className="flex min-h-0 flex-1 bg-[linear-gradient(90deg,rgba(244,245,248,0.5)_0%,rgba(255,255,255,0.7)_100%)]">
+        <div className="flex flex-1 min-h-0 bg-[linear-gradient(90deg,rgba(244,245,248,0.5)_0%,rgba(255,255,255,0.7)_100%)]">
           
           {/* Left Vertical Navigation */}
-          <aside className="w-56 flex-shrink-0 flex flex-col items-center bg-[#f4f7fc]/50 border-r border-[#e8ecf4] py-6 relative">
+          <aside className="w-48 flex-shrink-0 flex flex-col items-center bg-[#f4f7fc]/50 border-r border-[#e8ecf4] py-6 relative">
             <div className="w-full px-4 space-y-1">
               {studioNavigation.map((item) => (
                 <button
                   key={item.id}
                   onClick={() => setActiveStudioTab(item.id)}
                   className={cn(
-                    "flex w-full items-center gap-3 rounded-xl px-4 py-3 text-[13px] font-semibold transition-all duration-200",
+                    "w-11 h-11 lg:w-36 lg:h-12 rounded-[1.2rem] flex items-center justify-center lg:justify-start lg:px-4 gap-3 transition-all duration-300 group",
                     activeStudioTab === item.id 
-                     ? "bg-white text-slate-800 shadow-[0_4px_12px_-4px_rgba(15,23,42,0.08)]" 
-                     : "text-slate-500 hover:bg-slate-50 hover:text-slate-800"
+                       ? "bg-white text-indigo-600 shadow-md shadow-indigo-500/10 border border-indigo-50 ring-1 ring-indigo-50/50" 
+                       : "text-slate-400 hover:text-slate-600 hover:bg-white/50"
                   )}
                 >
-                  <item.icon className="h-4 w-4" />
-                  {item.label}
+                  <item.icon className={cn("h-4 w-4", activeStudioTab === item.id ? "text-indigo-500" : "text-slate-400 group-hover:text-slate-600")} />
+                  <span className="hidden lg:inline text-[13px] font-bold tracking-tight">{item.label}</span>
                 </button>
               ))}
             </div>
 
             {/* Floating Tool Rail */}
-            <div className="mt-8 flex flex-col gap-1.5 rounded-[1.2rem] bg-white border border-[#edf1f8] p-2 shadow-[0_8px_20px_-8px_rgba(15,23,42,0.06)] relative z-10 w-[52px]">
+            <div className="mt-auto mb-2 flex flex-col gap-1.5 rounded-[1.2rem] bg-white border border-[#edf1f8] p-2 shadow-[0_8px_20px_-8px_rgba(15,23,42,0.06)] relative z-10 w-[52px]">
               {sections.map((section) => (
                  <button
                    key={section.id}
@@ -253,8 +331,8 @@ export function DesktopEditor({ editor }: DesktopEditorProps) {
           </aside>
 
           {/* Form Editor Column */}
-          <main className="flex-1 min-w-0 max-w-[600px] border-r border-[#e8ecf4] bg-[#fdfdfd] relative z-10 shadow-[20px_0_40px_-20px_rgba(15,23,42,0.02)]">
-            <ScrollArea className="h-full px-10 py-10">
+          <main className="w-[42%] min-w-[400px] max-w-[720px] flex-shrink-0 border-r border-[#e8ecf4] bg-[#fdfdfd] relative z-10 shadow-[20px_0_40px_-20px_rgba(15,23,42,0.02)]">
+            <ScrollArea className="h-[calc(100vh-136px)] px-10 py-10">
                {activeStudioTab === "preview" ? (
                  <div className="max-w-full pb-24">
                    <h1 className="text-[22px] font-bold tracking-tight text-slate-800 mb-8 px-1">Edit Your Resume</h1>
@@ -270,6 +348,17 @@ export function DesktopEditor({ editor }: DesktopEditorProps) {
                           {activeSection === 'personal' && (
                              <motion.div initial={{ height: 0 }} animate={{ height: 'auto' }} exit={{ height: 0 }} className="overflow-hidden">
                                <div className="p-5 pt-1 space-y-4 bg-white">
+                                  <PhotoUpload
+                                    photoUrl={resume.content.personal.photoUrl}
+                                    onFileChange={handlePhotoFileChange}
+                                    onDelete={handleDeletePhoto}
+                                    isCropping={isCropping}
+                                    setIsCropping={setIsCropping}
+                                    cropImage={cropImage}
+                                    onCropComplete={onCropComplete}
+                                    onProcessCrop={processCrop}
+                                    isUploading={isUploading}
+                                  />
                                   <Input 
                                     value={resume.content.personal.name} 
                                     onChange={(e) => handleUpdate("content.personal.name", e.target.value)}
@@ -385,7 +474,7 @@ export function DesktopEditor({ editor }: DesktopEditorProps) {
                                               next[idx] = { ...next[idx], company: e.target.value }
                                               handleUpdate("content.experience", next)
                                             }}
-                                            className="font-bold text-[14px] border-none bg-transparent h-8 px-1 mb-1 focus-visible:ring-0 placeholder:text-slate-300 outline-none"
+                                            className="font-bold text-[14px] border-none bg-transparent h-8 pr-24 pl-1 mb-1 focus-visible:ring-0 placeholder:text-slate-300 outline-none"
                                             placeholder="Company Name"
                                          />
                                           <Input 
@@ -395,7 +484,7 @@ export function DesktopEditor({ editor }: DesktopEditorProps) {
                                               next[idx] = { ...next[idx], title: e.target.value }
                                               handleUpdate("content.experience", next)
                                             }}
-                                            className="text-[13px] border-none bg-transparent h-7 px-1 mb-2 text-slate-500 focus-visible:ring-0 placeholder:text-slate-300 outline-none"
+                                            className="text-[13px] border-none bg-transparent h-7 pr-24 pl-1 mb-2 text-slate-500 focus-visible:ring-0 placeholder:text-slate-300 outline-none"
                                             placeholder="Job Title"
                                          />
                                          <RichTextField
@@ -831,22 +920,23 @@ export function DesktopEditor({ editor }: DesktopEditorProps) {
             </ScrollArea>
           </main>
 
-          {/* Right Live Preview Column */}
-          <aside className="flex-1 bg-[#f0f3f8] flex flex-col relative">
-            <div className="flex items-center justify-between px-8 py-6 sticky top-0 z-10 bg-gradient-to-b from-[#f0f3f8] to-transparent">
-              <h2 className="text-[16px] font-bold text-slate-800">Live Preview</h2>
+          {/* Right Live Preview Column — full-page auto-scaled preview */}
+          <aside className="flex-1 min-w-0 flex flex-col relative bg-[#23303f] overflow-hidden">
+            {/* Inline preview header */}
+            <div className="flex items-center justify-between px-5 py-2.5 border-b border-white/5 bg-black/20 backdrop-blur-sm shrink-0 z-10">
               <div className="flex items-center gap-2">
-                 <Badge variant="outline" className="rounded-full bg-white border-slate-200 text-slate-500 font-semibold py-1 px-3 text-[10px] uppercase tracking-wider shadow-sm">
-                   <Eye className="mr-1.5 h-3 w-3" /> Live Preview
-                 </Badge>
+                <Eye className="h-3.5 w-3.5 text-slate-400" />
+                <span className="text-[11px] font-black uppercase tracking-[0.18em] text-slate-400">Live Preview</span>
               </div>
+              <Badge variant="outline" className="rounded-full bg-white/5 border-white/10 text-slate-400 font-semibold py-1 px-3 text-[9px] uppercase tracking-wider">
+                Auto-scaled
+              </Badge>
             </div>
-            
-            <ScrollArea className="flex-1 px-8 pb-10 flex">
-              <div className="mx-auto w-[210mm] min-h-[297mm] transform origin-top hover:shadow-2xl transition-all duration-500 rounded-lg bg-white shadow-[0_25px_50px_-12px_rgba(50,50,93,0.15)] ring-1 ring-slate-100/50 mb-10 overflow-hidden">
-                <ResumeTemplate data={resume} />
-              </div>
-            </ScrollArea>
+
+            {/* PrintPreviewContainer fills the rest — it auto-fits the A4 page */}
+            <div className="absolute inset-0" style={{ top: '2.5rem' }}>
+              <PrintPreviewContainer resume={resume} className="h-full" defaultFitMode="page" compact={true} />
+            </div>
           </aside>
 
         </div>
