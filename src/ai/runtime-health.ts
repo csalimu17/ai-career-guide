@@ -1,6 +1,6 @@
 import "server-only";
 
-import { ai } from "@/ai/genkit";
+import { getAi } from "@/ai/genkit";
 import {
   getConfiguredRuntimeModel,
   getFallbackGeminiModel,
@@ -28,7 +28,7 @@ function isRecoverableModelFailure(message: string) {
 }
 
 async function performHandshake(model: string) {
-  const response = await ai.generate({
+  const response = await getAi().generate({
     model,
     config: { temperature: 0 },
     prompt: 'Say "System Operational" if you can hear me.',

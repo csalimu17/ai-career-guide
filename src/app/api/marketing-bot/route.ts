@@ -6,10 +6,10 @@ import { PRODUCT_CTA_MAP, normalizeProduct, type ProductKey } from "@/lib/market
 import { postLeadToWebhook } from "@/lib/marketing-bot/leadWebhook";
 import { getBotPrompt } from "@/lib/marketing-bot/prompt";
 import { checkRateLimit } from "@/lib/marketing-bot/rateLimiter";
-import { ai } from "@/ai/genkit";
+import { getAi } from "@/ai/genkit";
 import { generateWithFallback } from "@/ai/generate-helper";
 import { getGeminiModel, getFallbackGeminiModel } from "@/ai/model-router";
-import { z } from "genkit";
+import { z } from "zod";
 
 const getOpenAI = () => {
   const apiKey = process.env.OPENAI_API_KEY || "sk-build-time-dummy";
@@ -19,6 +19,7 @@ const getOpenAI = () => {
 };
 
 // -- GENKIT TOOLS --
+const ai = getAi();
 
 const recommendProductTool = ai.defineTool(
   {
@@ -37,7 +38,7 @@ const recommendProductTool = ai.defineTool(
       description: z.string().optional(),
     }),
   },
-  async (args) => {
+  async (args: any) => {
     const product = normalizeProduct(args.product);
     const cta = PRODUCT_CTA_MAP[product];
     return {
@@ -67,7 +68,7 @@ const saveLeadTool = ai.defineTool(
       message: z.string().optional(),
     }),
   },
-  async (args) => {
+  async (args: any) => {
     const result = await postLeadToWebhook({
       email: args.email,
       first_name: args.first_name || undefined,

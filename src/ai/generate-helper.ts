@@ -1,4 +1,4 @@
-import { ai, hasGoogleAI, hasOpenAI } from './genkit';
+import { getAi, hasGoogleAI, hasOpenAI } from './genkit';
 import { GenerateOptions } from 'genkit';
 
 /**
@@ -17,7 +17,7 @@ export async function generateWithFallback(
   try {
     // Attempt primary call
     console.log(`[Genkit] Generating with model: ${options.model}`);
-    return await ai.generate(options);
+    return await getAi().generate(options);
   } catch (error: any) {
     const isRecoverableFailure = 
       error.status === 'RESOURCE_EXHAUSTED' || 
@@ -32,7 +32,7 @@ export async function generateWithFallback(
       
       try {
         // Attempt fallback call
-        return await ai.generate({
+        return await getAi().generate({
           ...options,
           model: fallbackModel,
         });

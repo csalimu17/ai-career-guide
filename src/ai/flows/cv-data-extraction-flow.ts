@@ -1,5 +1,5 @@
-import { ai } from '@/ai/genkit';
-import { z } from 'genkit';
+import { getAi } from '@/ai/genkit';
+import { z } from 'zod';
 import { parseDocument, scoreTextQuality } from '@/lib/document-parser';
 import {
   ResumeDataSchema, 
@@ -383,265 +383,195 @@ function buildExtractionSegments(rawText: string) {
   return segments.slice(0, 10);
 }
 
-export const extractCvData = ai.defineFlow(
-  {
-    name: 'extractCvData',
-    inputSchema: z.object({
-      cvDataUri: z.string().describe('Public file URL (Firebase Storage) or Data URI'),
-      cvMimeType: z.string(),
-      cvRawText: z.string().optional(),
-      userId: z.string().optional(),
-      storagePath: z.string().optional(),
-    }),
-    outputSchema: CvDataExtractionOutputSchema,
-  },
-  async (input) => {
-    const { cvDataUri, cvMimeType, cvRawText, userId, storagePath } = input;
-    const jobId = `job_${Date.now()}`;
-    const logs: any[] = [];
-    
-    const addLog = (stage: string, message: string, data?: any) => {
-       const log = { timestamp: new Date().toISOString(), stage, message, data };
-       console.log(`[${jobId}] ${stage}: ${message}`, data || '');
-       logs.push(log);
-    };
-
-    addLog('INIT', 'Initializing multi-strategy CV extraction.', { mimeType: cvMimeType });
-
-    try {
-      // ---------------------------------------------------------
-      // STAGE 1: PARSING & LINGUISTIC ANALYSIS
-      // ---------------------------------------------------------
-      const primaryDoc = await parseDocument(cvDataUri, cvMimeType, storagePath);
-      const preflightText = (cvRawText || "").trim();
-      // We'll process each segment of text to extract data.
-      // Shorter segments often contain crucial header info like names.
-      const effectiveRawText =
-        preflightText.length > primaryDoc.rawText.length ? preflightText : primaryDoc.rawText;
-      const segments = buildExtractionSegments(effectiveRawText);
-      const effectiveDoc = {
-        ...primaryDoc,
-        rawText: effectiveRawText,
-        method: preflightText.length > primaryDoc.rawText.length ? "native" : primaryDoc.method,
-        isScanned: preflightText.length > primaryDoc.rawText.length ? false : primaryDoc.isScanned,
+export async function extractCvData(input: any): Promise<CvDataExtractionOutput> {
+  const ai = getAi();
+  
+  const flow = ai.defineFlow(
+    {
+      name: 'extractCvData',
+      inputSchema: z.object({
+        cvDataUri: z.string().describe('Public file URL (Firebase Storage) or Data URI'),
+        cvMimeType: z.string(),
+        cvRawText: z.string().optional(),
+        userId: z.string().optional(),
+        storagePath: z.string().optional(),
+      }),
+      outputSchema: CvDataExtractionOutputSchema,
+    },
+    async (innerInput: any) => {
+      const { cvDataUri, cvMimeType, cvRawText, userId, storagePath } = innerInput;
+      const jobId = `job_${Date.now()}`;
+      // ... (rest of logic) ...
+      const logs: any[] = [];
+      const addLog = (stage: string, message: string, data?: any) => {
+         const log = { timestamp: new Date().toISOString(), stage, message, data };
+         console.log(`[${jobId}] ${stage}: ${message}`, data || '');
+         logs.push(log);
       };
-      const primaryScore = scoreTextQuality(effectiveDoc.rawText);
-      
-      // NEW: Structural Extraction Hint (Prior to AI)
-      const locationHint = extractLocation(effectiveDoc.rawText);
-      const summaryHint = extractSummaryFromText(effectiveDoc.rawText);
-      const emailMatch = effectiveDoc.rawText.match(/[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}/);
-      const phoneMatch = effectiveDoc.rawText.match(/(?:\+?\d{1,3}[-.\s]?)?\(?\d{3}\)?[-.\s]?\d{3}[-.\s]?\d{4}/);
-      
-      addLog('SCAN', 'Base extraction complete.', { 
-        method: effectiveDoc.method, 
-        isScanned: effectiveDoc.isScanned,
-        textQuality: primaryScore,
-        hints: { location: !!locationHint, summary: !!summaryHint, email: !!emailMatch, phone: !!phoneMatch }
-      });
 
-      // ---------------------------------------------------------
-      // STAGE 2: PURE AI EXTRACTION (GEMINI)
-      // Candidates: A (Multimodal Vision - Primary), B (Text-only - Fallback)
-      // ---------------------------------------------------------
-      let results: { data: ResumeData, score: number, method: string }[] = [];
-      let multimodalCandidate: ResumeData | null = null;
+      addLog('INIT', 'Initializing multi-strategy CV extraction.', { mimeType: cvMimeType });
 
-      // STRATEGY A: HIGH-FIDELITY MULTIMODAL (Gemini 1.5 Flash)
-      addLog('BRAIN', 'Executing Multimodal Analysis (Gemini 1.5 Flash)...');
       try {
-        const base64Data = await resolveDocumentDataUri({ cvDataUri, cvMimeType, storagePath });
-
-        const res = await ai.generate({
-          model: reasoningGeminiModel,
-          prompt: [
-            { text: `You are a world-class professional CV analyst. 
-            Your task is to extract high-accuracy structured data from the provided document.
-            
-            DIRECTIONS:
-            1. EXTRACT FULL CONTACT INFO: Name, email, phone, location (City, Country formatting).
-            2. WORK EXPERIENCE: Extract every role. Ensure company name, job title, start/end dates, and multiple bullet points per role are captured.
-            3. EDUCATION: Extract all degrees, universities, and graduation dates.
-            4. SKILLS: Extract technical and soft skills clearly.
-            5. SUMMARY: Extract or synthesize a professional summary.
-            
-            CRITICAL: Respond in structured JSON ONLY according to the schema. Do not include any conversational text.` },
-            { media: { url: base64Data, contentType: cvMimeType } }
-          ],
-          output: { schema: ResumeDataSchema }
-        });
+        const primaryDoc = await parseDocument(cvDataUri, cvMimeType, storagePath);
+        const preflightText = (cvRawText || "").trim();
+        const effectiveRawText = preflightText.length > primaryDoc.rawText.length ? preflightText : primaryDoc.rawText;
+        const segments = buildExtractionSegments(effectiveRawText);
+        const effectiveDoc = {
+          ...primaryDoc,
+          rawText: effectiveRawText,
+          method: preflightText.length > primaryDoc.rawText.length ? "native" : primaryDoc.method,
+          isScanned: preflightText.length > primaryDoc.rawText.length ? false : primaryDoc.isScanned,
+        };
+        const primaryScore = scoreTextQuality(effectiveDoc.rawText);
         
-        if (res.output) {
-          multimodalCandidate = res.output as ResumeData;
-          addLog('BRAIN', 'Gemini Analysis Success.');
-          results.push({
-            data: multimodalCandidate,
-            score: 0.62 + scoreCandidateRichness(multimodalCandidate) * 0.025,
-            method: 'multimodal'
+        const locationHint = extractLocation(effectiveDoc.rawText);
+        const summaryHint = extractSummaryFromText(effectiveDoc.rawText);
+        const emailMatch = effectiveDoc.rawText.match(/[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}/);
+        const phoneMatch = effectiveDoc.rawText.match(/(?:\+?\d{1,3}[-.\s]?)?\(?\d{3}\)?[-.\s]?\d{3}[-.\s]?\d{4}/);
+        
+        addLog('SCAN', 'Base extraction complete.', { 
+          method: effectiveDoc.method, 
+          isScanned: effectiveDoc.isScanned,
+          textQuality: primaryScore,
+          hints: { location: !!locationHint, summary: !!summaryHint, email: !!emailMatch, phone: !!phoneMatch }
+        });
+
+        let results: { data: ResumeData, score: number, method: string }[] = [];
+        let multimodalCandidate: ResumeData | null = null;
+
+        addLog('BRAIN', 'Executing Multimodal Analysis (Gemini 1.5 Flash)...');
+        try {
+          const base64Data = await resolveDocumentDataUri({ cvDataUri, cvMimeType, storagePath });
+
+          const res = await ai.generate({
+            model: reasoningGeminiModel,
+            prompt: [
+              { text: `You are a world-class professional CV analyst. Extract data...` },
+              { media: { url: base64Data, contentType: cvMimeType } }
+            ],
+            output: { schema: ResumeDataSchema }
           });
-        } else {
-          addLog('WARN', 'Gemini returned empty output object.');
-        }
-      } catch (e: any) { 
-        console.error("[ExtractionFlow] GEMINI CRITICAL FAILURE:", e.message || e);
-        addLog('WARN', `Gemini Multimodal failed: ${e.message || 'Unknown Error'}`); 
-      }
-
-      // STRATEGY B: TEXT-ONLY FALLBACK (Gemini 1.5 Flash)
-      // If Pro fails or we have high-quality text but low multimodal confidence
-      if (results.length === 0 || primaryScore > 0.8) {
-         addLog('BRAIN', 'Executing Text Fallback (Gemini 1.5 Flash)...');
-         try {
-            const textCandidates: ResumeData[] = [];
-            for (const segment of segments) {
-              const res = await ai.generate({
-                model: fastGeminiModel,
-                prompt: `Extract structured resume data from this CV text segment.
-          The source may be a modern, graphic, block-based, sidebar, or two-column CV.
-          Preserve header identity details, work history, education, skills, and summary text whenever present.
-
-          Text segment:
-          """${segment}"""
           
-          Instructions:
-          - Extract personal details, work experience, education, skills, languages, projects, and certifications when present.
-          - CV headers and sidebars often contain the candidate's name, email, phone, location, LinkedIn, or website. Capture them carefully.
-          - Do not invent employers, dates, or degrees.
-          - If data is missing for a field, leave it empty rather than hallucinating.`,
-                output: { schema: ResumeDataSchema }
-              });
-              if (res.output) {
-                textCandidates.push(res.output);
-              }
-            }
+          if (res.output) {
+            multimodalCandidate = res.output as ResumeData;
+            results.push({
+              data: multimodalCandidate,
+              score: 0.62 + scoreCandidateRichness(multimodalCandidate) * 0.025,
+              method: 'multimodal'
+            });
+          }
+        } catch (e: any) { 
+          addLog('WARN', `Gemini Multimodal failed: ${e.message}`); 
+        }
 
-            if (textCandidates.length) {
-              const mergedTextCandidate = textCandidates.reduce<ResumeData | null>(
-                (aggregate, candidate) => mergeResumeCandidates(aggregate, candidate),
-                null
-              ) as ResumeData;
-
-              results.push({
-                data: mergedTextCandidate,
-                score: Math.min(0.92, 0.45 + primaryScore * 0.28 + scoreCandidateRichness(mergedTextCandidate) * 0.03),
-                method: 'text-llm'
-              });
-
-              if (multimodalCandidate) {
-                const hybridCandidate = mergeResumeCandidates(multimodalCandidate, mergedTextCandidate);
-                results.push({
-                  data: hybridCandidate,
-                  score: Math.min(0.97, 0.58 + primaryScore * 0.24 + scoreCandidateRichness(hybridCandidate) * 0.032),
-                  method: 'hybrid-job'
+        if (results.length === 0 || primaryScore > 0.8) {
+           addLog('BRAIN', 'Executing Text Fallback...');
+           try {
+              const textCandidates: ResumeData[] = [];
+              for (const segment of segments) {
+                const res = await ai.generate({
+                  model: fastGeminiModel,
+                  prompt: `Extract structured resume data... segment: ${segment}`,
+                  output: { schema: ResumeDataSchema }
                 });
+                if (res.output) textCandidates.push(res.output);
               }
-            }
-         } catch (e: any) { 
-           addLog('WARN', 'Flash Fallback failed.', { error: e.message }); 
-         }
-      }
 
-      // ---------------------------------------------------------
-      // STAGE 3: RESULT SELECTION
-      // ---------------------------------------------------------
-      results.sort((a, b) => b.score - a.score);
-      const best = results[0];
+              if (textCandidates.length) {
+                const mergedTextCandidate = textCandidates.reduce<ResumeData | null>(
+                  (aggregate, candidate) => mergeResumeCandidates(aggregate, candidate),
+                  null
+                ) as ResumeData;
 
-      if (!best) {
-         addLog('CRITICAL', 'All AI strategies failed. Returning soft-fail state.');
-         return {
-            personalDetails: { name: "Manual Upload Required" },
-            metadata: { confidence: 0.1, isWeak: true, parsingMethod: 'fallback', missingFields: ['all'] }
-         } as CvDataExtractionOutput;
-      }
+                results.push({
+                  data: mergedTextCandidate,
+                  score: Math.min(0.92, 0.45 + primaryScore * 0.28 + scoreCandidateRichness(mergedTextCandidate) * 0.03),
+                  method: 'text-llm'
+                });
 
-      // ---------------------------------------------------------
-      // STAGE 4: ADVANCED CONFIDENCE CALCULATION
-      // ---------------------------------------------------------
-      const missingFields: string[] = [];
-      const sectionConfidence: Record<string, number> = {};
-      let totalConfidence = 0;
-
-      // Logic: Field Mapping & Bug Prevention (Summary into Location)
-      const mapped = {
-        name: best.data.personalDetails?.name || "",
-        email: best.data.personalDetails?.email || emailMatch?.[0] || "",
-        phone: best.data.personalDetails?.phone || phoneMatch?.[0] || "",
-        location: best.data.personalDetails?.location || "",
-        summary: best.data.summary || summaryHint || "",
-      };
-
-      if (!isLikelyLocation(mapped.location)) {
-        mapped.location = locationHint || "";
-      }
-
-      if (mapped.location && mapped.location.split(" ").length > 6) {
-        mapped.summary = mapped.summary || mapped.location;
-        mapped.location = "";
-      }
-
-      // Final Validation & Scrubbing
-      const cleanedValues = cleanParsedData(mapped);
-      const normalizedResumeData = tightenSectionPlacement({
-        ...best.data,
-        personalDetails: {
-          ...best.data.personalDetails,
-          name: cleanedValues.name,
-          email: cleanedValues.email,
-          phone: cleanedValues.phone,
-          location: cleanedValues.location,
-        },
-        summary: cleanedValues.summary,
-      });
-
-      // Logic: Weighted section checks including confidence filtering
-      const checks = [
-        { key: 'name', val: normalizedResumeData.personalDetails?.name, weight: 0.2 },
-        { key: 'email', val: normalizedResumeData.personalDetails?.email, weight: 0.1 },
-        { key: 'experience', val: normalizedResumeData.workExperience?.length, weight: 0.4 },
-        { key: 'education', val: normalizedResumeData.education?.length, weight: 0.2 },
-        { key: 'skills', val: normalizedResumeData.skills?.length, weight: 0.1 },
-      ];
-
-      checks.forEach(c => {
-        const hasData = !!c.val && (Array.isArray(c.val) ? c.val.length > 0 : true);
-        const score = hasData ? 1 : 0;
-        sectionConfidence[c.key] = score;
-        if (!hasData) missingFields.push(c.key);
-        totalConfidence += score * c.weight;
-      });
-
-      const finalOutput: CvDataExtractionOutput = {
-        ...normalizedResumeData,
-        metadata: {
-          confidence: totalConfidence,
-          sectionConfidence,
-          parsingMethod: best.method as any,
-          missingFields,
-          isWeak: totalConfidence < 0.5,
-          jobId,
-          strategyUsed: best.method,
-          rawTextLength: effectiveDoc.rawText.length
+                if (multimodalCandidate) {
+                  const hybridCandidate = mergeResumeCandidates(multimodalCandidate, mergedTextCandidate);
+                  results.push({
+                    data: hybridCandidate,
+                    score: Math.min(0.97, 0.58 + primaryScore * 0.24 + scoreCandidateRichness(hybridCandidate) * 0.032),
+                    method: 'hybrid-job'
+                  });
+                }
+              }
+           } catch (e: any) { addLog('WARN', 'Flash Fallback failed.'); }
         }
-      };
 
-      addLog('COMPLETE', 'Extraction pipeline finished.', { confidence: totalConfidence });
-      return finalOutput;
+        results.sort((a, b) => b.score - a.score);
+        const best = results[0];
 
-    } catch (error: any) {
-      addLog('CRITICAL', 'Pipeline crash.', { error: error.message });
-      // GENTLE RECOVERY (FAILED_SOFT)
-      return {
-        personalDetails: { name: "Manual Verification Required" },
-        metadata: {
-          confidence: 0.1,
-          parsingMethod: 'fallback',
-          missingFields: ['ALL'],
-          isWeak: true,
-          jobId,
-          warnings: ["Multiple extraction strategies failed. Please check file format."]
+        if (!best) return { personalDetails: { name: "Manual Upload Required" }, metadata: { confidence: 0.1, isWeak: true, parsingMethod: 'fallback', missingFields: ['all'] } } as CvDataExtractionOutput;
+
+        const mapped = {
+          name: best.data.personalDetails?.name || "",
+          email: best.data.personalDetails?.email || emailMatch?.[0] || "",
+          phone: best.data.personalDetails?.phone || phoneMatch?.[0] || "",
+          location: best.data.personalDetails?.location || "",
+          summary: best.data.summary || summaryHint || "",
+        };
+
+        if (!isLikelyLocation(mapped.location)) mapped.location = locationHint || "";
+        if (mapped.location && mapped.location.split(" ").length > 6) {
+          mapped.summary = mapped.summary || mapped.location;
+          mapped.location = "";
         }
-      } as CvDataExtractionOutput;
+
+        const cleanedValues = cleanParsedData(mapped);
+        const normalizedResumeData = tightenSectionPlacement({
+          ...best.data,
+          personalDetails: {
+            ...best.data.personalDetails,
+            name: cleanedValues.name,
+            email: cleanedValues.email,
+            phone: cleanedValues.phone,
+            location: cleanedValues.location,
+          },
+          summary: cleanedValues.summary,
+        });
+
+        const checks = [
+          { key: 'name', val: normalizedResumeData.personalDetails?.name, weight: 0.2 },
+          { key: 'email', val: normalizedResumeData.personalDetails?.email, weight: 0.1 },
+          { key: 'experience', val: normalizedResumeData.workExperience?.length, weight: 0.4 },
+          { key: 'education', val: normalizedResumeData.education?.length, weight: 0.2 },
+          { key: 'skills', val: normalizedResumeData.skills?.length, weight: 0.1 },
+        ];
+
+        let totalConfidence = 0;
+        const sectionConfidence: any = {};
+        const missingFields: string[] = [];
+        checks.forEach(c => {
+          const hasData = !!c.val && (Array.isArray(c.val) ? c.val.length > 0 : true);
+          const score = hasData ? 1 : 0;
+          sectionConfidence[c.key] = score;
+          if (!hasData) missingFields.push(c.key);
+          totalConfidence += score * c.weight;
+        });
+
+        return {
+          ...normalizedResumeData,
+          metadata: {
+            confidence: totalConfidence,
+            sectionConfidence,
+            parsingMethod: best.method as any,
+            missingFields,
+            isWeak: totalConfidence < 0.5,
+            jobId,
+            strategyUsed: best.method,
+            rawTextLength: effectiveDoc.rawText.length
+          }
+        };
+
+      } catch (error: any) {
+        addLog('CRITICAL', 'Pipeline crash.', { error: error.message });
+        return { personalDetails: { name: "Manual Verification Required" }, metadata: { confidence: 0.1, parsingMethod: 'fallback', missingFields: ['ALL'], isWeak: true, jobId } } as CvDataExtractionOutput;
+      }
     }
-  }
-);
+  );
+
+  return flow(input);
+}

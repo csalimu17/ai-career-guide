@@ -11,9 +11,11 @@ export class LinkedInAdapter implements JobApiAdapter {
     const { keywords, location, page = 1 } = params
     
     // Strict UK focus
-    const safeLocation = location?.toLowerCase().includes("uk") || location?.toLowerCase().includes("united kingdom") 
+    const safeLocation = (location?.toLowerCase().includes("uk") || location?.toLowerCase().includes("united kingdom"))
       ? location 
-      : `${location || "United Kingdom"}`
+      : location 
+        ? `${location}, UK` 
+        : "United Kingdom"
 
     const url = new URL(`https://${this.apiHost}/`)
     url.searchParams.set("search_terms", keywords || "")

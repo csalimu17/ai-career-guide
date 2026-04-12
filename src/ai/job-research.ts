@@ -1,6 +1,6 @@
-import { ai } from '@/ai/genkit';
+import { getAi } from '@/ai/genkit';
 import { getGeminiModel } from '@/ai/model-router';
-import { z } from 'genkit';
+import { z } from 'zod';
 
 const JobResearchInputSchema = z.object({
   message: z.string().optional(),
@@ -113,7 +113,7 @@ export async function buildJobResearchContext(input: JobResearchInput): Promise<
 
   try {
     const model = await getGeminiModel('jobResearch');
-    const response = await ai.generate({
+    const response = await getAi().generate({
       model,
       config: { temperature: 0.1 },
       system: `You are a career-role research analyst.

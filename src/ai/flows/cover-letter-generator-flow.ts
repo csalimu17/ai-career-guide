@@ -7,10 +7,10 @@
  * - generateCoverLetter - Function to generate the cover letter.
  */
 
-import {ai} from '@/ai/genkit';
+import { getAi } from '@/ai/genkit';
 import { buildJobResearchContext, formatJobResearchContext } from '@/ai/job-research';
 import { getGeminiModel } from '@/ai/model-router';
-import {z} from 'genkit';
+import { z } from 'zod';
 
 const CoverLetterInputSchema = z.object({
   resumeContent: z.string().describe("The user's resume content."),
@@ -34,63 +34,54 @@ const CoverLetterOutputSchema = z.object({
 });
 export type CoverLetterOutput = z.infer<typeof CoverLetterOutputSchema>;
 
-const coverLetterFlow = ai.defineFlow(
-  {
-    name: 'coverLetterFlow',
-    inputSchema: CoverLetterInputSchema,
-    outputSchema: CoverLetterOutputSchema,
-  },
-  async input => {
-    const jobResearchContext = await buildJobResearchContext({
-      jobTitle: input.role,
-      jobDescription: input.jobDescription,
-    });
-    const model = await getGeminiModel('cvWriting');
+export async function generateCoverLetter(input: CoverLetterInput): Promise<CoverLetterOutput> {
+  const ai = getAi();
+  
+  const flow = ai.defineFlow(
+    {
+      name: 'coverLetterFlow',
+      inputSchema: CoverLetterInputSchema,
+      outputSchema: CoverLetterOutputSchema,
+    },
+    async (innerInput: CoverLetterInput) => {
+      const jobResearchContext = await buildJobResearchContext({
+        jobTitle: innerInput.role,
+        jobDescription: innerInput.jobDescription,
+      });
+      const model = await getGeminiModel('cvWriting');
 
-    const response = await ai.generate({
-      model,
-      config: { temperature: input.tone === 'creative' ? 0.6 : input.tone === 'enthusiastic' ? 0.45 : 0.3 },
-      system: `You are an expert career consultant and cover-letter strategist.
-
+      const response = await ai.generate({
+        model,
+        config: { temperature: innerInput.tone === 'creative' ? 0.6 : innerInput.tone === 'enthusiastic' ? 0.45 : 0.3 },
+        system: `You are an expert career consultant and cover-letter strategist.
 Craft a compelling, professional cover-letter package that matches the target role closely.
-
-Rules:
-- Highlight resume evidence that maps directly to the job requirements.
-- Use the job research brief to understand the role title correctly.
-- Maintain the requested tone and length.
-- Use the company and role naturally when provided.
-- Use the hiring manager only if supplied; otherwise use a safe opener like "Dear Hiring Team".
-- Focus on how the candidate can solve problems implied by the role.
-- Do not invent metrics, tools, credentials, employers, or achievements.
-- Avoid placeholders like [Your Name] or [Company].
-- Return JSON only.`,
-      prompt: `Requested tone: ${input.tone}
-Requested length: ${input.length}
-Company: ${input.company || '(not provided)'}
-Role: ${input.role || '(not provided)'}
-Hiring manager: ${input.hiringManager || '(not provided)'}
+Rules apply...`,
+        prompt: `Requested tone: ${innerInput.tone}
+Requested length: ${innerInput.length}
+Company: ${innerInput.company || '(not provided)'}
+Role: ${innerInput.role || '(not provided)'}
+Hiring manager: ${innerInput.hiringManager || '(not provided)'}
 
 Job research brief:
 ${formatJobResearchContext(jobResearchContext)}
 
 Extra points to weave in if relevant:
-${input.keyPoints || '(none provided)'}
+${innerInput.keyPoints || '(none provided)'}
 
 Custom guidance:
-${input.customInstructions || '(none provided)'}
+${innerInput.customInstructions || '(none provided)'}
 
 Resume:
-${input.resumeContent}
+${innerInput.resumeContent}
 
 Job Description:
-${input.jobDescription}`,
-      output: { schema: CoverLetterOutputSchema },
-    });
+${innerInput.jobDescription}`,
+        output: { schema: CoverLetterOutputSchema },
+      });
 
-    return response.output!;
-  }
-);
+      return response.output!;
+    }
+  );
 
-export async function generateCoverLetter(input: CoverLetterInput): Promise<CoverLetterOutput> {
-  return coverLetterFlow(input);
+  return flow(input);
 }

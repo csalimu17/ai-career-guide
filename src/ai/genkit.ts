@@ -26,12 +26,29 @@ if (!googleApiKey && !openaiApiKey) {
   console.log(`[Genkit] ✅ Initialized with: ${activeKeys}`);
 }
 
-export const ai = genkit({
-  plugins: [
-    ...(googleApiKey ? [googleAI({ apiKey: googleApiKey })] : []),
-    ...(openaiApiKey ? [openAI({ apiKey: openaiApiKey })] : [])
-  ],
-  model: defaultGeminiModel,
-});
+const isServer = typeof window === 'undefined';
+
+let aiInstance: any = null;
+
+export const getAi = () => {
+  if (!isServer) {
+    throw new Error('Genkit cannot be used on the client side.');
+  }
+  
+  if (aiInstance) return aiInstance;
+  
+  aiInstance = genkit({
+    plugins: [
+      ...(googleApiKey ? [googleAI({ apiKey: googleApiKey })] : []),
+      ...(openaiApiKey ? [openAI({ apiKey: openaiApiKey })] : [])
+    ],
+    model: defaultGeminiModel,
+  });
+  
+  return aiInstance;
+};
+
+// Use getAi() instead of importing a static 'ai' instance to prevent 
+// top-level side effects that trigger Node.js-specific bundling errors.
 
 

@@ -1,4 +1,5 @@
 import type { Metadata, Viewport } from "next";
+import Script from "next/script";
 import { Inter, Manrope, Merriweather, Montserrat, Playfair_Display, Plus_Jakarta_Sans, Roboto, Space_Grotesk } from "next/font/google";
 import "./globals.css";
 import { FirebaseClientProvider } from "@/firebase/client-provider";
@@ -49,7 +50,9 @@ export const metadata: Metadata = {
     images: [siteConfig.ogImage],
   },
   icons: {
-    shortcut: [{ url: "/favicon.ico" }],
+    icon: "/logo.png",
+    apple: "/apple-icon.png",
+    shortcut: "/favicon.ico",
   },
 };
 
@@ -115,8 +118,8 @@ export default function RootLayout({
           <ImpersonationBanner />
           {children}
           <Toaster />
-          <script src="/marketing-bot.js" defer></script>
         </FirebaseClientProvider>
+        <Script src="/marketing-bot.js" strategy="afterInteractive" />
       </body>
     </html>
   );

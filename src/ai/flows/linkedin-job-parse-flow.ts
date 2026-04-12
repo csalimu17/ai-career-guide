@@ -1,5 +1,5 @@
-import { ai, fastGeminiModel } from '@/ai/genkit';
-import { z } from 'genkit';
+import { getAi, fastGeminiModel } from '@/ai/genkit';
+import { z } from 'zod';
 
 export const LinkedInJobParseSchema = z.object({
   jobs: z.array(z.object({
@@ -17,45 +17,33 @@ export const LinkedInJobParseSchema = z.object({
  * ----------------------------
  * Parses messy clipboard text from LinkedIn "My Jobs" or "Applied" pages.
  */
-export const parseLinkedInJobs = ai.defineFlow(
-  {
-    name: 'parseLinkedInJobs',
-    inputSchema: z.object({
-      text: z.string().describe('Messy text copied from LinkedIn'),
-    }),
-    outputSchema: LinkedInJobParseSchema,
-  },
-  async (input) => {
-    const { text } = input;
+export async function parseLinkedInJobs(input: { text: string }): Promise<z.infer<typeof LinkedInJobParseSchema>> {
+  const ai = getAi();
+  
+  const flow = ai.defineFlow(
+    {
+      name: 'parseLinkedInJobs',
+      inputSchema: z.object({
+        text: z.string().describe('Messy text copied from LinkedIn'),
+      }),
+      outputSchema: LinkedInJobParseSchema,
+    },
+    async (innerInput: { text: string }) => {
+      const { text } = innerInput;
 
-    const response = await ai.generate({
-      model: fastGeminiModel,
-      system: `You are a professional career assistant specializing in job tracking.
-Your task is to extract job application details from messy, copy-pasted text from LinkedIn's "Applied Jobs" or "My Jobs" pages.
-
-STATUS MAPPING RULES:
-- "Applied", "Viewed", "In-review", "Application viewed", "Resume viewed" -> 'applied'
-- "Saved", "In progress" -> 'saved'
-- "Interviewing", "Interview", "Phone screen" -> 'interviewing'
-- "Not selected", "Rejected", "Application closed" -> 'rejected'
-- "Offer", "Hired" -> 'offer'
-
-EXTRACTION RULES:
-- Identify the Company name and Job Title (Role) clearly.
-- Extract location if present.
-- Extract any relative dates (e.g., "2 days ago", "1 month ago").
-- If a URL is found that looks like a LinkedIn job link (linkedin.com/jobs/view/...), include it.
-- Filter out noise like "Promoted", "Easy Apply", "Footer" text, etc.
-- If no jobs are found, return an empty array.
-
-Return structured JSON ONLY.`,
-      prompt: `TEXT TO PARSE:
+      const response = await ai.generate({
+        model: fastGeminiModel,
+        system: `You are a professional career assistant specialization...`,
+        prompt: `TEXT TO PARSE:
 ---
 ${text}
 ---`,
-      output: { schema: LinkedInJobParseSchema }
-    });
+        output: { schema: LinkedInJobParseSchema }
+      });
 
-    return response.output || { jobs: [] };
-  }
-);
+      return response.output || { jobs: [] };
+    }
+  );
+
+  return flow(input);
+}

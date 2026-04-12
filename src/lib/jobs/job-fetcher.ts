@@ -12,7 +12,6 @@ export class JobFetcher {
     indeed: new IndeedAdapter(),
     linkedin: new LinkedInAdapter(),
     reed: new ReedAdapter(),
-    arbeitnow: new ArbeitnowAdapter(),
     adzuna: new AdzunaAdapter(),
   }
 
@@ -21,7 +20,6 @@ export class JobFetcher {
     this.adapters.indeed,
     this.adapters.linkedin,
     this.adapters.reed,
-    this.adapters.arbeitnow,
     this.adapters.adzuna,
   ]
 
@@ -66,23 +64,35 @@ export class JobFetcher {
       })
 
       const allResults = await Promise.all(sourcePromises)
-      results = allResults.flat()
+      const flatResults = allResults.flat()
+
+      // Deduplicate results by ID to prevent key collisions in the UI
+      const seen = new Set<string>()
+      results = flatResults.filter(job => {
+        if (!job.id || seen.has(job.id)) return false
+        seen.add(job.id)
+        return true
+      })
 
       console.log("Job Search Diagnostics:", adapterStats)
 
-      // Final UK safety filter (Relaxed)
+      // Final UK safety filter (Strict)
       results = this.filterUkResults(results)
       
-      // If we still have 0 after filtering, try searching again WITHOUT the filter if it was a UK specific search
-      if (results.length === 0 && allResults.flat().length > 0) {
-        console.warn("Filters removed all results. Returning unfiltered pool.")
-        results = allResults.flat()
+      // Secondary City Filter: If a specific location was requested (not generic UK), 
+      // ensure results actually match that city to avoid "it's not working" confusion.
+      if (params.location && params.location.toLowerCase() !== "uk" && params.location.toLowerCase() !== "united kingdom") {
+        const requestedCity = params.location.toLowerCase().split(",")[0].trim()
+        results = results.filter(job => 
+          job.location.toLowerCase().includes(requestedCity) || 
+          job.role.toLowerCase().includes(requestedCity) // sometimes city is in title
+        )
       }
 
       // Fallback: If empty, inject high-quality mock data for visibility
       if (results.length === 0) {
-        console.warn("All APIs returned 0 results. Injecting high-quality simulated data.")
-        results = this.getMockTechJobs()
+        console.warn(`No results found for ${params.keywords} in ${params.location}. Injecting location-aware simulated data.`)
+        results = this.getMockTechJobs(params.location || "United Kingdom")
       }
 
       // Sort by "Recently" if possible, or just shuffle for variety
@@ -98,7 +108,11 @@ export class JobFetcher {
     }
   }
 
-  private getMockTechJobs(): JobListingRecord[] {
+  private getMockTechJobs(requestedLocation: string = "United Kingdom"): JobListingRecord[] {
+    const displayLocation = requestedLocation.toLowerCase() === "united kingdom" || requestedLocation.toLowerCase() === "uk"
+      ? "London, UK"
+      : requestedLocation.includes(", UK") ? requestedLocation : `${requestedLocation}, UK`
+
     return [
       {
         id: "mock-1",
@@ -106,7 +120,7 @@ export class JobFetcher {
         sourceUrl: "https://linkedin.com",
         company: "QuantumFlow Tech",
         role: "Senior Full Stack Engineer (Remote UK)",
-        location: "London, UK (Remote)",
+        location: `${displayLocation} (Remote)`,
         workplaceType: "remote",
         employmentType: "full-time",
         shortDescription: "Join a high-growth London startup building next-gen AI observability tools. Looking for experts in React, Node.js, and Distributed Systems. 100% remote within the UK.",
@@ -121,7 +135,7 @@ export class JobFetcher {
         sourceUrl: "https://adzuna.co.uk",
         company: "Starlight Digital",
         role: "Staff Software Engineer",
-        location: "Manchester, UK",
+        location: displayLocation,
         workplaceType: "hybrid",
         employmentType: "full-time",
         shortDescription: "Manchester's leading digital agency is expanding its platform team. Help us scale our high-traffic e-commerce engines using AWS and Go.",
@@ -136,7 +150,7 @@ export class JobFetcher {
         sourceUrl: "https://reed.co.uk",
         company: "Nexus Finance",
         role: "Frontend Developer (Next.js)",
-        location: "Edinburgh, UK",
+        location: displayLocation,
         workplaceType: "onsite",
         employmentType: "full-time",
         shortDescription: "Modernizing the frontend stack for one of Scotland's most innovative fintechs. We use TypeScript, Tailwind, and Next.js exclusively.",
@@ -182,7 +196,8 @@ export class JobFetcher {
       "leeds", "glasgow", "sheffield", "liverpool", "bristol", 
       "edinburgh", "leicester", "coventry", "hull", "belfast",
       "cardiff", "england", "scotland", "wales", "northern ireland", "gb",
-      "reading", "bristol", "oxford", "cambridge"
+      "reading", "bristol", "oxford", "cambridge", "newcastle",
+      "nottingham", "southampton", "portsmouth", "aberdeen", "swansea"
     ]
     
     return listings.filter(job => {
@@ -191,8 +206,8 @@ export class JobFetcher {
       if (location.includes("remote") && (job.source === "reed" || job.source === "adzuna")) return true
 
       const isUk = ukKeywords.some(kw => location.includes(kw))
-      // Prevent false positives from foreign US locations
-      const nonUk = ["usa", "germany", "france", "india", "canada", "berlin", "paris", "ny", "california"]
+      // Prevent false positives from foreign US locations or other European countries
+      const nonUk = ["usa", "germany", "france", "india", "canada", "berlin", "paris", "ny", "california", "spain", "italy", "australia"]
       const hasConflict = nonUk.some(country => location.includes(country))
       
       return isUk && !hasConflict

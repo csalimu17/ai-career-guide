@@ -3,6 +3,7 @@
 import Link from "next/link"
 import { useRouter } from "next/navigation"
 import React, { useState, useEffect, useMemo, useRef } from "react"
+import { motion, AnimatePresence } from "framer-motion"
 import {
   collection,
   addDoc,
@@ -26,6 +27,8 @@ import {
   Info,
   Sparkles,
   Zap,
+  Bookmark,
+  ArrowUpRight,
 } from "lucide-react"
 
 import {
@@ -127,7 +130,15 @@ export default function JobsPage() {
       })
       const resp = await fetch(`/api/jobs/search?${params.toString()}`)
       const data = await resp.json()
-      setApiListings(data.listings || [])
+      
+      // De-duplicate results by ID just in case the backend sent duplicates
+      const uniqueListings = (data.listings || []).reduce((acc: JobListingRecord[], current: JobListingRecord) => {
+        const x = acc.find(item => item.id === current.id);
+        if (!x) return acc.concat([current]);
+        return acc;
+      }, []);
+      
+      setApiListings(uniqueListings)
     } catch (err) {
       toast({ variant: "destructive", title: "Search failed", description: "Try again in a moment." })
     } finally {
@@ -201,44 +212,79 @@ export default function JobsPage() {
   return (
     <div className="min-h-[calc(100vh-64px)] bg-[#fdfdfd]">
       {/* Search Header Section */}
-      <section className="relative overflow-hidden border-b border-slate-100 bg-white px-4 py-5 lg:px-8 lg:py-5">
-        <div className="absolute top-0 right-0 -translate-y-1/2 translate-x-1/3 w-96 h-96 bg-blue-400/5 blur-[120px] rounded-full pointer-events-none" />
-        <div className="absolute bottom-0 left-0 translate-y-1/2 -translate-x-1/4 w-64 h-64 bg-purple-400/5 blur-[100px] rounded-full pointer-events-none" />
+      <section className="relative overflow-hidden border-b border-slate-100 bg-white px-4 py-8 lg:px-8 lg:py-12">
+        {/* Dynamic Background Elements */}
+        <motion.div 
+          initial={{ opacity: 0, scale: 0.8 }}
+          animate={{ opacity: 1, scale: 1 }}
+          transition={{ duration: 1.5, ease: "easeOut" }}
+          className="absolute top-0 right-0 -translate-y-1/2 translate-x-1/3 w-[600px] h-[600px] bg-blue-500/5 blur-[140px] rounded-full pointer-events-none" 
+        />
+        <motion.div 
+          initial={{ opacity: 0, scale: 0.8 }}
+          animate={{ opacity: 1, scale: 1 }}
+          transition={{ duration: 1.5, ease: "easeOut", delay: 0.2 }}
+          className="absolute bottom-0 left-0 translate-y-1/2 -translate-x-1/4 w-[400px] h-[400px] bg-indigo-500/5 blur-[120px] rounded-full pointer-events-none" 
+        />
         
-        <div className="relative mx-auto flex max-w-[1600px] flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
-          <div className="space-y-3 lg:max-w-3xl">
-            <div className="flex items-center gap-3">
-              <div className="flex items-center gap-1.5 rounded-full bg-blue-600 px-3 py-1 text-[10px] font-black uppercase tracking-widest text-white shadow-[0_16px_36px_-24px_rgba(37,99,235,0.7)]">
-                <Zap className="w-3 h-3 fill-current" />
+        <div className="relative mx-auto flex max-w-[1600px] flex-col gap-8 lg:flex-row lg:items-center lg:justify-between">
+          <div className="space-y-5 lg:max-w-3xl">
+            <motion.div 
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="flex items-center gap-3"
+            >
+              <div className="flex items-center gap-1.5 rounded-full bg-blue-600 px-4 py-1.5 text-[11px] font-black uppercase tracking-[0.2em] text-white shadow-[0_20px_40px_-15px_rgba(37,99,235,0.4)]">
+                <Zap className="w-3.5 h-3.5 fill-current" />
                 Live UK Search
               </div>
-            </div>
-            <div>
-               <h1 className="bg-clip-text pb-1 text-[2.8rem] font-black leading-[0.92] tracking-tighter text-transparent bg-gradient-to-r from-blue-600 to-indigo-600 sm:text-[3.2rem] lg:text-[3.35rem]">
+            </motion.div>
+            
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.1 }}
+            >
+               <h1 className="bg-clip-text pb-2 text-[3.2rem] font-black leading-[1.1] tracking-tighter text-transparent bg-gradient-to-r from-blue-600 via-indigo-600 to-violet-600 sm:text-[4rem] lg:text-[4.5rem]">
                  Find your next role
                </h1>
-               <p className="mt-2 max-w-2xl text-sm font-semibold leading-relaxed text-slate-500 lg:text-base">
-                 Search live opportunities, save the ones worth chasing, and move the best matches into your pipeline faster.
+               <p className="mt-4 max-w-2xl text-base font-medium leading-relaxed text-slate-500 lg:text-lg">
+                 Search 140,000+ live opportunities across the UK, save the ones worth chasing, and track your applications in one premium dashboard.
                </p>
-            </div>
+            </motion.div>
           </div>
 
-          <div className="flex flex-wrap items-center gap-3 lg:justify-end">
-             {stats.map((s, i) => (
-                 <div key={i} className="hidden xl:flex flex-col items-center rounded-[1.5rem] border border-slate-100 bg-white px-5 py-3.5 shadow-[0_16px_36px_-28px_rgba(15,23,42,0.25)] min-w-[128px] transition-all hover:-translate-y-0.5 hover:shadow-[0_22px_42px_-30px_rgba(15,23,42,0.28)]">
-                    <span className="text-[10px] font-black uppercase tracking-[0.18em] text-slate-400 mb-1">{s.label}</span>
-                    <div className="flex items-center gap-2">
-                      <s.icon className={cn("w-4 h-4", s.color)} />
-                      <span className={cn("text-2xl font-black tabular-nums", s.color)}>{s.value}</span>
-                    </div>
-                 </div>
-              ))}
-              <Button size="lg" className="h-14 px-6 rounded-[1.8rem] font-black shadow-[0_24px_60px_-30px_rgba(37,99,235,0.45)] text-base lg:h-16 lg:px-8 lg:text-lg" asChild>
-                 <Link href="/tracker">
-                   My Tracker <ArrowRight className="ml-2 h-5 w-5" />
-                 </Link>
-             </Button>
-          </div>
+          <motion.div 
+            initial={{ opacity: 0, x: 20 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ delay: 0.2 }}
+            className="flex flex-col gap-4 lg:items-end"
+          >
+                <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+                  {/* Dashboard stats / tracker link */}
+                  <div className="flex flex-wrap items-center gap-3">
+                    {stats.map((stat) => (
+                      <div key={stat.label} className={cn("flex items-center gap-2 rounded-2xl px-4 py-2.5 bg-white shadow-sm border border-slate-50", stat.bg)}>
+                        <stat.icon className={cn("w-4 h-4", stat.color)} />
+                        <div className="flex flex-col">
+                          <span className="text-[9px] font-black uppercase tracking-wider text-slate-400">{stat.label}</span>
+                          <span className="text-sm font-black text-slate-900 leading-none">{stat.value}</span>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+
+                  <Button 
+                    variant="outline" 
+                    className="h-12 md:h-14 px-6 md:px-8 rounded-2xl md:rounded-3xl font-black text-[10px] md:text-xs uppercase tracking-[0.2em] bg-gradient-to-br from-purple-600 to-orange-500 text-white border-0 shadow-lg hover:scale-[1.02] active:scale-95 transition-all group w-full md:w-auto mt-4 md:mt-0"
+                    asChild
+                  >
+                    <Link href="/tracker">
+                      Go to Tracker <ArrowRight className="ml-2 w-4 h-4 group-hover:translate-x-1 transition-transform" />
+                    </Link>
+                  </Button>
+                </div>
+          </motion.div>
         </div>
       </section>
 
@@ -248,179 +294,253 @@ export default function JobsPage() {
           {/* Left Column: List & Tabs */}
           <div className="bg-transparent">
             {/* Search & Filter Box */}
-            <div className="mx-auto w-full max-w-5xl space-y-3 p-4 pb-2 lg:p-6">
-              <div className="relative group">
-                <div className="absolute -inset-1 bg-gradient-to-r from-blue-600 to-indigo-600 rounded-[2.5rem] blur opacity-10 group-focus-within:opacity-25 transition duration-1000 group-hover:duration-200" />
-                <div className="relative flex flex-col md:flex-row items-stretch md:items-center bg-white border border-slate-100 rounded-[2rem] md:rounded-[2.7rem] p-2 shadow-[0_22px_60px_-38px_rgba(15,23,42,0.3)] gap-2">
+            <div className="mx-auto w-full max-w-5xl space-y-6 p-4 pb-4 lg:p-8">
+              <motion.div 
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.3 }}
+                className="relative group"
+              >
+                <div className="absolute -inset-1 bg-gradient-to-r from-blue-600 via-indigo-600 to-violet-600 rounded-[2.5rem] blur opacity-15 group-focus-within:opacity-30 transition duration-1000 group-hover:duration-200" />
+                <div className="relative flex flex-col md:flex-row items-stretch md:items-center bg-white/80 backdrop-blur-xl border border-white/50 rounded-[2rem] md:rounded-[3rem] p-2 md:p-2.5 shadow-[0_30px_70px_-30px_rgba(15,23,42,0.25)] gap-2 md:gap-3">
                   
                   {/* Keywords Input */}
-                  <div className="flex flex-1 items-center min-w-0">
-                    <div className="ml-3 flex h-9 w-9 shrink-0 items-center justify-center rounded-2xl bg-blue-50 text-blue-600">
+                  <div className="flex flex-[1.2] items-center min-w-0 group/input">
+                    <div className="ml-3 flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-blue-50 text-blue-600 transition-colors group-focus-within/input:bg-blue-600 group-focus-within/input:text-white">
                       <Search className="h-5 w-5" />
                     </div>
                     <Input 
                       value={searchTerm}
                       onChange={e => setSearchTerm(e.target.value)}
                       onKeyDown={e => e.key === "Enter" && handlePerformSearch()}
-                      placeholder="Role or keywords..."
-                      className="flex-1 border-0 bg-transparent text-base md:text-lg font-bold placeholder:text-slate-300 focus-visible:ring-0 focus-visible:ring-offset-0 h-11 md:h-12"
+                      placeholder="Role or skill..."
+                      className="flex-1 border-0 bg-transparent text-base md:text-lg font-bold placeholder:text-slate-300 focus-visible:ring-0 focus-visible:ring-offset-0 h-11 md:h-14"
                     />
                   </div>
 
-                  <div className="hidden md:block w-px h-8 bg-slate-100 self-center" />
+                  <div className="hidden md:block w-px h-10 bg-slate-100/80 self-center" />
 
                   {/* Location Input */}
-                  <div className="flex flex-1 items-center min-w-0">
-                    <div className="ml-3 flex h-9 w-9 shrink-0 items-center justify-center rounded-2xl bg-orange-50 text-orange-600">
+                  <div className="flex flex-1 items-center min-w-0 group/input">
+                    <div className="ml-3 flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-orange-50 text-orange-600 transition-colors group-focus-within/input:bg-orange-600 group-focus-within/input:text-white">
                       <MapPin className="h-5 w-5" />
                     </div>
                     <Input 
                       value={locationSearch}
                       onChange={e => setLocationSearch(e.target.value)}
                       onKeyDown={e => e.key === "Enter" && handlePerformSearch()}
-                      placeholder="City or UK region..."
-                      className="flex-1 border-0 bg-transparent text-base md:text-lg font-bold placeholder:text-slate-300 focus-visible:ring-0 focus-visible:ring-offset-0 h-11 md:h-12"
+                      placeholder="Location..."
+                      className="flex-1 border-0 bg-transparent text-base md:text-lg font-bold placeholder:text-slate-300 focus-visible:ring-0 focus-visible:ring-offset-0 h-11 md:h-14"
                     />
                   </div>
 
                   <Button 
                     onClick={handlePerformSearch}
                     disabled={isApiLoading}
-                    className="h-11 md:h-14 px-8 md:px-10 rounded-[1.8rem] font-black text-[11px] uppercase tracking-[0.18em] bg-slate-900 shadow-[0_18px_46px_-28px_rgba(15,23,42,0.45)]"
+                    className="h-12 md:h-16 px-10 rounded-[1.8rem] md:rounded-[2.5rem] font-black text-xs uppercase tracking-[0.2em] bg-slate-900 hover:bg-slate-800 transition-all shadow-[0_20px_40px_-15px_rgba(15,23,42,0.5)] active:scale-95"
                   >
-                    {isApiLoading ? <Loader2 className="h-5 w-5 animate-spin" /> : "Search Jobs"}
+                    {isApiLoading ? <Loader2 className="h-6 w-6 animate-spin" /> : "Search Jobs"}
                   </Button>
                 </div>
-              </div>
+              </motion.div>
 
               {/* Advanced Filters: Workplace Type */}
-              <div className="flex flex-wrap items-center justify-between gap-3 py-1.5">
-                 <div className="flex items-center gap-2 rounded-full border border-slate-100 bg-slate-50 px-3 py-1.5">
-                     <span className="text-[10px] font-black uppercase tracking-widest text-slate-400">Workplace:</span>
-                     <div className="flex gap-1">
-                      {[
-                        { id: "all", label: "Any" },
-                        { id: "remote", label: "Remote" },
-                        { id: "hybrid", label: "Hybrid" },
-                        { id: "onsite", label: "On-site" }
-                      ].map((type) => (
-                        <button
-                          key={type.id}
-                          onClick={() => setWorkplaceType(type.id as any)}
-                          className={cn(
-                            "px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-wider transition-all",
-                            workplaceType === type.id 
-                              ? "bg-slate-900 text-white shadow-md shadow-slate-200" 
-                              : "text-slate-400 hover:text-slate-600 hover:bg-slate-100"
-                          )}
-                        >
-                          {type.label}
-                        </button>
-                      ))}
-                    </div>
-                 </div>
-              </div>
+              <motion.div 
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ delay: 0.4 }}
+                className="flex flex-wrap items-center justify-between gap-6 py-2 px-4"
+              >
+                  <div className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-4">
+                      <span className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">Workplace preference</span>
+                      <div className="flex flex-wrap gap-1 p-1 bg-slate-100/60 rounded-2xl md:rounded-full border border-slate-200/50 backdrop-blur-sm">
+                       {[
+                         { id: "all", label: "Any" },
+                         { id: "remote", label: "Remote" },
+                         { id: "hybrid", label: "Hybrid" },
+                         { id: "onsite", label: "On-site" }
+                       ].map((type) => (
+                         <button
+                           key={type.id}
+                           onClick={() => setWorkplaceType(type.id as any)}
+                           className={cn(
+                             "px-3 md:px-4 py-1.5 rounded-xl md:rounded-full text-[9px] md:text-[10px] font-black uppercase tracking-wider transition-all duration-300",
+                             workplaceType === type.id 
+                               ? "bg-white text-slate-900 shadow-sm" 
+                               : "text-slate-400 hover:text-slate-600"
+                           )}
+                         >
+                           {type.label}
+                         </button>
+                       ))}
+                     </div>
+                  </div>
 
-               <div className="flex items-center justify-center pt-1">
-                 <TabsList className="inline-flex h-11 items-center rounded-[1.4rem] border border-slate-100 bg-white/80 p-1 backdrop-blur-sm min-w-[300px] shadow-[0_16px_40px_-28px_rgba(15,23,42,0.22)]">
-                   <TabsTrigger value="discover" className="flex-1 rounded-[1rem] h-9 font-black text-[10px] uppercase tracking-widest data-[state=active]:bg-white data-[state=active]:text-blue-600 data-[state=active]:shadow-sm transition-all">Discover</TabsTrigger>
-                   <TabsTrigger value="saved" className="flex-1 rounded-[1rem] h-9 font-black text-[10px] uppercase tracking-widest data-[state=active]:bg-white data-[state=active]:text-amber-600 data-[state=active]:shadow-sm transition-all">Saved</TabsTrigger>
-                   <TabsTrigger value="tracking" className="flex-1 rounded-[1rem] h-9 font-black text-[10px] uppercase tracking-widest data-[state=active]:bg-white data-[state=active]:text-emerald-600 data-[state=active]:shadow-sm transition-all">Tracking</TabsTrigger>
-                 </TabsList>
-               </div>
+                  <TabsList className="h-11 md:h-12 items-center rounded-full border border-slate-100 bg-white/50 p-1.5 backdrop-blur-sm w-full md:w-auto md:min-w-[340px] shadow-[0_10px_30px_-10px_rgba(15,23,42,0.1)]">
+                    <TabsTrigger key="t-discover" value="discover" className="flex-1 rounded-full h-8 md:h-9 font-black text-[9px] md:text-[10px] uppercase tracking-widest data-[state=active]:bg-white data-[state=active]:text-blue-600 data-[state=active]:shadow-sm transition-all">Discover</TabsTrigger><TabsTrigger key="t-saved" value="saved" className="flex-1 rounded-full h-8 md:h-9 font-black text-[9px] md:text-[10px] uppercase tracking-widest data-[state=active]:bg-white data-[state=active]:text-amber-600 data-[state=active]:shadow-sm transition-all">Saved</TabsTrigger><TabsTrigger key="t-tracking" value="tracking" className="flex-1 rounded-full h-8 md:h-9 font-black text-[9px] md:text-[10px] uppercase tracking-widest data-[state=active]:bg-white data-[state=active]:text-emerald-600 data-[state=active]:shadow-sm transition-all">Tracking</TabsTrigger>
+                  </TabsList>
+              </motion.div>
             </div>
 
             {/* Scrollable List container */}
-            <div className="space-y-4 px-4 pb-6 pt-4 scrollbar-hide lg:px-6">
-              <div className="mx-auto w-full max-w-5xl">
-                <TabsContent value="discover" className="m-0 space-y-4 outline-none">
-                  {!hasSearched ? (
-                    <div className="py-20 text-center lg:py-24">
-                      <div className="w-24 h-24 bg-gradient-to-br from-blue-50 to-indigo-50 rounded-[3rem] flex items-center justify-center mx-auto mb-8 shadow-inner">
-                        <Briefcase className="w-10 h-10 text-blue-500/50" />
+            <div className="space-y-4 px-4 pb-12 pt-6 lg:px-8">
+              <div className="mx-auto w-full max-w-[1600px]">
+                <AnimatePresence mode="wait">
+                  <TabsContent key="content-discover" value="discover" className="m-0 outline-none">
+                    {!hasSearched ? (
+                      <motion.div 
+                        key="discover-initial"
+                        initial={{ opacity: 0, y: 30 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        className="py-24 text-center lg:py-32"
+                      >
+                        <div className="relative inline-block">
+                          <div className="absolute inset-0 bg-blue-500/10 blur-[50px] rounded-full animate-pulse" />
+                          <div className="relative w-28 h-28 bg-white rounded-[3rem] shadow-[0_30px_60px_-15px_rgba(15,23,42,0.1)] border border-slate-50 flex items-center justify-center mx-auto mb-10">
+                            <Briefcase className="w-12 h-12 text-blue-600/60" strokeWidth={1.5} />
+                          </div>
+                        </div>
+                        <h3 className="text-3xl font-black text-slate-900 tracking-tighter mb-4">Ready to explore?</h3>
+                        <p className="max-w-[380px] mx-auto text-base font-medium text-slate-500 leading-relaxed">
+                          Enter role keywords above to filter through 140,000+ live opportunities aggregated for you.
+                        </p>
+                      </motion.div>
+                    ) : isApiLoading ? (
+                      <div key="discover-loading" className="py-32 flex flex-col items-center justify-center space-y-8">
+                        <div className="relative h-20 w-20">
+                          <div className="absolute inset-0 bg-blue-500/20 blur-[30px] rounded-full animate-ping" />
+                          <Loader2 className="h-20 w-20 animate-spin text-blue-600 relative z-10" strokeWidth={2.5} />
+                        </div>
+                        <div className="text-center space-y-2">
+                           <p className="text-[10px] font-black text-blue-600 uppercase tracking-[0.3em] animate-pulse">Scanning Cloud Feeds</p>
+                           <p className="text-sm font-bold text-slate-400">Curating the best matches for you...</p>
+                        </div>
                       </div>
-                      <h3 className="text-2xl font-black text-slate-800 tracking-tight">Find your next job</h3>
-                      <p className="mt-2 text-slate-500 font-bold max-w-[320px] mx-auto text-sm leading-relaxed">Search for keywords above to pull live opportunities from across the UK tech ecosystem.</p>
-                    </div>
-                  ) : isApiLoading ? (
-                    <div className="py-20 flex flex-col items-center justify-center space-y-6 lg:py-24">
-                      <div className="relative">
-                        <div className="absolute inset-0 bg-blue-500/10 blur-[40px] animate-pulse rounded-full" />
-                        <Loader2 className="h-16 w-16 animate-spin text-blue-600 relative opacity-80" strokeWidth={3} />
-                      </div>
-                      <div className="text-center">
-                         <p className="text-xs font-black text-slate-400 uppercase tracking-[0.2em] animate-pulse">Aggregating Live UK Feeds</p>
-                      </div>
-                    </div>
-                  ) : apiListings.length === 0 ? (
-                    <div className="rounded-[2.5rem] border border-dashed border-slate-200 bg-slate-50/50 py-20 text-center lg:py-24">
-                      <Info className="h-12 w-12 mx-auto mb-4 text-slate-200" />
-                      <h4 className="text-lg font-black text-slate-800 uppercase tracking-tight">No matches found</h4>
-                      <p className="mt-1 text-xs font-bold text-slate-400 px-12">Try different keywords or a more general search.</p>
-                    </div>
-                  ) : (
-                    <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
-                       {apiListings.map(job => (
-                        <JobCard
-                          key={job.id} 
-                          job={job} 
-                          isActive={false} 
-                          onSelect={() => handleViewJob(job)}
-                          isSaved={trackedByFingerprint.get(buildListingFingerprint(job))?.status === "saved"}
-                        />
+                    ) : apiListings.length === 0 ? (
+                      <motion.div 
+                        key="discover-none"
+                        initial={{ opacity: 0, scale: 0.95 }}
+                        animate={{ opacity: 1, scale: 1 }}
+                        className="rounded-[3rem] border border-dashed border-slate-200 bg-slate-50/50 py-32 text-center"
+                      >
+                        <div className="w-20 h-20 bg-white rounded-3xl flex items-center justify-center mx-auto mb-6 shadow-sm border border-slate-100">
+                          <Info className="h-10 w-10 text-slate-300" />
+                        </div>
+                        <h4 className="text-xl font-black text-slate-900 tracking-tight">Zero matches found</h4>
+                        <p className="mt-2 text-sm font-bold text-slate-400 max-w-[280px] mx-auto">Try broadening your search or checking for spelling errors.</p>
+                      </motion.div>
+                    ) : (
+                      <motion.div 
+                        key="discover-grid"
+                        initial="hidden"
+                        animate="show"
+                        variants={{
+                          show: { transition: { staggerChildren: 0.04 } }
+                        }}
+                        className="grid gap-6 md:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4"
+                      >
+                         {apiListings.map((job, idx) => (
+                          <motion.div
+                            key={`${job.source}-${job.id || idx}`}
+                            variants={{
+                              hidden: { opacity: 0, y: 20 },
+                              show: { opacity: 1, y: 0 }
+                            }}
+                          >
+                            <JobCard
+                              job={job} 
+                              isActive={false} 
+                              onSelect={() => handleViewJob(job)}
+                              isSaved={trackedByFingerprint.get(buildListingFingerprint(job))?.status === "saved"}
+                            />
+                          </motion.div>
+                        ))}
+                      </motion.div>
+                    )}
+                  </TabsContent><TabsContent key="content-saved" value="saved" className="m-0 outline-none">
+                    <motion.div 
+                      key="saved-grid"
+                      initial="hidden"
+                      animate="show"
+                      variants={{ show: { transition: { staggerChildren: 0.04 } } }}
+                      className="grid gap-6 md:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4"
+                    >
+                      {(trackedApplications || []).filter(a => a.status === "saved").map((app, idx) => (
+                        <motion.div
+                          key={`saved-${app.id || idx}`}
+                          variants={{
+                            hidden: { opacity: 0, y: 20 },
+                            show: { opacity: 1, y: 0 }
+                          }}
+                        >
+                          <JobCard
+                              job={buildListingFromApp(app)}
+                              isActive={false}
+                              onSelect={() => handleViewJob(buildListingFromApp(app))}
+                              isSaved={true}
+                          />
+                        </motion.div>
                       ))}
-                    </div>
-                  )}
-                </TabsContent>
-
-                <TabsContent value="saved" className="m-0 space-y-4 outline-none">
-                  <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
-                    {(trackedApplications || []).filter(a => a.status === "saved").map(app => (
-                      <JobCard
-                          key={app.id} 
-                          job={buildListingFromApp(app)}
-                          isActive={false}
-                          onSelect={() => handleViewJob(buildListingFromApp(app))}
-                          isSaved={true}
-                      />
-                    ))}
-                  </div>
-                  {(trackedApplications || []).filter(a => a.status === "saved").length === 0 && (
-                    <div className="py-24 text-center opacity-40">
-                        <Archive className="w-12 h-12 mx-auto mb-4" />
-                        <p className="font-black uppercase tracking-widest text-xs">Saved list is empty</p>
-                    </div>
-                  )}
-                </TabsContent>
-
-                <TabsContent value="tracking" className="m-0 space-y-4 outline-none">
-                  <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
-                    {(trackedApplications || []).filter(a => a.status !== "saved").map(app => (
-                      <JobCard
-                          key={app.id} 
-                          job={buildListingFromApp(app)}
-                          isActive={false}
-                          onSelect={() => handleViewJob(buildListingFromApp(app))}
-                          isSaved={false}
-                      />
-                    ))}
-                  </div>
-                </TabsContent>
+                    </motion.div>
+                    {(trackedApplications || []).filter(a => a.status === "saved").length === 0 && (
+                      <div key="saved-empty" className="py-32 text-center lg:py-40">
+                          <div className="w-20 h-20 bg-slate-50 rounded-full flex items-center justify-center mx-auto mb-6 opacity-40">
+                            <Bookmark className="w-8 h-8 text-slate-400" />
+                          </div>
+                          <p className="font-black uppercase tracking-[0.2em] text-[11px] text-slate-400">Your collection is empty</p>
+                      </div>
+                    )}
+                  </TabsContent><TabsContent key="content-tracking" value="tracking" className="m-0 outline-none">
+                    <motion.div 
+                      key="tracking-grid"
+                      initial="hidden"
+                      animate="show"
+                      variants={{ show: { transition: { staggerChildren: 0.04 } } }}
+                      className="grid gap-6 md:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4"
+                    >
+                      {(trackedApplications || []).filter(a => a.status !== "saved").map((app, idx) => (
+                        <motion.div
+                          key={`tracked-${app.id || idx}`}
+                          variants={{
+                            hidden: { opacity: 0, y: 20 },
+                            show: { opacity: 1, y: 0 }
+                          }}
+                        >
+                          <JobCard
+                              job={buildListingFromApp(app)}
+                              isActive={false}
+                              onSelect={() => handleViewJob(buildListingFromApp(app))}
+                              isSaved={false}
+                          />
+                        </motion.div>
+                      ))}
+                    </motion.div>
+                    {(trackedApplications || []).filter(a => a.status !== "saved").length === 0 && (
+                      <div key="tracking-empty" className="py-32 text-center lg:py-40">
+                        <div className="w-20 h-20 bg-slate-50 rounded-full flex items-center justify-center mx-auto mb-6 opacity-40">
+                          <Target className="w-8 h-8 text-slate-400" />
+                        </div>
+                        <p className="font-black uppercase tracking-[0.2em] text-[11px] text-slate-400">Your pipeline is empty</p>
+                      </div>
+                    )}
+                  </TabsContent>
+                </AnimatePresence>
               </div>
             </div>
           </div>
         </Tabs>
       </div>
 
-      {/* Unified Detail Modal */}
-      {viewingJob && (
-         <Dialog open={!!viewingJob} onOpenChange={() => setViewingJob(null)}>
+      {/* Unified Detail Modal - Premium Polish */}
+      <AnimatePresence>
+        {viewingJob && (
+          <Dialog open={!!viewingJob} onOpenChange={() => setViewingJob(null)}>
             <DialogContent className={cn(
-               "max-w-4xl p-0 border-none outline-none overflow-hidden bg-white shadow-2xl rounded-[2.5rem]",
+               "max-w-4xl p-0 border-none outline-none overflow-hidden bg-white shadow-[0_50px_100px_-20px_rgba(15,23,42,0.25)] rounded-[3.5rem]",
                isMobile && "h-[100vh] w-full rounded-none m-0"
              )}>
               <div className="flex flex-col h-full max-h-[90vh]">
-                <div className="flex-1 overflow-y-auto p-8 lg:p-12 space-y-12 scrollbar-hide">
+                <div className="flex-1 overflow-y-auto p-8 lg:p-14 space-y-12 scrollbar-hide">
                   <DialogHeader className="sr-only">
                     <DialogTitle>{viewingJob.role}</DialogTitle>
                     <DialogDescription>
@@ -428,63 +548,90 @@ export default function JobsPage() {
                     </DialogDescription>
                   </DialogHeader>
 
-                  <div className="space-y-6">
-                     <div className="flex items-center gap-3">
-                        <Badge className={cn("rounded-xl px-4 py-1.5 text-[10px] font-black uppercase tracking-widest border-2", JOB_SOURCE_CONFIG[viewingJob.source].badgeClassName)}>
+                  <div className="space-y-8">
+                     <div className="flex items-center justify-between">
+                        <Badge className={cn("rounded-xl px-5 py-2 text-[11px] font-black uppercase tracking-[0.2em] border-2 shadow-sm", JOB_SOURCE_CONFIG[viewingJob.source].badgeClassName)}>
                           {JOB_SOURCE_CONFIG[viewingJob.source].label}
                         </Badge>
+                        <button 
+                          onClick={() => setViewingJob(null)}
+                          className="h-12 w-12 flex items-center justify-center rounded-full bg-slate-50 text-slate-400 hover:bg-slate-100 hover:text-slate-900 transition-all active:scale-95"
+                        >
+                          <ChevronRight className="rotate-90 w-6 h-6" />
+                        </button>
                      </div>
-                     <h2 className="text-4xl font-black leading-[1.1] tracking-tighter text-slate-900 lg:text-5xl">{viewingJob.role}</h2>
+                     <h2 className="text-4xl font-black leading-[1.05] tracking-tighter text-slate-900 lg:text-6xl max-w-2xl">{viewingJob.role}</h2>
                   </div>
 
-                  <div className="flex flex-wrap gap-3">
-                    <div className="flex items-center gap-3 text-slate-700 bg-slate-50 px-5 py-3 rounded-2xl border border-slate-100 shadow-sm">
-                      <Building2 className="h-5 w-5 text-blue-500" /> 
-                      <span className="font-black text-sm">{viewingJob.company}</span>
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+                    <div className="flex items-center gap-4 text-slate-700 bg-blue-50/50 px-6 py-5 rounded-[2rem] border border-blue-100/50 shadow-sm transition-transform hover:scale-[1.02]">
+                      <div className="h-12 w-12 rounded-2xl bg-blue-600 flex items-center justify-center text-white shadow-lg shadow-blue-500/30">
+                        <Building2 className="h-6 w-6" /> 
+                      </div>
+                      <div className="flex flex-col">
+                        <span className="text-[10px] font-black text-blue-600/60 uppercase tracking-widest">Company</span>
+                        <span className="font-black text-lg leading-tight">{viewingJob.company}</span>
+                      </div>
                     </div>
-                    <div className="flex items-center gap-3 text-slate-700 bg-slate-50 px-5 py-3 rounded-2xl border border-slate-100 shadow-sm">
-                      <MapPin className="h-5 w-5 text-orange-500" /> 
-                      <span className="font-bold text-sm">{viewingJob.location}</span>
+
+                    <div className="flex items-center gap-4 text-slate-700 bg-orange-50/50 px-6 py-5 rounded-[2rem] border border-orange-100/50 shadow-sm transition-transform hover:scale-[1.02]">
+                      <div className="h-12 w-12 rounded-2xl bg-orange-600 flex items-center justify-center text-white shadow-lg shadow-orange-500/30">
+                        <MapPin className="h-6 w-6" /> 
+                      </div>
+                      <div className="flex flex-col">
+                        <span className="text-[10px] font-black text-orange-600/60 uppercase tracking-widest">Location</span>
+                        <span className="font-black text-lg leading-tight">{viewingJob.location}</span>
+                      </div>
                     </div>
-                    <div className="flex items-center gap-3 text-slate-700 bg-slate-50 px-5 py-3 rounded-2xl border border-slate-100 shadow-sm font-bold text-sm uppercase tracking-widest">
-                      <Zap className="h-5 w-5 text-green-500" />
-                      {viewingJob.workplaceType}
+
+                    <div className="flex items-center gap-4 text-slate-700 bg-emerald-50/50 px-6 py-5 rounded-[2rem] border border-emerald-100/50 shadow-sm transition-transform hover:scale-[1.02]">
+                      <div className="h-12 w-12 rounded-2xl bg-emerald-600 flex items-center justify-center text-white shadow-lg shadow-emerald-500/30">
+                        <Zap className="h-6 w-6" /> 
+                      </div>
+                      <div className="flex flex-col">
+                        <span className="text-[10px] font-black text-emerald-600/60 uppercase tracking-widest">Environment</span>
+                        <span className="font-black text-lg leading-tight capitalize">{viewingJob.workplaceType}</span>
+                      </div>
                     </div>
                   </div>
 
-                  <div className="flex flex-col sm:flex-row gap-4">
-                    <Button size="lg" className="flex-1 h-16 rounded-[2rem] font-black text-lg shadow-xl shadow-blue-500/20 bg-blue-600 hover:bg-blue-700 transition-all group" asChild>
+                  <div className="flex flex-col sm:flex-row gap-5">
+                    <Button size="lg" className="flex-1 h-20 rounded-[2.5rem] font-black text-xl shadow-[0_25px_50px_-15px_rgba(37,99,235,0.4)] bg-blue-600 hover:bg-blue-700 transition-all hover:-translate-y-1 active:scale-95 group" asChild>
                       <a href={viewingJob.sourceUrl} target="_blank" rel="noopener noreferrer">
-                        Apply Now <ChevronRight className="ml-2 h-5 w-5 group-hover:translate-x-1 transition-transform" />
+                        Proceed to Apply <ArrowUpRight className="ml-3 h-6 w-6 group-hover:translate-x-1 group-hover:-translate-y-1 transition-transform" />
                       </a>
                     </Button>
                     <Button 
                       variant="outline" 
                       size="lg" 
-                      className="flex-1 h-16 rounded-[2rem] font-black text-lg border-2 border-slate-100 hover:bg-slate-50"
+                      className="flex-1 h-20 rounded-[2.5rem] font-black text-xl border-2 border-slate-100 hover:bg-slate-50 transition-all hover:border-blue-100"
                       onClick={() => handleSaveListing(viewingJob)}
                     >
-                      {trackedByFingerprint.get(buildListingFingerprint(viewingJob))?.status === "saved" ? "Remove from List" : "Save Job"}
+                      <Bookmark className={cn(
+                        "w-6 h-6 mr-3 transition-colors",
+                        trackedByFingerprint.get(buildListingFingerprint(viewingJob))?.status === "saved" ? "fill-amber-500 text-amber-500" : "text-slate-400"
+                      )} />
+                      {trackedByFingerprint.get(buildListingFingerprint(viewingJob))?.status === "saved" ? "Unsave Role" : "Save for later"}
                     </Button>
                   </div>
 
-                  <div className="space-y-8 pb-12">
-                    <div className="flex items-center gap-4">
-                       <h3 className="font-black text-[10px] uppercase tracking-[0.2em] text-slate-400 whitespace-nowrap">Job Description</h3>
+                  <div className="space-y-10 pb-12">
+                    <div className="flex items-center gap-6">
+                       <h3 className="font-black text-xs uppercase tracking-[0.3em] text-slate-300 whitespace-nowrap">Opportunity Context</h3>
                        <div className="h-px w-full bg-slate-100" />
                     </div>
                     
                     {isLoadingDetail ? (
-                      <div className="space-y-6 animate-pulse">
-                        <div className="h-4 bg-slate-100 rounded-[2rem] w-full" />
-                        <div className="h-4 bg-slate-100 rounded-[2rem] w-[90%]" />
-                        <div className="h-4 bg-slate-100 rounded-[2rem] w-[95%]" />
-                         <div className="flex flex-col items-center pt-8">
-                           <Loader2 className="h-8 w-8 animate-spin text-blue-200" />
+                      <div className="space-y-8 animate-pulse">
+                        <div className="h-5 bg-slate-50 rounded-[2rem] w-full" />
+                        <div className="h-5 bg-slate-50 rounded-[2rem] w-[90%]" />
+                        <div className="h-5 bg-slate-50 rounded-[2rem] w-[95%]" />
+                         <div className="flex flex-col items-center pt-10">
+                           <Loader2 className="h-10 w-10 animate-spin text-blue-100" />
                         </div>
                       </div>
                     ) : (
-                      <div className="prose prose-slate max-w-none prose-p:text-slate-600 prose-p:text-lg prose-p:leading-relaxed prose-li:text-slate-600 prose-li:font-bold prose-headings:font-black prose-headings:tracking-tight">
+                      <div className="prose prose-slate prose-xl max-w-none prose-p:text-slate-600 prose-p:text-xl prose-p:font-medium prose-p:leading-relaxed prose-li:text-slate-600 prose-li:font-bold prose-headings:font-black prose-headings:tracking-tight">
                         {fullDescription ? (
                           <div dangerouslySetInnerHTML={{ __html: fullDescription.replace(/\n/g, "<br/>") }} />
                         ) : (
@@ -496,8 +643,9 @@ export default function JobsPage() {
                 </div>
               </div>
             </DialogContent>
-         </Dialog>
-      )}
+          </Dialog>
+        )}
+      </AnimatePresence>
     </div>
   )
 }

@@ -1,6 +1,6 @@
 "use server";
 
-import { ai } from "@/ai/genkit";
+import { getAi } from "@/ai/genkit";
 import { reasoningGeminiModel } from "@/ai/genkit";
 import { z } from "zod";
 import { AgentRole, CAREER_AGENTS, RoutingResult } from "./CareerAgents";
@@ -12,6 +12,7 @@ const RoutingSchema = z.object({
 
 export const classifyCareerRouting = async (text: string): Promise<RoutingResult> => {
   const roles = Object.keys(CAREER_AGENTS).join(", ");
+  const ai = getAi();
   
   try {
     const { output } = await ai.generate({
@@ -45,6 +46,7 @@ export const getCareerAgentResponse = async (
   resumeContext: any
 ): Promise<string> => {
   const agent = CAREER_AGENTS[role];
+  const ai = getAi();
   
   try {
     const { text: responseText } = await ai.generate({

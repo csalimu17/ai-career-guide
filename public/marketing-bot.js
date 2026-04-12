@@ -195,7 +195,12 @@
     }
   `;
 
+  if (document.getElementById("acg-bot-root")) {
+    return;
+  }
+
   const root = document.createElement("div");
+  root.id = "acg-bot-root";
   root.className = "acg-bot-root";
 
   const styleTag = document.createElement("style");
@@ -290,10 +295,13 @@
   const observer = new MutationObserver(() => {
     if (window.location.pathname !== lastPathname) {
       lastPathname = window.location.pathname;
-      updateVisibility();
+      // Wrap in requestAnimationFrame to ensure we don't fight with React
+      // during the heat of a render cycle.
+      window.requestAnimationFrame(updateVisibility);
     }
   });
-  observer.observe(document.body, { childList: true, subtree: true });
+  // Only observe childList to minimize noise
+  observer.observe(document.body, { childList: true });
 
   const originalPushState = window.history.pushState;
   const originalReplaceState = window.history.replaceState;
