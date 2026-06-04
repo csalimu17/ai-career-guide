@@ -1,0 +1,10 @@
+{
+  "permissions": {
+    "allow": [
+      "PowerShell(Start-Process \"http://localhost:3000\")",
+      "PowerShell(cd \"c:\\\\Users\\\\csali\\\\Downloads\\\\studio--14892-t5pny0xfflmS-\"; npx tsc --noEmit --skipLibCheck 2>&1 | Where-Object { $_ -match \"DesktopEditor\" } | Select-Object -First 20)",
+      "PowerShell(cd \"c:\\\\Users\\\\csali\\\\Downloads\\\\studio--14892-t5pny0xfflmS-\"; $output = npx tsc --noEmit --skipLibCheck 2>&1; $output | Where-Object { $_ -match \"DesktopEditor\" } | Out-String)",
+      "PowerShell(cd \"c:\\\\Users\\\\csali\\\\Downloads\\\\studio--14892-t5pny0xfflmS-\"; npx tsc --noEmit --skipLibCheck > \"$env:TEMP\\\\tsc_out.txt\" 2>&1; Get-Content \"$env:TEMP\\\\tsc_out.txt\" | Select-String \"DesktopEditor\")"
+    ]
+  }
+}

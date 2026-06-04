@@ -1,0 +1,910 @@
+"use client"
+
+import type { CSSProperties, ReactNode } from "react"
+import Image from "next/image"
+
+import { RichTextRenderer } from "@/components/editor/rich-text-renderer"
+import { DEFAULT_SECTION_ORDER, getTemplateConfig, type ResumeSectionId, type TemplateConfig, type TemplateEntryVariant } from "@/lib/templates-config"
+import { coerceResumeFontKey, getResumeFontStack } from "@/lib/resume-fonts"
+import { cn } from "@/lib/utils"
+
+type ResumeRenderMode = "screen" | "mobile" | "print" | "thumbnail"
+type ResumeTemplateFamily = TemplateConfig["category"]
+
+interface ResumeTemplateProps {
+  data: any
+  isPrint?: boolean
+  noPadding?: boolean
+  mode?: ResumeRenderMode
+  className?: string
+}
+
+const SECTION_LABELS: Record<Exclude<ResumeSectionId, "page-break">, string> = {
+  summary: "Summary",
+  experience: "Experience",
+  projects: "Projects",
+  education: "Education",
+  skills: "Skills",
+  certifications: "Certifications",
+  languages: "Languages",
+}
+
+function extractPrimaryBaseColor(color: string) {
+  const match = color.match(/#(?:[0-9a-fA-F]{3}){1,2}/)
+  return match?.[0] ?? "#1f3a5f"
+}
+
+function hexToRgba(hex: string, alpha: number) {
+  const normalized = hex.replace("#", "")
+  const expanded =
+    normalized.length === 3
+      ? normalized
+          .split("")
+          .map((character) => character + character)
+          .join("")
+      : normalized
+
+  const value = Number.parseInt(expanded, 16)
+  const r = (value >> 16) & 255
+  const g = (value >> 8) & 255
+  const b = value & 255
+  return `rgba(${r}, ${g}, ${b}, ${alpha})`
+}
+
+function pxToMm(px: number) {
+  return px * 0.264583
+}
+
+function normalizeSectionOrder(sectionOrder?: string[] | null): ResumeSectionId[] {
+  const allowed = new Set<ResumeSectionId>([...DEFAULT_SECTION_ORDER, "page-break"])
+  const normalized = (sectionOrder ?? DEFAULT_SECTION_ORDER).filter((sectionId): sectionId is ResumeSectionId =>
+    allowed.has(sectionId as ResumeSectionId)
+  )
+
+  if (!normalized.length) {
+    return DEFAULT_SECTION_ORDER
+  }
+
+  return normalized
+}
+
+function getDensityMetrics(template: TemplateConfig, mode: ResumeRenderMode) {
+  const map = {
+    compact: {
+      headerGap: 22,
+      sectionGap: 22,
+      entryGap: 14,
+      headingGap: 10,
+    },
+    comfortable: {
+      headerGap: 28,
+      sectionGap: 28,
+      entryGap: 16,
+      headingGap: 12,
+    },
+    relaxed: {
+      headerGap: 34,
+      sectionGap: 32,
+      entryGap: 18,
+      headingGap: 14,
+    },
+  }[template.design.density]
+
+  if (mode === "mobile") {
+    return {
+      headerGap: Math.max(18, map.headerGap - 8),
+      sectionGap: Math.max(20, map.sectionGap - 8),
+      entryGap: Math.max(12, map.entryGap - 4),
+      headingGap: Math.max(10, map.headingGap - 2),
+    }
+  }
+
+  if (mode === "thumbnail") {
+    return {
+      headerGap: Math.max(16, map.headerGap - 6),
+      sectionGap: Math.max(18, map.sectionGap - 8),
+      entryGap: Math.max(10, map.entryGap - 3),
+      headingGap: Math.max(8, map.headingGap - 3),
+    }
+  }
+
+  return map
+}
+
+function getContactItems(content: any) {
+  return [
+    content?.personal?.location,
+    content?.personal?.email,
+    content?.personal?.phone,
+    content?.personal?.linkedin,
+    content?.personal?.website,
+  ].filter(Boolean)
+}
+
+function getEntryShellClassName(variant: TemplateEntryVariant) {
+  switch (variant) {
+    case "accented":
+      return "border-l-[3px] pl-4"
+    case "outlined":
+      return "rounded-[1rem] border px-4 py-3"
+    default:
+      return ""
+  }
+}
+
+function getEntryShellStyle(variant: TemplateEntryVariant, accent: string, subtleFill?: boolean) {
+  if (variant === "accented") {
+    return {
+      borderLeftColor: accent,
+    }
+  }
+
+  if (variant === "outlined") {
+    return {
+      borderColor: hexToRgba(accent, 0.18),
+      backgroundColor: subtleFill ? hexToRgba(accent, 0.04) : "#ffffff",
+    }
+  }
+
+  return undefined
+}
+
+function getTemplateFamilyTone(category: ResumeTemplateFamily, mode: ResumeRenderMode) {
+  switch (category) {
+    case "Professional":
+      return {
+        headerSurfaceClass:
+          mode === "thumbnail"
+            ? "shadow-[0_16px_34px_-28px_rgba(15,23,42,0.28)]"
+            : "shadow-[0_18px_42px_-30px_rgba(15,23,42,0.26)]",
+        headerSurfaceStyle: undefined as CSSProperties | undefined,
+        sectionLabelClass: "uppercase tracking-[0.22em]",
+        sectionDividerClass: "h-[2px] opacity-95",
+        sectionSpacingClass: "space-y-4",
+      }
+    case "Modern":
+      return {
+        headerSurfaceClass: "rounded-[1.45rem] border px-6 py-5 shadow-[0_18px_40px_-32px_rgba(37,99,235,0.16)]",
+        headerSurfaceStyle: {
+          backgroundImage: "linear-gradient(135deg, rgba(37,99,235,0.04), rgba(14,165,233,0.03) 58%, rgba(255,255,255,0.92))",
+        } as CSSProperties,
+        sectionLabelClass: "rounded-full border border-blue-200/70 bg-blue-50/70 px-3 py-1 uppercase tracking-[0.18em]",
+        sectionDividerClass: "h-px",
+        sectionSpacingClass: "space-y-3.5",
+      }
+    case "Classic":
+    default:
+      return {
+        headerSurfaceClass:
+          mode === "thumbnail"
+            ? "shadow-[0_12px_26px_-24px_rgba(180,83,9,0.18)]"
+            : "shadow-[0_16px_34px_-28px_rgba(180,83,9,0.16)]",
+        headerSurfaceStyle: {
+          backgroundImage: "linear-gradient(180deg, rgba(255,255,255,0.98), rgba(255,248,239,0.95))",
+        } as CSSProperties,
+        sectionLabelClass: "uppercase tracking-[0.26em]",
+        sectionDividerClass: "h-px [opacity:0.85]",
+        sectionSpacingClass: "space-y-[1.125rem]",
+      }
+  }
+}
+
+function ResumeSectionHeading({
+  title,
+  template,
+  accent,
+  mode,
+  familyTone,
+}: {
+  title: string
+  template: TemplateConfig
+  accent: string
+  mode: ResumeRenderMode
+  familyTone: ReturnType<typeof getTemplateFamilyTone>
+}) {
+  const isUppercase = template.design.headingCase === "uppercase"
+  const label = isUppercase ? title.toUpperCase() : title
+  const headingSize =
+    template.design.headingVariant === "serif"
+      ? mode === "mobile"
+        ? "text-[0.92em]"
+        : "text-[0.96em]"
+      : "text-[0.82em]"
+
+  return (
+    <div 
+      className="resume-section-heading flex items-center gap-3"
+    >
+      <div
+        className={cn(
+          "shrink-0 font-bold text-slate-900",
+          familyTone.sectionLabelClass,
+          headingSize,
+          isUppercase ? "uppercase" : "tracking-[0.08em]",
+          template.design.headingVariant === "serif" && "font-semibold tracking-[0.18em]"
+        )}
+        style={{
+          color: accent,
+          letterSpacing: template.design.headingVariant === "serif" ? "0.12em" : undefined,
+          breakAfter: "avoid",
+        }}
+      >
+        {template.design.headingVariant === "eyebrow" ? (
+          <span
+            className="inline-flex items-center rounded-full border px-3 py-1"
+            style={{
+              borderColor: hexToRgba(accent, 0.2),
+              backgroundColor: hexToRgba(accent, 0.08),
+            }}
+          >
+            {label}
+          </span>
+        ) : (
+          label
+        )}
+      </div>
+      <div
+        className={cn(
+          "flex-1",
+          familyTone.sectionDividerClass,
+          template.design.sectionDividers === "bold" ? "h-[2px]" : "h-px",
+          template.design.headingVariant === "serif" ? "opacity-80" : "opacity-100"
+        )}
+        style={{
+          backgroundColor:
+            template.design.headingVariant === "serif" ? hexToRgba(accent, 0.28) : hexToRgba(accent, 0.22),
+          height: template.design.sectionDividers === "bold" ? "2px" : undefined,
+        }}
+      />
+    </div>
+  )
+}
+
+function ResumeHeaderPhoto({
+  photoUrl,
+  name,
+  accent,
+  mode,
+}: {
+  photoUrl: string
+  name?: string
+  accent: string
+  mode: ResumeRenderMode
+}) {
+  const size = mode === "mobile" ? 72 : mode === "thumbnail" ? 48 : 88
+
+  return (
+    <div
+      className="shrink-0 overflow-hidden rounded-[1.35rem] border bg-white"
+      style={{
+        width: `${size}px`,
+        height: `${size}px`,
+        borderColor: hexToRgba(accent, 0.2),
+        boxShadow: `0 12px 24px -18px ${hexToRgba(accent, 0.5)}`,
+      }}
+    >
+      <Image
+        src={photoUrl}
+        alt={name ? `${name} profile photo` : "Profile photo"}
+        width={size}
+        height={size}
+        sizes={`${size}px`}
+        unoptimized
+        className="h-full w-full object-cover"
+      />
+    </div>
+  )
+}
+
+function ResumeTemplateHeader({
+  content,
+  template,
+  accent,
+  mode,
+  familyTone,
+  spacing,
+}: {
+  content: any
+  template: TemplateConfig
+  accent: string
+  mode: ResumeRenderMode
+  familyTone: ReturnType<typeof getTemplateFamilyTone>
+  spacing: ReturnType<typeof getDensityMetrics>
+}) {
+  const contactItems = getContactItems(content)
+  const splitLayout = template.design.contactLayout === "split" && mode !== "mobile"
+  const photoUrl =
+    typeof content?.personal?.photoUrl === "string" && content.personal.photoUrl.trim().length > 0
+      ? content.personal.photoUrl
+      : null
+
+  const headerClassName = cn(
+    "resume-header relative flex w-full gap-6",
+    familyTone.headerSurfaceClass,
+    template.design.headerAlignment === "center" && !splitLayout ? "flex-col items-center text-center" : "flex-col",
+    splitLayout && "flex-row items-start justify-between",
+    template.design.headerVariant === "classic" && "border-b pb-6",
+    template.design.headerVariant === "minimal" && "border-b pb-6",
+    template.design.headerVariant === "modern" && "rounded-[1.4rem] border px-6 py-5",
+    template.design.headerVariant === "executive" && "rounded-[1.4rem] border px-6 py-5",
+    template.design.headerVariant === "elegant" && "rounded-[1.6rem] border px-6 py-6"
+  )
+
+  const headerStyle: CSSProperties = {
+    gap: `${spacing.headerGap}px`,
+    ...(familyTone.headerSurfaceStyle ?? {}),
+    borderColor:
+      template.design.headerVariant === "classic" || template.design.headerVariant === "minimal"
+        ? hexToRgba(accent, 0.24)
+        : hexToRgba(accent, 0.18),
+    borderBottomWidth:
+      template.design.headerVariant === "classic" || template.design.headerVariant === "minimal" ? "1px" : undefined,
+    borderTopWidth: template.design.headerVariant === "elegant" ? "1px" : undefined,
+    backgroundColor:
+      template.design.headerVariant === "modern" || template.design.headerVariant === "executive"
+        ? hexToRgba(accent, template.design.subtleFill ? 0.05 : 0.03)
+        : template.design.headerVariant === "elegant"
+          ? hexToRgba(accent, 0.035)
+          : undefined,
+  }
+
+  const nameClassName = cn(
+    "font-black tracking-tight text-slate-900",
+    mode === "mobile" ? "text-[2.05em]" : "text-[2.45em]",
+    mode === "thumbnail" && "text-[2.0em]",
+    template.design.headerVariant === "minimal" && "font-semibold",
+    template.design.headerVariant === "executive" && "text-[2.6em]"
+  )
+
+  const contactClassName = cn(
+    "flex text-[0.84em] font-medium text-slate-600",
+    splitLayout
+      ? "max-w-[250px] flex-col gap-1.5 text-right"
+      : template.design.contactLayout === "stacked" || mode === "mobile"
+        ? "flex-col gap-1.5"
+        : "flex-wrap items-center gap-x-3 gap-y-1",
+    template.design.headerAlignment === "center" && !splitLayout && "items-center justify-center text-center"
+  )
+
+  const headerIntroClassName = cn(
+    "flex min-w-0 gap-4",
+    template.design.headerAlignment === "center" && !splitLayout ? "flex-col items-center text-center" : "items-start"
+  )
+
+  return (
+    <header className={headerClassName} style={{ ...headerStyle, breakAfter: "avoid" }}>
+      {template.design.headerBand && (
+        <div
+          className="absolute inset-x-0 top-0 h-1 rounded-t-[1.4rem]"
+          style={{
+            backgroundColor: accent,
+          }}
+        />
+      )}
+
+      <div className={cn("min-w-0", splitLayout && "flex-1")}>
+        <div className={headerIntroClassName}>
+          {photoUrl ? (
+            <ResumeHeaderPhoto
+              photoUrl={photoUrl}
+              name={content?.personal?.name}
+              accent={accent}
+              mode={mode}
+            />
+          ) : null}
+
+          <div className="min-w-0 space-y-3">
+            <div className={cn(template.design.headerAlignment === "center" && !splitLayout && "text-center")}>
+              <h1 className={nameClassName} style={{ color: accent }}>
+                {content?.personal?.name || "Your Name"}
+              </h1>
+              {content?.personal?.title ? (
+                <p
+                  className={cn(
+                    "mt-2 text-[0.95em] font-semibold uppercase tracking-[0.18em] text-slate-500",
+                    mode === "mobile" && "text-[0.92em]",
+                    mode === "thumbnail" && "text-[0.85em]"
+                  )}
+                >
+                  {content.personal.title}
+                </p>
+              ) : null}
+            </div>
+
+            {!splitLayout && contactItems.length > 0 && (
+              <div className={contactClassName}>
+                {contactItems.map((item: string, index: number) => (
+                  <div key={`${item}-${index}`} className="flex items-center gap-2">
+                    {template.design.contactLayout === "inline" && index > 0 && mode !== "mobile" && (
+                      <span className="h-1 w-1 rounded-full bg-slate-300" />
+                    )}
+                    <span className={cn(item.includes("@") && "break-all", item === content?.personal?.phone && "whitespace-nowrap")}>
+                      {item}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
+
+      {splitLayout && contactItems.length > 0 && (
+        <div
+          className="rounded-[1rem] border px-4 py-3 text-[0.82em] font-medium text-slate-600"
+          style={{
+            borderColor: hexToRgba(accent, 0.18),
+            backgroundColor: hexToRgba(accent, 0.045),
+          }}
+        >
+          <div className="space-y-1.5">
+            {contactItems.map((item: string, index: number) => (
+              <div key={`${item}-${index}`} className={cn("break-all", item === content?.personal?.phone && "whitespace-nowrap")}>
+                {item}
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+    </header>
+  )
+}
+
+function ResumeSection({
+  title,
+  template,
+  accent,
+  mode,
+  familyTone,
+  children,
+}: {
+  title: string
+  template: TemplateConfig
+  accent: string
+  mode: ResumeRenderMode
+  familyTone: ReturnType<typeof getTemplateFamilyTone>
+  children: ReactNode
+}) {
+  return (
+    <section 
+      className={cn("resume-section", familyTone.sectionSpacingClass)}
+    >
+      <ResumeSectionHeading title={title} template={template} accent={accent} mode={mode} familyTone={familyTone} />
+      {children}
+    </section>
+  )
+}
+
+function Description({
+  value,
+  mode,
+}: {
+  value: string
+  mode: ResumeRenderMode
+}) {
+  if (!value) return null
+
+  return (
+    <RichTextRenderer
+      value={value}
+      compact={mode === "print" || mode === "thumbnail"}
+      className={cn(
+        "text-[0.94em] leading-relaxed text-slate-700",
+        "[&_p]:mb-2 [&_ul]:mb-2 [&_ol]:mb-2",
+        mode === "mobile" && "text-[0.98em]",
+        mode === "thumbnail" && "text-[0.9em] leading-[1.45] [&_p]:mb-1.5 [&_ul]:mb-1.5 [&_ol]:mb-1.5"
+      )}
+    />
+  )
+}
+
+export function ResumeTemplate({
+  data,
+  isPrint = false,
+  noPadding = false,
+  mode = "screen",
+  className,
+}: ResumeTemplateProps) {
+  if (!data) return null
+
+  const renderMode: ResumeRenderMode = isPrint ? "print" : mode
+  const template = getTemplateConfig(data?.templateId)
+  const styles = data?.styles ?? {}
+  const accent = extractPrimaryBaseColor(styles.primaryColor || template.defaults.primaryColor)
+  const activeFontKey = coerceResumeFontKey(styles.fontFamily, template.defaults.fontFamily)
+  const fontStack = getResumeFontStack(activeFontKey)
+  const spacing = getDensityMetrics(template, renderMode)
+  const familyTone = getTemplateFamilyTone(template.category, renderMode)
+  const sectionOrder = normalizeSectionOrder(data?.sectionOrder)
+  const content = data?.content ?? {}
+
+  const baseFontSize = Number(styles.fontSize ?? template.defaults.fontSize)
+  const baseLineHeight = Number(styles.lineHeight ?? template.defaults.lineHeight)
+  const baseMargins = Number(styles.margins ?? template.defaults.margins)
+  const screenPadding = 48 // 48px padding - 24px mask start = 24px visible top margin
+  const mobilePadding = Math.max(28, Math.round(baseMargins * 0.8))
+  const thumbnailPadding = Math.max(24, Math.round(baseMargins * 0.6))
+  const printPadding = Math.max(8, Math.min(14, pxToMm(baseMargins) * 0.88))
+
+  const rootStyle: CSSProperties & { WebkitPrintColorAdjust?: "exact"; printColorAdjust?: "exact" } = {
+    backgroundColor: "#ffffff",
+    color: "#0f172a",
+    width: noPadding ? "100%" : renderMode === "print" ? "210mm" : "100%",
+    minHeight: renderMode === "mobile" ? undefined : "297mm",
+    height: renderMode === "print" || renderMode === "mobile" ? "auto" : undefined, // Let total height flow, rounded up in container
+    padding: "0",
+    maskImage: undefined,
+    WebkitMaskImage: undefined,
+    fontFamily: fontStack,
+    fontSize: `${renderMode === "mobile" ? Math.max(10.5, baseFontSize - 0.3) : renderMode === "thumbnail" ? Math.max(9.25, baseFontSize - 0.8) : baseFontSize}pt`,
+    lineHeight: renderMode === "mobile" ? Math.max(1.55, baseLineHeight) : renderMode === "thumbnail" ? Math.max(1.42, baseLineHeight - 0.05) : baseLineHeight,
+    border: template.design.pageBorder ? `1px solid ${hexToRgba(accent, 0.16)}` : undefined,
+    borderRadius: renderMode === "mobile" ? "28px" : renderMode === "print" ? "0" : "8px",
+    boxSizing: "border-box",
+    overflow: renderMode === "screen" ? "hidden" : "visible",
+    WebkitPrintColorAdjust: "exact",
+    printColorAdjust: "exact",
+  }
+
+  const sectionGapStyle: CSSProperties = {
+    gap: `${spacing.sectionGap}px`,
+  }
+
+  const activeEntryVariant = (styles.entryVariant || template.design.entryVariant) as TemplateEntryVariant
+  const entryShellClassName = getEntryShellClassName(activeEntryVariant)
+  const entryShellStyle = getEntryShellStyle(activeEntryVariant, accent, template.design.subtleFill)
+
+  const renderExperience = () => {
+    const items = (content?.experience || []).filter((e: any) => e.title || e.company || e.description)
+    if (!items.length) return null
+
+    return (
+      <ResumeSection title={SECTION_LABELS.experience} template={template} accent={accent} mode={renderMode} familyTone={familyTone}>
+        <div className="space-y-4">
+          {items.map((experience: any) => (
+            <article
+              key={experience.id}
+              className={cn("resume-entry space-y-1.5", entryShellClassName)}
+              style={entryShellStyle}
+            >
+              <div 
+                className={cn("resume-entry-header flex flex-col gap-1 sm:flex-row sm:items-baseline sm:justify-between")}
+              >
+                <div>
+                  <h4 className="text-[1.06em] font-bold text-slate-900">{experience.title}</h4>
+                  <p className="text-[0.92em] font-semibold text-slate-600">{experience.company}</p>
+                </div>
+                {experience.period && (
+                  <span className="text-[0.82em] font-semibold uppercase tracking-[0.14em] text-slate-500">
+                    {experience.period}
+                  </span>
+                )}
+              </div>
+              <Description value={experience.description} mode={renderMode} />
+            </article>
+          ))}
+        </div>
+      </ResumeSection>
+    )
+  }
+
+  const renderProjects = () => {
+    const items = (content?.projects || []).filter((p: any) => p.name || p.description)
+    if (!items.length) return null
+
+    return (
+      <ResumeSection title={SECTION_LABELS.projects} template={template} accent={accent} mode={renderMode} familyTone={familyTone}>
+        <div className="space-y-4">
+          {items.map((project: any) => (
+            <article
+              key={project.id}
+              className={cn("resume-entry space-y-1.5", entryShellClassName)}
+              style={entryShellStyle}
+            >
+              <div 
+                className="flex flex-col gap-1 sm:flex-row sm:items-baseline sm:justify-between"
+              >
+                <div>
+                  <h4 className="text-[1em] font-bold text-slate-900">{project.name}</h4>
+                  {project.url ? (
+                    <span className="text-[0.82em] font-medium text-slate-500">{project.url}</span>
+                  ) : null}
+                </div>
+                {project.period ? (
+                  <span className="text-[0.82em] font-semibold uppercase tracking-[0.14em] text-slate-500">
+                    {project.period}
+                  </span>
+                ) : null}
+              </div>
+              <Description value={project.description} mode={renderMode} />
+            </article>
+          ))}
+        </div>
+      </ResumeSection>
+    )
+  }
+
+  const renderEducation = () => {
+    const items = (content?.education || []).filter((e: any) => e.degree || e.institution)
+    if (!items.length) return null
+
+    return (
+      <ResumeSection title={SECTION_LABELS.education} template={template} accent={accent} mode={renderMode} familyTone={familyTone}>
+        <div className="space-y-4">
+          {items.map((education: any) => (
+            <article
+              key={education.id}
+              className={cn("resume-entry space-y-1.5", entryShellClassName)}
+              style={entryShellStyle}
+            >
+              <div 
+                className="flex flex-col gap-1 sm:flex-row sm:items-baseline sm:justify-between"
+              >
+                <div>
+                  <h4 className="text-[1.06em] font-bold text-slate-900">{education.degree}</h4>
+                  <p className="text-[0.92em] font-semibold text-slate-600">{education.institution}</p>
+                </div>
+                {education.period && (
+                  <span className="text-[0.82em] font-semibold uppercase tracking-[0.14em] text-slate-500">
+                    {education.period}
+                  </span>
+                )}
+              </div>
+              <Description value={education.description} mode={renderMode} />
+            </article>
+          ))}
+        </div>
+      </ResumeSection>
+    )
+  }
+
+  const renderSkills = () => {
+    const items = (content?.skills || []).filter((s: string) => s && s.trim().length > 0)
+    if (!items.length) return null
+
+    return (
+      <ResumeSection title={SECTION_LABELS.skills} template={template} accent={accent} mode={renderMode} familyTone={familyTone}>
+        <ul className="list-disc space-y-1.5 pl-5 text-[0.94em] leading-relaxed text-slate-700">
+          {items.map((skill: string, index: number) => (
+            <li key={`${skill}-${index}`}>{skill}</li>
+          ))}
+        </ul>
+      </ResumeSection>
+    )
+  }
+
+  const renderCertifications = () => {
+    const items = (content?.certifications || []).filter((c: any) => c.name || c.date)
+    if (!items.length) return null
+
+    return (
+      <ResumeSection title={SECTION_LABELS.certifications} template={template} accent={accent} mode={renderMode} familyTone={familyTone}>
+        <div className="space-y-3">
+          {items.map((certification: any) => (
+            <article
+              key={certification.id}
+              className={cn("resume-entry flex flex-col gap-1 sm:flex-row sm:items-baseline sm:justify-between", entryShellClassName)}
+              style={entryShellStyle}
+            >
+              <div>
+                <h4 className="text-[0.98em] font-bold text-slate-900">{certification.name}</h4>
+                {certification.issuer ? (
+                  <p className="text-[0.85em] font-semibold text-slate-500">{certification.issuer}</p>
+                ) : null}
+              </div>
+              {certification.date ? (
+                <span className="text-[0.82em] font-semibold uppercase tracking-[0.14em] text-slate-500">
+                  {certification.date}
+                </span>
+              ) : null}
+            </article>
+          ))}
+        </div>
+      </ResumeSection>
+    )
+  }
+
+  const renderLanguages = () => {
+    const items = (content?.languages || []).filter((l: any) => l.language || l.name)
+    if (!items.length) return null
+
+    return (
+      <ResumeSection title={SECTION_LABELS.languages} template={template} accent={accent} mode={renderMode} familyTone={familyTone}>
+        <div className="space-y-2 text-[0.94em] text-slate-700">
+          {items.map((language: any, index: number) => (
+            <p key={`${language.language || language.name}-${index}`}>
+              <span className="font-bold text-slate-900">{language.language || language.name}</span>
+              {(language.proficiency || language.level) && (
+                <span className="text-slate-500"> - {language.proficiency || language.level}</span>
+              )}
+            </p>
+          ))}
+        </div>
+      </ResumeSection>
+    )
+  }
+
+  const renderSummary = () => {
+    if (!content?.summary) return null
+
+    return (
+      <ResumeSection title={SECTION_LABELS.summary} template={template} accent={accent} mode={renderMode} familyTone={familyTone}>
+        <Description value={content.summary} mode={renderMode} />
+      </ResumeSection>
+    )
+  }
+
+  const sectionRenderers: Record<ResumeSectionId, () => ReactNode> = {
+    summary: renderSummary,
+    experience: renderExperience,
+    projects: renderProjects,
+    education: renderEducation,
+    skills: renderSkills,
+    certifications: renderCertifications,
+    languages: renderLanguages,
+    "page-break": () => (
+      <div
+        className={cn(
+          "resume-manual-break w-full",
+          renderMode === "print" ? "h-0" : "flex items-center gap-3 py-2 text-[0.66rem] font-semibold uppercase tracking-[0.22em] text-slate-400"
+        )}
+        style={{
+          breakBefore: renderMode === "print" ? "page" : undefined,
+          pageBreakBefore: renderMode === "print" ? "always" : undefined,
+        }}
+      >
+        {renderMode !== "print" && (
+          <>
+            <div className="h-px flex-1 bg-slate-200" />
+            <span>Page Break</span>
+            <div className="h-px flex-1 bg-slate-200" />
+          </>
+        )}
+      </div>
+    ),
+  }
+
+  const sidebarSections = new Set(template.sidebarSections ?? ["skills", "languages", "certifications", "education"])
+  const isTwoColumn = template.layout === "two-column" && renderMode !== "mobile"
+
+  return (
+    <div
+      className={cn("resume-preview-sheet resume-document relative", className)}
+      data-resume-mode={renderMode}
+      data-template-id={template.id}
+      style={rootStyle}
+    >
+      {/* Visual Page Break Indicators for Screen/Mobile */}
+      {/* Unmasked Visual Page Break Indicators (Overlay) */}
+      {renderMode === "screen" && !isPrint && (
+        <div 
+          className="absolute inset-x-0 top-0 bottom-0 pointer-events-none z-50" 
+          aria-hidden="true"
+        >
+          {[1, 2, 3, 4, 5, 6, 7, 8].map(page => (
+            <div 
+              key={page}
+              className="absolute w-full flex flex-col items-center justify-center h-[40px]"
+              style={{ top: `calc(${page} * (297mm + 40px) - 40px)` }}
+            >
+               {/* Translucent Bar Background with Glow and Blur */}
+               <div className="absolute inset-0 bg-slate-950/90 backdrop-blur-md border-y border-white/10 shadow-[0_0_30px_rgba(0,0,0,0.5)]" />
+               
+               {/* Accent Gradient Lines */}
+               <div className="absolute top-0 inset-x-0 h-[1px] bg-gradient-to-r from-transparent via-indigo-500/30 to-transparent" />
+               <div className="absolute bottom-0 inset-x-0 h-[1px] bg-gradient-to-r from-transparent via-orange-500/20 to-transparent" />
+               
+               {/* Label Badge */}
+               <div className="relative flex items-center gap-4 text-[10px] font-black tracking-[0.3em] text-white/50 uppercase pr-2">
+                 <div className="h-[1px] w-8 bg-gradient-to-r from-transparent to-white/10" />
+                 Page {page} <span className="opacity-20 text-indigo-400 mx-1">/</span> {page + 1}
+                 <div className="h-[1px] w-8 bg-gradient-to-l from-transparent to-white/10" />
+               </div>
+            </div>
+          ))}
+        </div>
+      )}
+
+      <div 
+        className="flex flex-col relative z-0 w-full" 
+        style={{
+          ...sectionGapStyle,
+          padding: 
+            noPadding ? "0" : 
+            renderMode === "print" ? `${printPadding}mm` : 
+            renderMode === "mobile" ? `${mobilePadding}px` : 
+            renderMode === "thumbnail" ? `${thumbnailPadding}px` :
+            `${screenPadding}px`,
+          maskImage: renderMode === "screen" ? 
+            "repeating-linear-gradient(to bottom, transparent 0, transparent 24px, black 24px, black calc(297mm - 24px), transparent calc(297mm - 24px), transparent calc(297mm + 40px))" : undefined,
+          WebkitMaskImage: renderMode === "screen" ? 
+            "repeating-linear-gradient(to bottom, transparent 0, transparent 24px, black 24px, black calc(297mm - 24px), transparent calc(297mm - 24px), transparent calc(297mm + 40px))" : undefined,
+        }}
+      >
+        <ResumeTemplateHeader
+          content={content}
+          template={template}
+          accent={accent}
+          mode={renderMode}
+          familyTone={familyTone}
+          spacing={spacing}
+        />
+
+        {isTwoColumn ? (
+          <div
+            className={cn(
+              "grid w-full gap-8",
+              template.sidebarPosition === "right" ? "grid-cols-[1fr_260px]" : "grid-cols-[260px_1fr]"
+            )}
+          >
+            <div className={cn("flex flex-col", template.sidebarPosition === "right" ? "order-1" : "order-2")} style={sectionGapStyle}>
+              {sectionOrder
+                .filter((id) => !sidebarSections.has(id))
+                .map((sectionId, index) => {
+                  const renderedSection = sectionRenderers[sectionId]?.()
+                  if (!renderedSection) return null
+                  return (
+                    <div key={`${sectionId}-${index}`} className="contents">
+                      {renderedSection}
+                      {template.design.sectionDividers === "thin" && (
+                        <div className="h-px w-full bg-slate-100" />
+                      )}
+                      {template.design.sectionDividers === "bold" && (
+                        <div className="h-0.5 w-full" style={{ backgroundColor: hexToRgba(accent, 0.1) }} />
+                      )}
+                    </div>
+                  )
+                })}
+            </div>
+            <div
+              className={cn(
+                "flex flex-col gap-6 rounded-[1rem] p-5",
+                template.sidebarPosition === "right" ? "order-2" : "order-1"
+              )}
+              style={{
+                backgroundColor: template.design.subtleFill ? hexToRgba(accent, 0.04) : "transparent",
+                border: template.design.subtleFill ? `1px solid ${hexToRgba(accent, 0.1)}` : "none",
+              }}
+            >
+              {sectionOrder
+                .filter((id) => sidebarSections.has(id))
+                .map((sectionId, index) => {
+                  const renderedSection = sectionRenderers[sectionId]?.()
+                  if (!renderedSection) return null
+                  return (
+                    <div key={`${sectionId}-${index}`} className="contents">
+                      {renderedSection}
+                    </div>
+                  )
+                })}
+            </div>
+          </div>
+        ) : (
+          <main 
+            className="block-layout" 
+            style={{ 
+              "--resume-section-gap": `${spacing.sectionGap}px` 
+            } as any}
+          >
+            {sectionOrder.map((sectionId, index) => {
+              const renderedSection = sectionRenderers[sectionId]?.()
+              if (!renderedSection) return null
+
+              return (
+                <div key={`${sectionId}-${index}`} className="contents">
+                  {renderedSection}
+                  {template.design.sectionDividers === "thin" && (
+                    <div className="h-px w-full bg-slate-100" />
+                  )}
+                  {template.design.sectionDividers === "bold" && (
+                    <div className="h-0.5 w-full" style={{ backgroundColor: hexToRgba(accent, 0.1) }} />
+                  )}
+                </div>
+              )
+            })}
+          </main>
+        )}
+      </div>
+    </div>
+  )
+}

@@ -1,0 +1,52 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(node -e \"require\\('./lib/helpers'\\).detectDevServers\\(\\).then\\(servers => console.log\\(JSON.stringify\\(servers\\)\\)\\)\")",
+      "Bash(node run.js ' *)",
+      "Bash(Start-Sleep -Seconds 12)",
+      "Bash(Get-Content \"C:\\\\Users\\\\csali\\\\AppData\\\\Local\\\\Temp\\\\claude\\\\c--Users-csali-Downloads-studio--14892-t5pny0xfflmS-\\\\ba1b4939-f077-468d-a85b-82a0fe906bac\\\\tasks\\\\bdw8tor8s.output\" -ErrorAction SilentlyContinue)",
+      "Read(//tmp/**)",
+      "Read(//c/tmp/**)",
+      "Bash(curl -s -o /dev/null -w \"%{http_code}\" http://localhost:3000/)",
+      "Bash(npm run *)",
+      "Bash(echo \"Dev server PID: $!\")",
+      "Bash(start http://localhost:3000)",
+      "PowerShell(Start-Sleep -Seconds 5; $log = Get-Content \"C:\\\\Users\\\\csali\\\\AppData\\\\Local\\\\Temp\\\\claude\\\\c--Users-csali-Downloads-studio--14892-t5pny0xfflmS-\\\\ba1b4939-f077-468d-a85b-82a0fe906bac\\\\tasks\\\\b19n492k6.output\" -ErrorAction SilentlyContinue; Write-Host \\($log | Select-Object -Last 5 | Out-String\\))",
+      "WebSearch",
+      "Bash(npx tsc *)",
+      "Bash(xargs grep *)",
+      "Bash(echo \"Exit code: $?\")",
+      "Bash(npx next *)",
+      "Bash(echo \"Build started in background: $!\")",
+      "Bash(curl -s -o /dev/null -w \"%{http_code}\" http://localhost:3001)",
+      "PowerShell($ports = @\\(3000, 3001\\); foreach \\($p in $ports\\) { $r = try { \\(Invoke-WebRequest -Uri \"http://localhost:$p\" -TimeoutSec 3 -UseBasicParsing\\).StatusCode } catch { \"DOWN\" }; Write-Output \"Port $p`: $r\" })",
+      "Bash(curl -s -o /dev/null -w \"%{http_code}\" http://localhost:3000)",
+      "Bash(node run.js /tmp/playwright-test-full.js)",
+      "PowerShell($env:TEMP)",
+      "Bash(node run.js \"C:\\\\Users\\\\csali\\\\AppData\\\\Local\\\\Temp\\\\pw-test.js\")",
+      "Bash(node run.js \"C:\\\\Users\\\\csali\\\\AppData\\\\Local\\\\Temp\\\\pw-public.js\")",
+      "Bash(vercel --version)",
+      "Bash(firebase --version)",
+      "PowerShell(firebase --version 2>&1)",
+      "PowerShell(npx firebase --version 2>&1)",
+      "Bash(npx firebase *)",
+      "Bash(curl -s -o /dev/null -w \"%{http_code}\" \"https://studio--studio-3704831244-a5638.us-central1.hosted.app\")",
+      "Bash(curl -s \"https://studio--studio-3704831244-a5638.us-central1.hosted.app\")",
+      "PowerShell($token = \\(npx firebase --project studio-3704831244-a5638 auth:print-access-token 2>$null\\); if \\($token\\) { Invoke-RestMethod -Uri \"https://firebaseapphosting.googleapis.com/v1beta/projects/studio-3704831244-a5638/locations/us-central1/backends/studio/rollouts?pageSize=5\" -Headers @{\"Authorization\"=\"Bearer $token\"} | ConvertTo-Json -Depth 5 } else { \"No token\" })",
+      "PowerShell(cd \"c:\\\\Users\\\\csali\\\\Downloads\\\\studio--14892-t5pny0xfflmS-\"; $token = \\(npx firebase --project studio-3704831244-a5638 auth:print-access-token 2>$null\\).Trim\\(\\); $token.Length)",
+      "PowerShell(cd \"c:\\\\Users\\\\csali\\\\Downloads\\\\studio--14892-t5pny0xfflmS-\"; $token = \\(npx firebase --project studio-3704831244-a5638 auth:print-access-token 2>&1 | Select-String -Pattern \"^ya29|^eyJ\" | Select-Object -First 1\\).ToString\\(\\).Trim\\(\\); Write-Host \"Token starts: $\\($token.Substring\\(0,10\\)\\)...\")",
+      "Bash(grep -v \"^#\\\\|^$\\\\|SECRET\\\\|PASSWORD\\\\|FIREBASE_ADMIN\\\\|PRIVATE_KEY\\\\|SUPABASE\\\\|STRIPE\" \"c:/Users/csali/Downloads/studio--14892-t5pny0xfflmS-/.env\")",
+      "Bash(findstr :3000)",
+      "Bash(findstr LISTENING)",
+      "Bash(taskkill /PID 19100 /F)",
+      "PowerShell(Stop-Process -Id 19100 -Force)",
+      "Bash('.acg-bot-root')",
+      "Bash(curl -s -o /dev/null -w \"%{http_code}\" http://localhost:3000/print/resume/test)"
+    ],
+    "additionalDirectories": [
+      "\\tmp",
+      "c:\\tmp",
+      "C:\\Users\\csali\\AppData\\Local\\Temp"
+    ]
+  }
+}

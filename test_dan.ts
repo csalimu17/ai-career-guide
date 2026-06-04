@@ -1,0 +1,1 @@
+import { interactiveAiCareerAssistant } from './src/ai/flows/interactive-ai-career-assistant-flow'; async function run() { try { const res = await interactiveAiCareerAssistant({ message: 'CAN YOU IMPROVE THE GRAMMA ON MY CV', uid: 'testuid' }); console.log('SUCCESS:', res); } catch(e) { console.error('FAILED:', e); } }; run();

@@ -1,0 +1,56 @@
+import { getAi } from '../src/ai/genkit';
+import { 
+  getGeminiModel, 
+  getFallbackGeminiModel, 
+  GEMINI_MODELS, 
+  GROQ_MODELS, 
+  OPENROUTER_MODELS 
+} from '../src/ai/model-router';
+
+async function testModel(name: string) {
+  console.log(`Testing model: ${name}...`);
+  try {
+    const ai = getAi();
+    const response = await ai.generate({
+      model: name,
+      prompt: "Ping",
+    });
+    console.log(`? SUCCESS: ${name} responded: ${response.text}`);
+    return true;
+  } catch (e: any) {
+    console.log(`? FAILED: ${name} error: ${e.message || String(e)}`);
+    return false;
+  }
+}
+
+async function main() {
+  console.log("--- AI Model Configuration Audit ---");
+  
+  const modelsToTest = [
+    GEMINI_MODELS.fast,
+    GROQ_MODELS.fast,
+    OPENROUTER_MODELS.free
+  ];
+
+  const results = {};
+  for (const model of modelsToTest) {
+    results[model] = await testModel(model);
+  }
+
+  console.log("\n--- Connectivity Summary ---");
+  console.table(results);
+
+  console.log("\n--- Fallback Logic Test ---");
+  const primary = await getGeminiModel("default");
+  const fallback = getFallbackGeminiModel("default", primary);
+  console.log(`Primary Model: ${primary}`);
+  console.log(`Fallback Model: ${fallback}`);
+
+  if (!fallback) {
+    console.log("? Fallback system missing: No valid fallback model found.");
+  } else {
+    console.log("? Fallback system configured.");
+  }
+}
+
+main().catch(console.error);

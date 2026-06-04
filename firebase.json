@@ -1,0 +1,101 @@
+{
+  "auth": {
+    "providers": {
+      "googleSignIn": {
+        "oAuthBrandDisplayName": "AI Career Guide",
+        "supportEmail": "csalimu17@gmail.com",
+        "authorizedRedirectUris": [
+          "https://aicareerguide.uk",
+          "https://www.aicareerguide.uk",
+          "https://studio--studio-3704831244-a5638.us-central1.hosted.app"
+        ]
+      },
+      "emailPassword": true,
+      "anonymous": true
+    }
+  },
+  "firestore": {
+    "rules": "firestore.rules"
+  },
+  "storage": {
+    "rules": "storage.rules"
+  },
+  "hosting": {
+    "source": ".",
+    "ignore": [
+      "firebase.json",
+      "**/.*",
+      "**/node_modules/**"
+    ],
+    "frameworksBackend": {
+      "region": "us-central1"
+    }
+  },
+  "apphosting": {
+    "backendId": "studio",
+    "rootDir": "/",
+    "ignore": [
+      "node_modules",
+      ".next",
+      ".next_dev",
+      ".git",
+      ".agents",
+      ".idx",
+      ".venv",
+      ".vscode",
+      "docs",
+      "scratch",
+      "tools",
+      "tmp",
+      "qa_second_pass",
+      "firebase-debug.log",
+      "firebase-debug.*.log",
+      "functions",
+      "scripts",
+      "experimental_scripts",
+      "build_output.txt",
+      "build.log",
+      "build_*.txt",
+      "build_*.log",
+      "deploy_*.txt",
+      "backend*.json",
+      "result.json",
+      "studio.json",
+      "models.json",
+      "server*.log",
+      "dev-*.log",
+      "dev-*.out.log",
+      "dev-*.err.log",
+      "qa-*.log",
+      "qa-*.out.log",
+      "qa-*.err.log",
+      "acg-dev.*.log",
+      ".next-*.log",
+      ".next-*.err.log",
+      "tsconfig.typecheck.tsbuildinfo",
+      "tsc_*.txt",
+      "typecheck*.txt",
+      "apphosting-help.txt",
+      "backend_details.txt",
+      "dev-log.txt",
+      "process_logo.js",
+      "fix_editor.js",
+      "qa-test-resume.txt",
+      "*.log",
+      ".*.log",
+      "*.err",
+      ".*.err",
+      "*.out",
+      ".*.out",
+      "*.pdf",
+      "tmp_*",
+      ".smoke-*",
+      ".qa-*",
+      ".qa2-*",
+      ".diag-*",
+      ".launch-*",
+      ".localhost-*",
+      ".next-*"
+    ]
+  }
+}
