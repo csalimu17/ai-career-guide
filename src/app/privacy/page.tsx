@@ -35,41 +35,59 @@ export default function PrivacyPage() {
 
           <article className="surface-card max-w-4xl space-y-8 px-6 py-8 sm:px-8">
             <p className="text-base leading-relaxed text-muted-foreground">
-              Your privacy matters. AI Career Guide is designed to help you build better resumes and manage your job search without making your information harder to control.
+              Your privacy matters. AI Career Guide is designed to help you build better resumes and manage your job search without making your information harder to control. We are committed to protecting your personal information and your right to privacy.
             </p>
 
             <section className="space-y-3">
               <h2 className="text-2xl font-black text-primary">1. Information we collect</h2>
               <p className="text-sm leading-relaxed text-muted-foreground">
-                We collect information you provide directly, including account details, resume content, career preferences, and job application tracking data you choose to store in the app.
+                We collect information you provide directly to us when you create an account, build a resume, use our AI tools, or contact support. This includes:
               </p>
+              <ul className="list-disc pl-6 text-sm leading-relaxed text-muted-foreground space-y-1">
+                <li><strong>Account Data:</strong> Email address, name, and authentication credentials (handled via Firebase Authentication).</li>
+                <li><strong>Profile & Career Data:</strong> Your resume content, job history, skills, career preferences, and job application tracking data.</li>
+                <li><strong>Payment Data:</strong> We use Stripe to process payments. We do not store your full credit card details, but we do store subscription status and billing history.</li>
+                <li><strong>Usage Data:</strong> Basic analytics on how you interact with our platform to help us improve reliability and user experience.</li>
+              </ul>
             </section>
 
             <section className="space-y-3">
               <h2 className="text-2xl font-black text-primary">2. How we use your data</h2>
               <p className="text-sm leading-relaxed text-muted-foreground">
-                We use your data to provide resume editing, AI-assisted content generation, ATS analysis, onboarding personalization, billing support, and product reliability improvements.
+                We use your data solely to provide, maintain, and improve the AI Career Guide platform. This includes resume editing, AI-assisted content generation, Applicant Tracking System (ATS) analysis, onboarding personalization, processing transactions, and providing customer support. We do not sell your personal data to third parties.
               </p>
             </section>
 
             <section className="space-y-3">
-              <h2 className="text-2xl font-black text-primary">3. AI processing</h2>
+              <h2 className="text-2xl font-black text-primary">3. AI processing & Third-Party Services</h2>
               <p className="text-sm leading-relaxed text-muted-foreground">
-                Resume and job-description content may be processed by AI systems to generate suggestions, scores, or recommendations. That processing is limited to product functionality and is not intended to sell or repackage your data.
+                To provide our core features, your resume and job-description content are processed by our AI partners (including Google Gemini, Groq, and OpenRouter).
+              </p>
+              <ul className="list-disc pl-6 text-sm leading-relaxed text-muted-foreground space-y-1 mt-2">
+                <li><strong>No Training on Your Data:</strong> We configure our AI provider APIs so that your personal data is NOT used to train their foundational models.</li>
+                <li><strong>Data Sharing:</strong> Data is transmitted securely to these APIs strictly for generating suggestions, scores, or recommendations in real-time.</li>
+                <li><strong>Infrastructure:</strong> Our database and hosting infrastructure is provided by Google Cloud (Firebase), which adheres to strict security and compliance standards.</li>
+              </ul>
+            </section>
+
+            <section className="space-y-3">
+              <h2 className="text-2xl font-black text-primary">4. Security, Storage, and Data Retention</h2>
+              <p className="text-sm leading-relaxed text-muted-foreground">
+                We implement industry-standard security measures, including authenticated account access, strict database rules, and encrypted data transmission (HTTPS), to protect your information. Your data is stored securely in Firebase Firestore. We retain your personal information only for as long as your account is active or as necessary to fulfill the purposes outlined in this policy, comply with our legal obligations, or resolve disputes.
               </p>
             </section>
 
             <section className="space-y-3">
-              <h2 className="text-2xl font-black text-primary">4. Security and access control</h2>
+              <h2 className="text-2xl font-black text-primary">5. Your privacy rights (GDPR & CCPA)</h2>
               <p className="text-sm leading-relaxed text-muted-foreground">
-                We use authenticated account access, database rules, and server-side billing checks to reduce unauthorized access and keep your workspace limited to your account context.
+                Depending on your location, you may have specific rights regarding your personal data, including the right to access, correct, or delete your information. You can update your profile data, manage your billing through the Stripe customer portal, and request complete account deletion directly within the app. Upon account deletion, all your resumes, cover letters, and tracked jobs are permanently removed from our active databases.
               </p>
             </section>
 
             <section className="space-y-3">
-              <h2 className="text-2xl font-black text-primary">5. Your rights</h2>
+              <h2 className="text-2xl font-black text-primary">6. Contact us</h2>
               <p className="text-sm leading-relaxed text-muted-foreground">
-                You can update profile data, request account deletion, and contact support for access-related issues. Where available, billing and security controls are also accessible in-app.
+                If you have questions or comments about this privacy policy, or if you wish to exercise your data rights, please contact our support team.
               </p>
             </section>
           </article>

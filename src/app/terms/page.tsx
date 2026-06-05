@@ -35,37 +35,44 @@ export default function TermsPage() {
 
           <article className="surface-card max-w-4xl space-y-8 px-6 py-8 sm:px-8">
             <section className="space-y-3">
-              <h2 className="text-2xl font-black text-primary">1. Using the service</h2>
+              <h2 className="text-2xl font-black text-primary">1. Acceptance of Terms</h2>
               <p className="text-sm leading-relaxed text-muted-foreground">
-                AI Career Guide provides resume building, ATS analysis, cover-letter support, and career workflow tools. By using the platform, you agree to use it lawfully and protect your account credentials.
+                By accessing or using AI Career Guide, you agree to be bound by these Terms of Service. If you disagree with any part of the terms, you may not access the service. These terms apply to all visitors, users, and others who access or use the platform.
               </p>
             </section>
 
             <section className="space-y-3">
-              <h2 className="text-2xl font-black text-primary">2. Accounts and subscriptions</h2>
+              <h2 className="text-2xl font-black text-primary">2. Service Description & AI Disclaimer</h2>
               <p className="text-sm leading-relaxed text-muted-foreground">
-                Some features are available on free plans, while others require a paid subscription. Paid plan access, billing updates, and cancellations are managed through the linked billing workflow.
+                AI Career Guide provides resume building, ATS analysis, cover-letter support, and career workflow tools utilizing Artificial Intelligence. You acknowledge that AI-generated content may be inaccurate, incomplete, or inappropriate. You must manually review and verify all generated resumes, cover letters, and scores before using them in live job applications. We do not guarantee employment, interviews, or any specific career outcome.
               </p>
             </section>
 
             <section className="space-y-3">
-              <h2 className="text-2xl font-black text-primary">3. Your content</h2>
+              <h2 className="text-2xl font-black text-primary">3. Accounts and Subscriptions</h2>
               <p className="text-sm leading-relaxed text-muted-foreground">
-                You keep responsibility for the resume content, job descriptions, and supporting information you provide. You should review all generated content before using it in live applications.
+                You are responsible for safeguarding your account credentials. Some features are available on free plans, while others require a paid subscription processed securely via Stripe. Paid plan access is billed in advance on a subscription basis. You may cancel your subscription at any time through the billing portal, but no refunds are provided for partial subscription periods unless legally required.
               </p>
             </section>
 
             <section className="space-y-3">
-              <h2 className="text-2xl font-black text-primary">4. Platform changes</h2>
+              <h2 className="text-2xl font-black text-primary">4. Acceptable Use & User Content</h2>
               <p className="text-sm leading-relaxed text-muted-foreground">
-                We may improve, revise, or retire parts of the service over time. We aim to do that without breaking the core product intent: helping users create better application materials and manage their search effectively.
+                You retain all rights to the resume content and personal data you upload. By uploading content, you grant us a license to process it solely to provide the service. You agree not to: (a) use the service for any illegal purpose; (b) attempt to reverse engineer or scrape the platform or its AI models; (c) upload malicious code; or (d) share accounts. We reserve the right to suspend or terminate accounts that violate these terms.
               </p>
             </section>
 
             <section className="space-y-3">
-              <h2 className="text-2xl font-black text-primary">5. Limitation of liability</h2>
+              <h2 className="text-2xl font-black text-primary">5. Platform Changes & Availability</h2>
               <p className="text-sm leading-relaxed text-muted-foreground">
-                The service is provided as a software tool to support your job-search process. Final hiring outcomes depend on many factors outside the platform, and all generated content should be reviewed before use.
+                We continuously update our services and may change, suspend, or discontinue any aspect of the platform at any time without notice. While we strive for high uptime, we do not guarantee that the service will be uninterrupted or error-free.
+              </p>
+            </section>
+
+            <section className="space-y-3">
+              <h2 className="text-2xl font-black text-primary">6. Limitation of Liability & Indemnification</h2>
+              <p className="text-sm leading-relaxed text-muted-foreground">
+                To the maximum extent permitted by law, AI Career Guide and its operators shall not be liable for any indirect, incidental, special, consequential, or punitive damages, or any loss of profits or revenues, whether incurred directly or indirectly. You agree to indemnify and hold harmless AI Career Guide from any claims resulting from your use of the service or your violation of these terms.
               </p>
             </section>
           </article>
