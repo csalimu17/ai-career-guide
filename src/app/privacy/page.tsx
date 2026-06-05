@@ -29,7 +29,7 @@ export default function PrivacyPage() {
               How AI Career Guide handles your data and account information.
             </h1>
             <p className="text-lg leading-relaxed text-muted-foreground">
-              Last updated: March 25, 2026. This page explains what information we collect, how it is used, and what controls are available to you.
+              Last updated: June 5, 2026. This page explains what information we collect, how it is used, and what controls are available to you.
             </p>
           </div>
 

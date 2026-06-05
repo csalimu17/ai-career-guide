@@ -29,7 +29,7 @@ export default function TermsPage() {
               The product terms that apply when you use AI Career Guide.
             </h1>
             <p className="text-lg leading-relaxed text-muted-foreground">
-              Last updated: March 25, 2026. These terms explain how the service works, what you can expect, and what responsibilities come with account access.
+              Last updated: June 5, 2026. These terms explain how the service works, what you can expect, and what responsibilities come with account access.
             </p>
           </div>
 
