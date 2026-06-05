@@ -6,11 +6,20 @@ import { useEditorState } from "@/hooks/use-editor-state"
 import { DesktopEditor } from "@/components/editor/DesktopEditor"
 import { MobileEditor } from "@/components/editor/MobileEditor"
 import { Loader2, Monitor } from "lucide-react"
+import { useRouter } from "next/navigation"
+import { useUser } from "@/firebase"
 
 export default function CvEditorPage() {
   const isMobile = useIsMobile()
   const editor = useEditorState()
   const { isLoading, resume } = editor
+  const { user, isUserLoading } = useUser()
+  const router = useRouter()
+
+  if (!isUserLoading && !user) {
+    router.replace("/login")
+    return null
+  }
 
   if (isLoading && !resume) {
     return (
