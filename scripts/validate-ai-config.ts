@@ -65,7 +65,8 @@ export async function validateAiConfiguration() {
   const results: ValidationResult[] = [];
   
   for (const model of modelsToTest) {
-    const result = await validateProvider(model);
+    if (!model) continue;
+    const result = await validateProvider(model as string);
     results.push(result);
     console.log(result.message);
   }

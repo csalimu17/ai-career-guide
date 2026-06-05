@@ -24,7 +24,7 @@ export type AiTaskCategory =
   | "marketingChat";
 
 
-const CATEGORY_MODEL_MAP: Record<AiTaskCategory, string> = {
+export const CATEGORY_MODEL_MAP: Record<AiTaskCategory, string> = {
   default: GEMINI_MODELS.reasoning,
   structuredExtraction: GEMINI_MODELS.fast,
   jobResearch: GEMINI_MODELS.fast,
