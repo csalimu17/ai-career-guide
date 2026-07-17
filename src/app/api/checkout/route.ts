@@ -26,6 +26,28 @@ export async function POST(req: Request) {
     }
 
     const decodedToken = await adminAuth.verifyIdToken(idToken);
+
+    // SECURITY: Block checkout for anonymous users or unverified email addresses.
+    if (decodedToken.firebase.sign_in_provider === 'anonymous' || !decodedToken.email) {
+      return NextResponse.json(
+        {
+          error: 'You are currently using a guest account. Please sign up or log in to subscribe to a paid plan.',
+          code: 'ANONYMOUS_USER',
+        },
+        { status: 403 }
+      );
+    }
+
+    if (!decodedToken.email_verified) {
+      return NextResponse.json(
+        {
+          error: 'Please verify your email address before subscribing. Check your inbox for the verification link, or resend it from your account settings.',
+          code: 'EMAIL_NOT_VERIFIED',
+        },
+        { status: 403 }
+      );
+    }
+
     const { planId } = await req.json();
 
     if (!planId) {
@@ -70,6 +92,12 @@ export async function POST(req: Request) {
         { status: 500 }
       );
     }
-    return NextResponse.json({ error: err.message }, { status: 500 });
+    // SECURITY: Don't surface raw Stripe / Firebase error messages to the
+    // client — they can leak internal IDs, account hints, or PII. Log the
+    // detail server-side and return a generic message.
+    return NextResponse.json(
+      { error: 'We could not start the checkout session. Please try again or contact support.' },
+      { status: 500 }
+    );
   }
 }

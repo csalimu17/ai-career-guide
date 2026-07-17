@@ -9,7 +9,6 @@
  * - CvContentEnhancementOutput - The return type for the enhanceCvContent function.
  */
 
-import { getAi } from '@/ai/genkit';
 import { generateWithFallback } from '@/ai/generate-helper';
 import { buildJobResearchContext, formatJobResearchContext } from '@/ai/job-research';
 import { getGeminiModel, getFallbackGeminiModel } from '@/ai/model-router';
@@ -19,7 +18,7 @@ import { z } from 'zod';
 
 const CvContentEnhancementInputSchema = z.object({
   action: z
-    .enum(['generate_content', 'rewrite_bullet', 'suggest_skills', 'craft_summary', 'suggest_summary_variants', 'suggest_role_bullets'])
+    .enum(['generate_content', 'rewrite_bullet', 'suggest_skills', 'craft_summary', 'suggest_summary_variants', 'suggest_role_bullets', 'suggest_interests'])
     .describe('The specific AI action to perform on the CV content.'),
   currentCvContent: z
     .string()
@@ -68,8 +67,59 @@ const GeneratedContentSchema = z.object({ generatedContent: z.string() });
 const RewrittenBulletSchema = z.object({ rewrittenBullet: z.string() });
 const SuggestedSkillsSchema = z.object({ suggestedSkills: z.array(z.string()) });
 const ProfessionalSummarySchema = z.object({ professionalSummary: z.string() });
-const SummaryVariantsSchema = z.object({ summaryVariants: z.array(z.string()) });
+const SummaryVariantItemSchema = z.object({ 
+  style: z.string().describe('The style of the summary (e.g., short, professional, impact, long)'),
+  summary: z.string().describe('The professional summary text')
+});
+const SummaryVariantsSchema = z.object({ summaryVariants: z.array(SummaryVariantItemSchema) });
 const RoleBulletsSchema = z.object({ bullets: z.array(z.string()) });
+const SuggestedInterestsSchema = z.object({ suggestedInterests: z.array(z.string()) });
+
+function suggestionToText(suggestion: unknown): string {
+  if (typeof suggestion === 'string') {
+    return suggestion.trim();
+  }
+
+  if (typeof suggestion === 'number') {
+    return String(suggestion);
+  }
+
+  if (Array.isArray(suggestion)) {
+    return suggestion.map(suggestionToText).filter(Boolean).join(' ').trim();
+  }
+
+  if (!suggestion || typeof suggestion !== 'object') {
+    return '';
+  }
+
+  const record = suggestion as Record<string, unknown>;
+  const keys = [
+    'text',
+    'bullet',
+    'content',
+    'value',
+    'name',
+    'skill',
+    'interest',
+    'suggestion',
+    'replacement',
+    'message',
+  ];
+
+  for (const key of keys) {
+    const value = suggestionToText(record[key]);
+    if (value) return value;
+  }
+
+  return '';
+}
+
+function normalizeSuggestions(suggestions: unknown[]): string[] {
+  return suggestions
+    .map(suggestionToText)
+    .map((suggestion) => suggestion.replace(/^[-•*\d.)\s]+/, '').trim())
+    .filter(Boolean);
+}
 
 async function getResearchBrief(input: CvContentEnhancementInput) {
   if (!input.jobDescription && !input.targetContent && !input.additionalContext) {
@@ -131,8 +181,6 @@ async function getLiveRoleSignals(jobTitle?: string, includeDeepContext: boolean
 }
 
 export async function enhanceCvContent(input: CvContentEnhancementInput): Promise<CvContentEnhancementOutput> {
-  const ai = getAi();
-  
   let enhancedContent: string | undefined;
   let suggestions: string[] | undefined;
   const researchBrief = await getResearchBrief(input);
@@ -153,13 +201,13 @@ export async function enhanceCvContent(input: CvContentEnhancementInput): Promis
       const response = await generateWithFallback({
         model: writingModel,
         config: { temperature: 0.3 },
-        system: `You are a high-end Career Strategist. Your task is to generate compelling CV content based on the user's request.
+        system: `You are a high-end Career Strategist who writes in clear, standard English.
         
         CRITICAL RULES:
-        1. BE SPECIFIC: Use industry-standard terms and tools.
-        2. BE IMPACTFUL: Focus on results and outcomes, not just tasks.
-        3. BE GUIDED: Use the provided Live market signals and job research to ensure the content is relevant to today's market.
-        4. TONE: Confident, professional, and achievement-oriented.`,
+        1. NO ROBOTIC BUZZWORDS: Strictly avoid "Spearheaded", "Leveraged", "Pioneered", "Utilized", "Facilitated", or "Synergized". Use direct, human verbs like "Led", "Built", "Managed", "Improved", or "Created".
+        2. BE SPECIFIC: Use industry-standard terms and tools naturally.
+        3. BE IMPACTFUL: Focus on results and outcomes with narrative depth.
+        4. TONE: Human, professional, and authentic — never like an AI prompt.`,
         prompt: `Current CV context:
 ${input.currentCvContent || '(not provided)'}
 
@@ -175,7 +223,7 @@ ${rolePlaybook || '(none available)'}
 Live market signals:
 ${liveRoleSignals || '(none available)'}`,
             output: { schema: GeneratedContentSchema },
-          }, fallbackWritingModel || undefined);
+          }, { category: 'cvWriting' });
           enhancedContent = response.output?.generatedContent;
           break;
         }
@@ -187,14 +235,14 @@ ${liveRoleSignals || '(none available)'}`,
       const response = await generateWithFallback({
         model: writingModel,
         config: { temperature: 0.2 },
-        system: `You are a professional CV Editor specializing in high-impact achievement bullets.
+        system: `You are a professional CV Editor who avoids robotic "resume-speak" clichés.
         
         INSTRUCTIONS:
-        - Rewrite the input bullet point to be more powerful, professional, and results-oriented.
-        - Use the CAR method (Context, Action, Result).
-        - Inject relevant keywords from the 'Live market signals' if they fit naturally.
-        - Keep the content concise and punchy.
-        - If multiple variants are requested, ensure they cover different angles (e.g., leadership, technical depth, operational efficiency).`,
+        - Rewrite the input to be more powerful and results-oriented while using PLAIN, DIRECT ENGLISH.
+        - ABSOLUTELY NO: "Spearheaded", "Leveraged", "Pioneered", "Orchestrated", or "Utilized". 
+        - USE INSTEAD: "Led", "Built", "Managed", "Improved", "Run", or "Created".
+        - Use the CAR method (Context, Action, Result) but keep it sounding like a real person.
+        - Keep the content concise and punchy.`,
         prompt: `Original content to transform:
 ${input.targetContent}
 
@@ -215,7 +263,7 @@ Instructions:
 3. If format is 'paragraph', return a single professional paragraph.
 4. Align the tone with the job description and research brief provided.`,
         output: { schema: RewrittenBulletSchema },
-      }, fallbackWritingModel || undefined);
+      }, { category: 'cvWriting' });
       enhancedContent = response.output?.rewrittenBullet;
       break;
     }
@@ -240,8 +288,8 @@ ${researchBrief || '(none available)'}
 Role playbook:
 ${rolePlaybook || '(none available)'}`,
             output: { schema: SuggestedSkillsSchema },
-          }, fallbackWritingModel || undefined);
-          suggestions = response.output?.suggestedSkills;
+          }, { category: 'cvWriting' });
+          suggestions = normalizeSuggestions(response.output?.suggestedSkills || []);
           break;
         }
         case 'craft_summary': {
@@ -252,7 +300,12 @@ ${rolePlaybook || '(none available)'}`,
       const response = await generateWithFallback({
         model: writingModel,
         config: { temperature: 0.4 },
-        system: `You are an expert CV writer...`,
+        system: `You are an expert CV writer who writes standard, authentic English.
+        
+        STRICT TONE RULES:
+        1. NO BUZZWORDS: Strictly avoid robotic terms like "Spearheaded", "Leveraged", "Pioneered", "Utilized", "Empowered", or "Facilitated".
+        2. HUMAN VOICE: Write like a real person summarizing their career value.
+        3. DIRECT IMPACT: Focus on clear value propositions without flowery AI filler. Use verbs like "Led", "Built", or "Managed".`,
         prompt: `Key points or raw summary material:
 ${input.targetContent}
 
@@ -268,7 +321,7 @@ ${researchBrief || '(none available)'}
 Role playbook:
 ${rolePlaybook || '(none available)'}`,
             output: { schema: ProfessionalSummarySchema },
-          }, fallbackWritingModel || undefined);
+          }, { category: 'cvWriting' });
           enhancedContent = response.output?.professionalSummary;
           break;
         }
@@ -280,9 +333,14 @@ ${rolePlaybook || '(none available)'}`,
       const response = await generateWithFallback({
         model: writingModel,
         config: { temperature: 0.7 },
-        system: `You are an expert CV writer...`,
+        system: `You are an expert CV writer who excels at creating human, non-robotic summaries.
+        
+        STRICT TONE RULES:
+        1. AVOID CLICHÉS: Never use robotic buzzwords like "Spearheaded", "Leveraged", "Pioneered", or flowery adjectives like "Dynamic" or "Visionary".
+        2. PLAIN ENGLISH: Use simple but powerful language that an employer can trust. Use words like "Built", "Managed", "Improved", or "Ran".`,
         prompt: `Generate 3 distinct professional summary variants for a CV based on the following input.
-Requested style: ${input.summaryStyle || 'professional'}
+Each variant should be an object with 'style' and 'summary' fields.
+Requested style for all variants: ${input.summaryStyle || 'professional'} (but make them distinct).
 
 Style Guidelines (MANDATORY):
 - 'short': 1-2 powerful sentences. Extremely concise and punchy.
@@ -307,9 +365,11 @@ ${researchBrief || '(none available)'}
 Role playbook:
 ${rolePlaybook || '(none available)'}`,
             output: { schema: SummaryVariantsSchema },
-          }, fallbackWritingModel || undefined);
+          }, { category: 'cvWriting' });
           suggestions = response.output?.summaryVariants;
-          enhancedContent = response.output?.summaryVariants?.[0];
+          enhancedContent = typeof response.output?.summaryVariants?.[0] === 'object' 
+            ? response.output?.summaryVariants?.[0].summary 
+            : response.output?.summaryVariants?.[0];
           break;
         }
         case 'suggest_role_bullets': {
@@ -322,17 +382,17 @@ ${rolePlaybook || '(none available)'}`,
           model: researchModel,
           config: { temperature: 0.25 },
           system: `You are an elite Resume Strategist and Career Intelligence Expert who writes hyper-specific, role-tailored resume bullet points.
-Your goal is to generate high-impact bullet points that sound like they come from a top 1% professional who actually held this position at this specific company.
+Your goal is to generate high-impact bullet points that sound authentic, human, and expert — as if they were written by a top 1% professional reflecting on real accomplishments.
 
 STRICT GUIDELINES:
-1. SPECIFICITY OVER GENERALISM: Do NOT write vague bullets like "managed teams", "improved processes", or "collaborated with stakeholders". Use company context to infer the real environment.
-2. COMPANY CONTEXT: If a company name is provided, consider its industry, scale, and typical technology stack when crafting bullets. A startup's bullets ≠ an enterprise's bullets.
-3. CAR/STAR METHOD: Context → Action → Result. Start every bullet with a strong past-tense action verb.
-4. IMPROVE ON EXISTING: If the user already has a description for this role, treat it as a baseline — keep what's authentic, elevate the language, and inject missing impact or metrics.
-5. INDUSTRY VERNACULAR: Inject real tools, platforms, and frameworks appropriate to this role at this type of company.
-6. QUANTIFIABLE PLACEHOLDERS: Use '[X]%', '£[X]k', 'across [N] teams' as calibrated placeholders where metrics are inferred but unknown.
-7. DIVERSE ANGLES: Cover distinct professional dimensions — delivery, technical depth, stakeholder/leadership, process improvement, measurable business impact.
-8. NO DUPLICATES: Never start two bullets with the same verb or cover the same theme.`,
+1. PLAIN ENGLISH ONLY: Strictly avoid robotic "corporate buzzwords" such as "Spearheaded", "Leveraged", "Pioneered", "Orchestrated", "Utilized", "Empowered", "Facilitated", or "Synergized". These are red flags for AI-generated content. Use simple, direct, human verbs like "Led", "Built", "Managed", "Improved", "Run", "Created", or "Handled".
+2. AUTHENTICITY OVER ARCHETYPES: Prioritize sounding like a real person reflecting on their job. Use a sophisticated but clear professional voice without being overly flowery.
+3. COMPANY & ROLE PRECISION: If a company name is provided, tailor the bullets to that company's specific type. Use the 'Live market signals' to inject real-world context.
+4. SELECTIVE METRICS: No forced percentages. Only include numbers if they provide genuine proof of impact.
+5. NARRATIVE WEIGHT: Focus on the "HOW" and "WHY". Describe the complexity of a problem or the specific strategic approach taken.
+6. CAR/STAR METHOD: Context → Action → Result. Start every bullet with a strong but SIMPLE action verb.
+7. DIVERSE ANGLES: Ensure the set of bullets covers Technical expertise, Stakeholder Management, and Business Impact.
+8. NO DUPLICATES: Every bullet must tell a unique story.`,
           prompt: `Target role title: ${input.targetContent}
 
 ${input.additionalContext ? `Role context from the CV (use this to ensure bullets are grounded in this person's real experience):\n${input.additionalContext}\n` : ''}
@@ -354,15 +414,39 @@ ${liveRoleSignals || '(none available)'}
 TASK: Generate exactly 5 highly specific, high-impact bullet points for someone who held the role of "${input.targetContent}"${input.additionalContext?.includes('Company:') ? ` at ${input.additionalContext.split('\n')[0].replace('Company: ', '')}` : ''}.
 Each bullet must begin with a strong past-tense action verb and reflect the real scope of this specific role in this specific context.`,
               output: { schema: RoleBulletsSchema },
-            }, fallbackResearchModel || undefined);
+            }, { category: 'cvWriting' });
 
-            const bullets = response.output?.bullets || [];
+            const rawBullets: unknown[] = response.output?.bullets || [];
+            const bullets = normalizeSuggestions(rawBullets);
             suggestions = bullets;
             enhancedContent = bullets.map((b: string) => `- ${b}`).join('\n');
           } catch (err) {
             console.error('suggestRoleBulletsPrompt error:', err);
             throw err;
           }
+          break;
+        }
+        case 'suggest_interests': {
+      const response = await generateWithFallback({
+        model: writingModel,
+        config: { temperature: 0.6 },
+        system: `You are a Career Character Coach who suggests authentic hobbies and interests that show personality, leadership, or unique technical character.
+        
+        RULES:
+        1. AVOID CLICHÉS: Don't just say "Reading" or "Traveling". Suggest specific things like "Ultra-marathon running", "Chess strategy", "Post-process photography", or "Vintage hardware restoration".
+        2. PERSONALITY: Suggest items that subtly hint at soft skills (e.g., Team sports for teamwork, Strategy games for logic).
+        3. DIVERSITY: Provide 8-10 varied options ranging from active, creative, to intellectual.`,
+        prompt: `Suggest hobbies and interests based on this profile:
+${input.currentCvContent || '(not provided)'}
+
+Job research context (for subtle culture fit):
+${researchBrief || '(none available)'}
+
+Role playbook:
+${rolePlaybook || '(none available)'}`,
+            output: { schema: SuggestedInterestsSchema },
+          }, { category: 'cvWriting' });
+          suggestions = normalizeSuggestions(response.output?.suggestedInterests || []);
           break;
         }
     default:

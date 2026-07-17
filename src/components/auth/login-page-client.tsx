@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { ArrowRight, Loader2, Lock, Mail, UserCircle } from "lucide-react";
 import { collection, doc, limit, query } from "firebase/firestore";
 import { useAuth, useCollection, useDoc, useFirestore, useMemoFirebase, useUser } from "@/firebase";
@@ -10,6 +10,7 @@ import {
   initiateAnonymousSignIn,
   initiateEmailSignIn,
   initiateGoogleSignIn,
+  consumeGoogleRedirectResult,
 } from "@/firebase/non-blocking-login";
 import { useToast } from "@/hooks/use-toast";
 import { AuthShell } from "@/components/auth/auth-shell";
@@ -18,12 +19,14 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { getPostAuthDestination, upsertUserProfile } from "@/lib/user-profile";
+import { clearAuthIntent, getIntentDestination, loadAuthIntent, readAuthIntent, saveAuthIntent } from "@/lib/auth-intent";
 
 export default function LoginPageClient() {
   const auth = useAuth();
   const db = useFirestore();
   const { user, isUserLoading, uid } = useUser();
   const router = useRouter();
+  const searchParams = useSearchParams();
   const { toast } = useToast();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -44,10 +47,44 @@ export default function LoginPageClient() {
   const { data: resumes, isLoading: isResumesLoading } = useCollection(resumesQuery);
 
   useEffect(() => {
-    if (user && !isUserLoading) {
-      router.replace("/dashboard");
+    if (searchParams) saveAuthIntent(readAuthIntent(searchParams));
+  }, [searchParams]);
+
+  useEffect(() => {
+    // Wait for the Firestore profile + a quick existence check on resumes
+    // before redirecting, so we can honour onboardingComplete and skip
+    // the visible dashboard→onboarding bounce for fresh users.
+    if (!user || isUserLoading || isProfileLoading || isResumesLoading) return;
+
+    const hasWorkspaceData = Array.isArray(resumes) && resumes.length > 0;
+    const destination = getIntentDestination(loadAuthIntent(), hasWorkspaceData);
+    if (destination) {
+      clearAuthIntent();
+      router.replace(destination);
+      return;
     }
-  }, [user, isUserLoading, router]);
+
+    router.replace(getPostAuthDestination(profile as any, hasWorkspaceData));
+  }, [user, isUserLoading, isProfileLoading, isResumesLoading, profile, resumes, router]);
+
+  // If the user just returned from a Google redirect sign-in (mobile or
+  // popup-blocked fallback), pick up the credential and upsert their
+  // Firestore profile. No-op when there's no pending redirect.
+  useEffect(() => {
+    if (!auth || !db) return;
+    let cancelled = false;
+    consumeGoogleRedirectResult(auth, db).catch((error: any) => {
+      if (cancelled) return;
+      toast({
+        variant: "destructive",
+        title: "Google sign-in failed",
+        description: error.message || "We couldn't complete Google authentication right now.",
+      });
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [auth, db, toast]);
 
   const handleEmailLogin = async (event: React.FormEvent) => {
     event.preventDefault();
@@ -55,13 +92,13 @@ export default function LoginPageClient() {
 
     try {
       await initiateEmailSignIn(auth, email, password);
-    } catch (error: any) {
+      // On success the useEffect above redirects once profile + resumes load.
+      // Leave isLoggingIn=true so the button stays in its loading state
+      // through the navigation.
+    } catch {
+      // initiateEmailSignIn already showed a friendly toast for known
+      // Firebase error codes; don't double-toast here.
       setIsLoggingIn(false);
-      toast({
-        variant: "destructive",
-        title: "Unable to sign in",
-        description: error.message || "Double-check your email and password, then try again.",
-      });
     }
   };
 
@@ -81,16 +118,23 @@ export default function LoginPageClient() {
           photoURL: result.user.photoURL,
           emailVerified: result.user.emailVerified,
         });
+        // useEffect handles routing; keep isLoggingIn=true through redirect.
       } else {
+        // User closed the popup or we kicked off a redirect flow.
         setIsLoggingIn(false);
       }
     } catch (error: any) {
       setIsLoggingIn(false);
-      toast({
-        variant: "destructive",
-        title: "Google sign-in failed",
-        description: error.message || "We couldn't complete Google authentication right now.",
-      });
+      // initiateGoogleSignIn toasts most errors itself; surface the one it
+      // intentionally throws clean (unauthorized-domain) so the user sees a
+      // helpful message rather than nothing.
+      if (error?.code === "auth/unauthorized-domain") {
+        toast({
+          variant: "destructive",
+          title: "Domain not authorized",
+          description: error.message,
+        });
+      }
     }
   };
 
@@ -106,13 +150,13 @@ export default function LoginPageClient() {
   return (
     <AuthShell
       title="Welcome back"
-      description="Resume edits, ATS insights, job tracking, and billing stay in sync here, so you can pick up where you left off."
+      description="CV edits, ATS insights, job tracking, and billing stay in sync here, so you can pick up where you left off."
       supportingTitle="Step back into a sharper job search flow."
-      supportingCopy="Everything in AI Career Guide is designed to help you move from resume draft to interview pipeline with less friction and more confidence."
+      supportingCopy="Everything in AI Career Guide is designed to help you move from CV draft to interview pipeline with less friction and more confidence."
       highlights={[
         {
-          title: "Resume edits stay synced",
-          description: "Open your latest resume, jump into the editor, and continue from the last autosaved state.",
+          title: "CV edits stay synced",
+          description: "Open your latest CV, jump into the editor, and continue from the last autosaved state.",
         },
         {
           title: "ATS guidance is ready",
@@ -194,13 +238,6 @@ export default function LoginPageClient() {
       <div className="space-y-3">
         <GoogleSignInButton onClick={handleGoogleLogin} isLoading={isLoggingIn} />
       </div>
-
-      <p className="mt-6 text-center text-[0.8rem] leading-relaxed text-muted-foreground">
-        By signing in, you agree to our{" "}
-        <Link href="/terms" className="font-medium text-primary hover:underline">Terms of Service</Link>
-        {" "}and{" "}
-        <Link href="/privacy" className="font-medium text-primary hover:underline">Privacy Policy</Link>.
-      </p>
     </AuthShell>
   );
 }

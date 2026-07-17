@@ -162,6 +162,103 @@ function tightenSectionPlacement(data: ResumeData): ResumeData {
   };
 }
 
+/**
+ * Industrial Data Normalization
+ * ----------------------------
+ * Fixes obvious structural errors before the reasoning model sees them.
+ */
+function normalizeExtractedData(data: ResumeData): ResumeData {
+  const normalized = { ...data };
+
+  // 1. Clean Summary (Remove section headers)
+  if (normalized.summary?.toLowerCase().includes("professional summary")) {
+    normalized.summary = normalized.summary.replace(/professional summary/i, "").trim();
+  }
+
+  // 2. Clean Work Experience Bleed
+  normalized.workExperience = normalized.workExperience?.map(exp => {
+    let title = exp.title || "";
+    let description = exp.description || [];
+
+    // If title contains multiple lines or bullet points, it's likely a bleed
+    if (title.includes("\n") || title.includes("•") || title.length > 100) {
+      const lines = title.split(/\n|•/).map(l => l.trim()).filter(Boolean);
+      title = lines[0];
+      description = [...lines.slice(1), ...description];
+    }
+
+    return { ...exp, title, description };
+  });
+
+  // 3. Dedup Skills
+  if (normalized.skills) {
+    normalized.skills = Array.from(new Set(normalized.skills.map(s => s.trim()))).filter(s => s.length > 1);
+  }
+
+  return normalized;
+}
+
+/**
+ * Institutional Refinement Pass
+ * ----------------------------
+ * Uses a reasoning model to perform a final 'Self-Correction' pass.
+ */
+async function refineExtractedData(
+  candidate: ResumeData,
+  rawText: string
+): Promise<{ data: ResumeData; corrections: string[]; sourceLanguage?: string; isTranslated?: boolean }> {
+  const ai = getAi();
+  const corrections: string[] = [];
+
+  // Step 0: Heuristic cleanup
+  const prepared = normalizeExtractedData(candidate);
+
+  try {
+    const res = await ai.generate({
+      model: reasoningGeminiModel,
+      system: `You are a Senior CV Verification Agent. Your task is to audit and REPAIR an extracted resume JSON against its source text.
+      
+      COMMON ERRORS TO FIX:
+      - Titles: Must be short (e.g. "Senior Dev"). If you see bullet points or multi-line text in a title, move it to the description.
+      - Dates: Ensure dates match the company/degree.
+      - Location: If it looks like a section header (e.g. "Professional Profile"), clear it.
+      - Descriptions: Ensure they are an array of strings.
+      - INSTITUTIONAL STANDARD: Detect the language of the source text. If it is NOT English, you MUST translate the extracted JSON content into English while preserving professional terminology and context.
+      
+      Return the REPAIRED and TRANSLATED (if necessary) JSON following the ResumeDataSchema.`,
+      prompt: `Audit this extracted JSON:
+      
+      ${JSON.stringify(prepared, null, 2)}
+      
+      Against the source text:
+      
+      ${rawText.slice(0, 30000)}`,
+      output: { 
+        schema: z.object({
+          data: ResumeDataSchema,
+          sourceLanguage: z.string().describe("Detected language of source text (e.g. 'Spanish', 'French', 'English')"),
+          isTranslated: z.boolean().describe("True if content was translated to English")
+        }) 
+      },
+    });
+
+    if (res.output) {
+      const { data: refined, sourceLanguage, isTranslated } = res.output as any;
+      
+      // Calculate high-level diff for logs
+      if ((refined.workExperience?.length || 0) !== (candidate.workExperience?.length || 0)) {
+        corrections.push(`Adjusted experience count from ${candidate.workExperience?.length} to ${refined.workExperience?.length}`);
+      }
+      
+      return { data: refined, corrections, sourceLanguage, isTranslated };
+    }
+  } catch (error) {
+    console.warn("[RefinementPass] Refinement failed, returning original candidate.", error);
+  }
+
+  return { data: candidate, corrections };
+}
+
 function mergeLineArrays(left: string[] | undefined, right: string[] | undefined) {
   return uniqueStrings([...(left || []), ...(right || [])]);
 }
@@ -447,8 +544,9 @@ CRITICAL RULES:
 2. Location: Should ONLY be the city, state, or country (e.g., "London, UK", "New York, NY"). 
    - NEVER include section headers (e.g., "Personal Statement", "About Me", "Profile") in the location field.
    - If no location is explicitly stated, leave it empty.
-   - NEVER include phone numbers, emails, or zip codes in the location field.
-3. Job Titles: MUST be short (e.g., "Software Engineer"). Do NOT place job responsibilities or bullet points inside the job title. Write responsibilities as a list of strings in the 'description' array.` },
+3. Job Titles: MUST be short (e.g., "Software Engineer"). Do NOT place job responsibilities or bullet points inside the job title. Write responsibilities as a list of strings in the 'description' array.
+4. Entity Pairing: Ensure dates and locations are accurately associated with their respective companies or schools.
+5. INSTITUTIONAL STANDARD: If the document is not in English, extract and translate the data into English.` },
           { media: { url: base64Data, contentType: cvMimeType } }
         ],
         output: { schema: ResumeDataSchema }
@@ -477,6 +575,7 @@ CRITICAL RULES:
 CRITICAL: 
 - Location: ONLY city/state/country. NEVER include headers (e.g. "Personal Statement") or contact info. If not found, leave empty.
 - Job Title: Short role name ONLY.
+- TRANSLATION: If the text is not English, output English.
 Segment: ${segment}`,
               output: { schema: ResumeDataSchema }
             });
@@ -527,7 +626,7 @@ Segment: ${segment}`,
     }
 
     const cleanedValues = cleanParsedData(mapped);
-    const normalizedResumeData = tightenSectionPlacement({
+    let normalizedResumeData = tightenSectionPlacement({
       ...best.data,
       personalDetails: {
         ...best.data.personalDetails,
@@ -538,6 +637,14 @@ Segment: ${segment}`,
       },
       summary: cleanedValues.summary,
     });
+
+    // --- NEW: Institutional Refinement Pass ---
+    addLog('REFINE', 'Activating Self-Correction Refinement Pass...');
+    const { data: refinedData, corrections, sourceLanguage, isTranslated } = await refineExtractedData(normalizedResumeData, effectiveDoc.rawText);
+    normalizedResumeData = refinedData;
+    if (corrections.length > 0 || isTranslated) {
+      addLog('REFINE', 'Refinement successful.', { corrections, sourceLanguage, isTranslated });
+    }
 
     const checks = [
       { key: 'name', val: normalizedResumeData.personalDetails?.name, weight: 0.2 },
@@ -568,7 +675,9 @@ Segment: ${segment}`,
         isWeak: totalConfidence < 0.5,
         jobId,
         strategyUsed: best.method,
-        rawTextLength: effectiveDoc.rawText.length
+        rawTextLength: effectiveDoc.rawText.length,
+        sourceLanguage,
+        isTranslated
       }
     };
 

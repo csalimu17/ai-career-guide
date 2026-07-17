@@ -5,10 +5,9 @@
  * and offers actionable improvement suggestions.
  */
 
-import { getAi } from '@/ai/genkit';
 import { generateWithFallback } from '@/ai/generate-helper';
 import { buildJobResearchContext, formatJobResearchContext } from '@/ai/job-research';
-import { getFallbackModels, getGeminiModel } from '@/ai/model-router';
+import { getGeminiModel } from '@/ai/model-router';
 import { z } from 'zod';
 
 const AtsOptimizationScoringInputSchema = z.object({
@@ -96,13 +95,10 @@ const AtsOptimizationScoringOutputSchema = z.object({
 export type AtsOptimizationScoringOutput = z.infer<typeof AtsOptimizationScoringOutputSchema>;
 
 export async function atsOptimizationScoring(input: AtsOptimizationScoringInput): Promise<AtsOptimizationScoringOutput> {
-  const ai = getAi();
-  
   const jobResearchContext = await buildJobResearchContext({
     jobDescription: input.jobDescription,
   });
       const model = await getGeminiModel('atsAnalysis');
-      const fallbackModels = await getFallbackModels('atsAnalysis');
 
       const response = await generateWithFallback({
         model,
@@ -133,6 +129,6 @@ Output must strictly adhere to the provided schema.`,
 
         Ensure the 'headline' is professional and summary-like (e.g., "Strong technical alignment with experience gaps in leadership").`,
         output: { schema: AtsOptimizationScoringOutputSchema },
-      }, fallbackModels);
+      });
   return response.output!;
 }

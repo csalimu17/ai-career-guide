@@ -48,41 +48,41 @@ export function PhotoUpload({
   }
 
   return (
-    <div className="flex items-center gap-4">
-      <div className="relative group">
-        <Avatar className="h-20 w-20 border-2 border-slate-100 shadow-sm transition-all duration-300 group-hover:border-indigo-100">
+    <div className="flex flex-col gap-4 rounded-2xl border border-slate-100 bg-white p-4 shadow-sm min-[380px]:flex-row min-[380px]:items-center min-[380px]:border-0 min-[380px]:p-0 min-[380px]:shadow-none">
+      <div className="group relative flex items-center gap-3 min-[380px]:block">
+        <Avatar className="h-16 w-16 border-2 border-slate-100 shadow-sm transition-all duration-300 group-hover:border-indigo-100 min-[380px]:h-20 min-[380px]:w-20">
           {photoUrl ? (
             <AvatarImage src={photoUrl} alt="Profile Photo" className="object-cover" />
           ) : (
             <AvatarFallback className="bg-slate-50 text-slate-300">
-              <User className="h-10 w-10" />
+              <User className="h-8 w-8 min-[380px]:h-10 min-[380px]:w-10" />
             </AvatarFallback>
           )}
         </Avatar>
         
         <button
           onClick={handleUploadClick}
-          className="absolute inset-0 flex items-center justify-center bg-black/40 text-white rounded-full opacity-0 group-hover:opacity-100 transition-opacity duration-300 cursor-pointer"
+          className="absolute left-0 top-0 flex h-16 w-16 cursor-pointer items-center justify-center rounded-full bg-black/40 text-white opacity-0 transition-opacity duration-300 group-hover:opacity-100 min-[380px]:inset-0 min-[380px]:h-auto min-[380px]:w-auto"
         >
-          <Camera className="h-6 w-6" />
+          <Camera className="h-5 w-5 min-[380px]:h-6 min-[380px]:w-6" />
         </button>
         
         {isUploading && (
-          <div className="absolute inset-0 flex items-center justify-center bg-white/60 rounded-full z-10">
-            <Loader2 className="h-6 w-6 animate-spin text-indigo-500" />
+          <div className="absolute left-0 top-0 z-10 flex h-16 w-16 items-center justify-center rounded-full bg-white/60 min-[380px]:inset-0 min-[380px]:h-auto min-[380px]:w-auto">
+            <Loader2 className="h-5 w-5 animate-spin text-indigo-500 min-[380px]:h-6 min-[380px]:w-6" />
           </div>
         )}
       </div>
 
-      <div className="flex flex-col gap-1.5">
-        <h4 className="text-sm font-semibold text-slate-800">Profile Photo</h4>
-        <p className="text-[12px] text-slate-500 mb-2">Professional photos increase visibility</p>
-        <div className="flex gap-2">
+      <div className="flex min-w-0 flex-1 flex-col gap-1.5">
+        <h4 className="text-sm font-bold text-slate-800">Profile Photo</h4>
+        <p className="mb-1 text-[12px] leading-relaxed text-slate-500">Professional photos increase visibility</p>
+        <div className="flex flex-wrap gap-2">
           <Button
             variant="outline"
             size="sm"
             onClick={handleUploadClick}
-            className="h-8 px-3 rounded-lg text-xs font-semibold border-[#edf1f8] hover:bg-slate-50"
+            className="h-8 rounded-lg border-[#edf1f8] px-3 text-xs font-semibold hover:bg-slate-50"
           >
             {photoUrl ? "Change Photo" : "Upload Photo"}
           </Button>
@@ -108,7 +108,9 @@ export function PhotoUpload({
       />
 
       <Dialog open={isCropping} onOpenChange={setIsCropping}>
-        <DialogContent className="sm:max-w-[500px] p-0 overflow-hidden bg-white border-none shadow-2xl">
+        {/* max-h + overflow-y-auto so the cropper + footer fit a 375x667 phone.
+            Cropper itself uses clamp() so it shrinks on small viewports. */}
+        <DialogContent className="sm:max-w-[500px] p-0 overflow-hidden bg-white border-none shadow-2xl max-h-[90dvh] overflow-y-auto">
           <DialogHeader className="p-6 pb-0">
             <DialogTitle className="text-xl font-bold text-slate-800 flex items-center gap-2">
               <div className="h-8 w-8 rounded-lg bg-indigo-50 flex items-center justify-center">
@@ -117,8 +119,8 @@ export function PhotoUpload({
               Crop Your Photo
             </DialogTitle>
           </DialogHeader>
-          
-          <div className="relative h-[350px] w-full bg-slate-100 mt-6">
+
+          <div className="relative h-[clamp(220px,40dvh,350px)] w-full bg-slate-100 mt-6">
             {cropImage && (
               <Cropper
                 image={cropImage}

@@ -19,12 +19,13 @@ export function RichTextRenderer({ value, className, compact = false }: RichText
   return (
     <div
       className={cn(
-        "rich-text-renderer text-[0.9em] text-slate-700",
-        "[&_p]:mb-3 [&_p:last-child]:mb-0 [&_p]:leading-relaxed [&_p]:[break-inside:avoid]",
-        "[&_ul]:mb-3 [&_ul]:list-disc [&_ul]:space-y-1.5 [&_ul]:pl-5",
-        "[&_ol]:mb-3 [&_ol]:list-decimal [&_ol]:space-y-1.5 [&_ol]:pl-5",
-        "[&_li]:leading-relaxed [&_li]:[break-inside:avoid] [&_strong]:font-bold [&_em]:italic [&_u]:underline [&_u]:underline-offset-[0.18em] [&_u]:[text-decoration-thickness:1px] [&_u]:[text-decoration-skip-ink:auto]",
-        compact && "[&_p]:mb-1.5 [&_ul]:mb-1.5 [&_ol]:mb-1.5 [&_ul]:space-y-1 [&_ol]:space-y-1",
+        "rich-text-renderer text-[0.9em] text-slate-700 break-words w-full max-w-full",
+        !compact && "overflow-hidden",
+        "[&_p]:mb-3 [&_p:last-child]:mb-0 [&_p]:leading-relaxed",
+        "[&_ul]:mb-3 [&_ul:last-child]:mb-0 [&_ul]:list-disc [&_ul:not(:last-child)]:mb-4 [&_ul]:space-y-1.5 [&_ul]:pl-5",
+        "[&_ol]:mb-3 [&_ol:last-child]:mb-0 [&_ol]:list-decimal [&_ol]:space-y-1.5 [&_ol]:pl-5",
+        "[&_li]:leading-relaxed [&_strong]:font-bold [&_em]:italic [&_u]:underline [&_u]:underline-offset-[0.18em] [&_u]:[text-decoration-thickness:1px] [&_u]:[text-decoration-skip-ink:auto]",
+        compact && "[&_p]:mb-1.5 [&_p]:leading-[1.4] [&_li]:leading-[1.4] [&_ul]:mb-1.5 [&_ol]:mb-1.5 [&_ul]:space-y-0.5 [&_ol]:space-y-0.5",
         className
       )}
       dangerouslySetInnerHTML={{ __html: html }}

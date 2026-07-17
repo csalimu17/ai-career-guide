@@ -1,11 +1,8 @@
 import type { Metadata, Viewport } from "next";
-import Script from "next/script";
 import { GoogleAnalytics } from "@next/third-parties/google";
 import { Manrope, Plus_Jakarta_Sans, Sora } from "next/font/google";
 import "./globals.css";
-import { FirebaseClientProvider } from "@/firebase/client-provider";
-import { ImpersonationBanner } from "@/components/admin/impersonation-banner";
-import { Toaster } from "@/components/ui/toaster";
+import { SiteStructuredData } from "@/components/structured-data/site-structured-data";
 import { defaultKeywords, siteConfig } from "@/lib/site";
 
 export const metadata: Metadata = {
@@ -28,6 +25,16 @@ export const metadata: Metadata = {
   publisher: siteConfig.name,
   referrer: "origin-when-cross-origin",
   category: "business",
+  alternates: {
+    canonical: siteConfig.url,
+    languages: {
+      "en-GB": siteConfig.url,
+      "x-default": siteConfig.url,
+    },
+    types: {
+      "application/rss+xml": `${siteConfig.url}/feed.xml`,
+    },
+  },
   openGraph: {
     type: "website",
     url: siteConfig.url,
@@ -64,8 +71,11 @@ export const metadata: Metadata = {
 };
 
 export const viewport: Viewport = {
-  themeColor: "#6d58f6",
+  themeColor: "#553cff",
   colorScheme: "light",
+  width: "device-width",
+  initialScale: 1,
+  viewportFit: "cover",
 };
 
 const manrope = Manrope({
@@ -89,17 +99,13 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" suppressHydrationWarning>
+    <html lang="en-GB" suppressHydrationWarning>
       <body
         className={`${plusJakartaSans.variable} ${manrope.variable} ${sora.variable} bg-background font-body text-foreground antialiased`}
         suppressHydrationWarning
       >
-        <FirebaseClientProvider>
-          <ImpersonationBanner />
-          {children}
-          <Toaster />
-        </FirebaseClientProvider>
-        <Script src="/marketing-bot.js" strategy="afterInteractive" />
+        <SiteStructuredData />
+        {children}
         {process.env.NEXT_PUBLIC_GA_ID && (
           <GoogleAnalytics gaId={process.env.NEXT_PUBLIC_GA_ID} />
         )}

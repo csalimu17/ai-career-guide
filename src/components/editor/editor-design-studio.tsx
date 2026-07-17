@@ -303,23 +303,27 @@ export function EditorDesignStudio({
                   <button
                     key={s.value}
                     onClick={() => onUpdateStyle("primaryColor", s.value)}
+                    aria-label={`Set primary color to ${s.label}`}
+                    // Touch target ~44px on mobile via padding-wrapped hit area;
+                    // visual swatch stays a comfortable size for the design.
                     className={cn(
-                      "h-7 w-7 rounded-full border-2 transition-transform hover:scale-110",
+                      "h-11 w-11 sm:h-9 sm:w-9 rounded-full border-2 transition-transform hover:scale-110",
                       selectedColor === s.value ? "border-slate-900" : "border-white shadow-sm"
                     )}
                     style={{ backgroundColor: s.value }}
                     title={s.label}
                   />
                 ))}
-                <div className="relative h-7 w-7 group">
+                <div className="relative h-11 w-11 sm:h-9 sm:w-9 group">
                    <input
                     type="color"
                     value={selectedColor}
                     onChange={(e) => onUpdateStyle("primaryColor", e.target.value)}
+                    aria-label="Choose custom primary color"
                     className="absolute inset-0 h-full w-full opacity-0 cursor-pointer z-10"
                   />
                   <div className="h-full w-full rounded-full border-2 border-dashed border-slate-300 flex items-center justify-center bg-white group-hover:bg-slate-50 transition-colors">
-                    <Paintbrush2 className="h-3 w-3 text-slate-400" />
+                    <Paintbrush2 className="h-4 w-4 text-slate-400" />
                   </div>
                 </div>
               </div>

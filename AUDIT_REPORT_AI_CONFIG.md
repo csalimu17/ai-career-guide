@@ -270,15 +270,15 @@ If a complete failover were triggered today:
 
 ### .env (Primary)
 ```
-GEMINI_API_KEY=AIzaSyBAMxuJy2kp3xh3x9DJzzA3uL0F7fs_Po0
-GOOGLE_API_KEY=AIzaSyBAMxuJy2kp3xh3x9DJzzA3uL0F7fs_Po0
+GEMINI_API_KEY=<redacted-google-api-key>
+GOOGLE_API_KEY=<redacted-google-api-key>
 ```
 
 ### .env.local (Development)
 ```
 ADZUNA_APP_ID=49b7fcf9
-ADZUNA_APP_KEY=8b4ad87ce14007d187615f3237c20270
-REED_API_KEY=5f9f3771-9991-4b52-bdb9-0c82b8926746
+ADZUNA_APP_KEY=<redacted-adzuna-key>
+REED_API_KEY=<redacted-reed-api-key>
 ```
 
 ### Missing Configuration

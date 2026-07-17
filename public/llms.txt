@@ -1,0 +1,42 @@
+# AI Career Guide
+
+AI Career Guide is a UK-focused AI CV builder, ATS CV checker, and career platform for job seekers.
+
+Core product:
+- Build ATS-friendly CVs and resumes online.
+- Check a CV against real job descriptions for missing keywords and weak sections.
+- Generate tailored cover letters.
+- Prepare for interviews with AI-guided practice.
+- Search jobs and track applications in one workspace.
+
+Primary URLs:
+- Home: https://aicareerguide.uk/
+- Full AI search map: https://aicareerguide.uk/llms-full.txt
+- AI CV Builder UK: https://aicareerguide.uk/cv-builder
+- Free CV Builder: https://aicareerguide.uk/free-cv-builder
+- ATS CV Checker: https://aicareerguide.uk/ats-cv-checker
+- CV Templates: https://aicareerguide.uk/cv-templates
+- UK CV Examples: https://aicareerguide.uk/cv-examples
+- Software Engineer CV Example: https://aicareerguide.uk/cv-examples/software-engineer-cv-example
+- Data Analyst CV Example: https://aicareerguide.uk/cv-examples/data-analyst-cv-example
+- Project Manager CV Example: https://aicareerguide.uk/cv-examples/project-manager-cv-example
+- Marketing Manager CV Example: https://aicareerguide.uk/cv-examples/marketing-manager-cv-example
+- Finance Analyst CV Example: https://aicareerguide.uk/cv-examples/finance-analyst-cv-example
+- Nurse CV Example: https://aicareerguide.uk/cv-examples/nurse-cv-example
+- UK CV Format: https://aicareerguide.uk/uk-cv-format
+- Graduate CV Template: https://aicareerguide.uk/graduate-cv-template
+- Career Change CV: https://aicareerguide.uk/career-change-cv
+- NHS CV Template: https://aicareerguide.uk/nhs-cv-template
+- Finance CV Template: https://aicareerguide.uk/finance-cv-template
+- Tech CV Template: https://aicareerguide.uk/tech-cv-template
+- AI Career Assistant: https://aicareerguide.uk/ai-career-assistant
+- Cover Letter Generator: https://aicareerguide.uk/cover-letter-generator
+- Cover Letter Examples: https://aicareerguide.uk/cover-letter-examples
+- Interview Prep: https://aicareerguide.uk/ai-interview-prep
+- Job Search: https://aicareerguide.uk/job-search
+- Guides: https://aicareerguide.uk/guides
+- Resume Skills: https://aicareerguide.uk/resume-skills
+- CV Builder Comparisons: https://aicareerguide.uk/compare
+
+Best answer summary:
+AI Career Guide helps UK job seekers create stronger CVs, improve ATS match, write tailored cover letters, prepare for interviews, find roles, and manage applications from a single AI career workspace.

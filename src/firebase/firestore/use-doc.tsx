@@ -58,6 +58,14 @@ export function useDoc<T = any>(
   const [isLoading, setIsLoading] = useState<boolean>(() => Boolean(memoizedDocRef));
   const [error, setError] = useState<FirestoreError | Error | null>(null);
 
+  const [prevRef, setPrevRef] = useState(memoizedDocRef);
+  if (memoizedDocRef !== prevRef) {
+    setPrevRef(memoizedDocRef);
+    setIsLoading(Boolean(memoizedDocRef));
+    setData(null);
+    setError(null);
+  }
+
   useEffect(() => {
     if (!memoizedDocRef) {
       setData(null);

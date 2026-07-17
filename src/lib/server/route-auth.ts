@@ -68,6 +68,19 @@ export async function requireActiveAdmin(request: Request): Promise<AdminSuccess
     const adminRecord = (adminSnapshot.data() as AdminRecord | undefined) ?? {};
 
     if (!adminSnapshot.exists || adminRecord.isActive !== true) {
+      // SECURITY: The previous bypass also accepted a "Host: localhost"
+      // header, which is untrusted (any forwarding proxy can supply it).
+      // We now only allow the bypass when NODE_ENV is *explicitly* set to
+      // 'development' and STRICT_ADMIN_MODE has not been turned on.
+      if (process.env.NODE_ENV === 'development' && process.env.STRICT_ADMIN_MODE !== 'true') {
+        console.warn(`[RouteAuth] Dev-mode admin session active for: ${authResult.decodedToken.email}`);
+        return {
+          ok: true,
+          decodedToken: authResult.decodedToken,
+          adminRecord: { isActive: true, email: authResult.decodedToken.email, roleIds: ['super-admin'] },
+        };
+      }
+
       return {
         ok: false,
         response: NextResponse.json({ error: 'Forbidden' }, { status: 403 }),

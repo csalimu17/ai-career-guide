@@ -103,6 +103,8 @@ export default function ReviewParsedDataPage() {
         content: {
           personal: {
             name: parsedData.personalDetails?.name || "",
+            // Infer professional title from first experience entry when available
+            title: parsedData.workExperience?.[0]?.title || "",
             email: parsedData.personalDetails?.email || user.email || "",
             phone: parsedData.personalDetails?.phone || "",
             location: parsedData.personalDetails?.location || "",
@@ -112,30 +114,41 @@ export default function ReviewParsedDataPage() {
           summary: plainTextToRichTextHtml(parsedData.summary || ""),
           experience: parsedData.workExperience?.map((exp: any, index: number) => ({
             id: `exp-${Date.now()}-${index}`,
-            title: exp.title,
-            company: exp.company,
-            period: `${exp.startDate} - ${exp.endDate || "Present"}`,
-            description: plainTextToRichTextHtml(exp.description?.map((line: string) => line.startsWith("-") ? line : `- ${line}`).join("\n") || ""),
+            title: exp.title || "",
+            company: exp.company || "",
+            period: [exp.startDate, exp.endDate || "Present"].filter(Boolean).join(" - "),
+            description: plainTextToRichTextHtml(
+              exp.description
+                ?.map((line: string) => (line.startsWith("-") ? line : `- ${line}`))
+                .join("\n") || ""
+            ),
           })) || [],
           education: parsedData.education?.map((edu: any, index: number) => ({
             id: `edu-${Date.now()}-${index}`,
-            degree: edu.degree,
-            institution: edu.institution,
+            degree: edu.degree || "",
+            school: edu.institution || "",       // editor uses "school", parser uses "institution"
             period: edu.graduationDate || "",
+            description: edu.description || "",
           })) || [],
           skills: parsedData.skills || [],
           languages: parsedData.languages || [],
           projects: parsedData.projects?.map((proj: any, index: number) => ({
             id: `proj-${Date.now()}-${index}`,
-            ...proj,
+            name: proj.name || "",
+            description: proj.description || "",
+            url: proj.url || "",
+            period: proj.period || "",
           })) || [],
           certifications: parsedData.certifications?.map((cert: any, index: number) => ({
             id: `cert-${Date.now()}-${index}`,
-            ...cert,
+            name: cert.name || "",
+            issuer: cert.issuer || "",
+            date: cert.date || "",
           })) || [],
           customSections: parsedData.customSections?.map((section: any, index: number) => ({
             id: `custom-${Date.now()}-${index}`,
-            ...section,
+            title: section.title || "",
+            content: section.content || "",
           })) || [],
         },
         sourceExtraction: {
@@ -171,7 +184,7 @@ export default function ReviewParsedDataPage() {
           ? "Your draft is saved and ready in the editor."
           : "Your partial draft is saved. You can finish refining it in the editor.",
       })
-      router.push(`/cv-editor?id=${resumeDoc.id}&returnTo=${encodeURIComponent("/onboarding/review")}`)
+      router.push("/dashboard")
     } catch (error) {
       console.error(error)
       toast({ variant: "destructive", title: "Error Saving", description: "Something went wrong." })
@@ -292,7 +305,7 @@ export default function ReviewParsedDataPage() {
 
       <div className="grid gap-5 lg:grid-cols-3 lg:gap-10">
         <div className="space-y-6 lg:col-span-2 lg:space-y-10">
-          <section className="space-y-4 animate-in fade-in slide-in-from-left-8 duration-700 delay-[600ms]">
+          <section className="space-y-4 animate-in fade-in slide-in-from-left-8 duration-700" style={{ animationDelay: "600ms" }}>
             <div className="flex items-center gap-3 px-2">
               <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary/10 text-primary shadow-[inner_0_0_15px_rgba(124,58,237,0.1)]">
                 <CheckCircle2 className="h-5 w-5" />
@@ -314,7 +327,7 @@ export default function ReviewParsedDataPage() {
             </Card>
           </section>
 
-          <section className="space-y-4 animate-in fade-in slide-in-from-left-8 duration-700 delay-[700ms]">
+          <section className="space-y-4 animate-in fade-in slide-in-from-left-8 duration-700" style={{ animationDelay: "700ms" }}>
             <div className="flex items-center gap-3 px-2">
               <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary/10 text-primary shadow-[inner_0_0_15px_rgba(124,58,237,0.1)]">
                 <FileText className="h-5 w-5" />
@@ -337,7 +350,7 @@ export default function ReviewParsedDataPage() {
           </section>
 
           {parsedData.customSections && parsedData.customSections.length > 0 && (
-            <section className="space-y-4 animate-in fade-in slide-in-from-left-8 duration-700 delay-[750ms]">
+            <section className="space-y-4 animate-in fade-in slide-in-from-left-8 duration-700" style={{ animationDelay: "750ms" }}>
               <div className="flex items-center gap-3 px-2">
                 <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary/10 text-primary shadow-[inner_0_0_15px_rgba(124,58,237,0.1)]">
                   <Layout className="h-5 w-5" />
@@ -362,7 +375,7 @@ export default function ReviewParsedDataPage() {
             </section>
           )}
 
-          <section className="space-y-4 animate-in fade-in slide-in-from-left-8 duration-700 delay-[800ms]">
+          <section className="space-y-4 animate-in fade-in slide-in-from-left-8 duration-700" style={{ animationDelay: "800ms" }}>
             <div className="flex items-center gap-3 px-2">
               <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary/10 text-primary shadow-[inner_0_0_15px_rgba(124,58,237,0.1)]">
                 <Briefcase className="h-5 w-5" />
@@ -436,7 +449,7 @@ export default function ReviewParsedDataPage() {
           </section>
         </div>
         <div className="space-y-8">
-          <Card className="sticky top-24 overflow-hidden rounded-[3rem] border-none bg-slate-950 bg-none text-white shadow-[0_30px_90px_-20px_rgba(0,0,0,0.6)] animate-in fade-in slide-in-from-right-8 duration-1000 delay-[900ms]">
+          <Card className="sticky top-24 overflow-hidden rounded-[3rem] border-none bg-slate-950 bg-none text-white shadow-[0_30px_90px_-20px_rgba(0,0,0,0.6)] animate-in fade-in slide-in-from-right-8 duration-1000" style={{ animationDelay: "900ms" }}>
             <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_right,rgba(255,255,255,0.15),transparent)]" />
             
             <CardHeader className="relative p-8 pb-4 md:p-10 md:pb-4">

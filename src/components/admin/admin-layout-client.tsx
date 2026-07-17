@@ -42,7 +42,7 @@ export default function AdminLayoutClient({
           <header className="sticky top-0 z-40 flex min-h-14 shrink-0 items-center justify-between gap-2 border-b border-white/80 bg-white/78 px-3 py-2.5 backdrop-blur-xl sm:min-h-16 sm:gap-3 sm:px-6 sm:py-3">
             <div className="flex min-w-0 items-center gap-2.5 sm:gap-4">
               <SidebarTrigger className="-ml-1 h-9 w-9 rounded-xl hover:bg-primary/5 sm:-ml-2 sm:h-10 sm:w-10" />
-              <HistoryButtons fallbackHref="/admin" buttonClassName="h-8 w-8 rounded-xl sm:h-9 sm:w-9" />
+              <HistoryButtons fallbackHref="/admin" buttonClassName="h-10 w-10 rounded-xl sm:h-11 sm:w-11" />
               <div className="hidden h-4 w-px bg-border sm:block" />
               <div className="flex min-w-0 items-center gap-2 rounded-full border border-primary/10 bg-primary/5 px-2.5 py-1 sm:border-none sm:bg-transparent sm:px-0 sm:py-0">
                 <ShieldCheck className="h-3.5 w-3.5 text-secondary sm:h-4 sm:w-4" />

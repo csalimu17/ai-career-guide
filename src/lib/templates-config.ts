@@ -12,6 +12,7 @@ export type ResumeSectionId =
   | "skills"
   | "certifications"
   | "languages"
+  | "interests"
   | "page-break";
 
 export type TemplateAccessTier = "free" | "pro" | "master";
@@ -20,6 +21,9 @@ export type TemplateHeadingVariant = "rule" | "eyebrow" | "serif";
 export type TemplateEntryVariant = "standard" | "accented" | "outlined";
 export type TemplateSkillVariant = "stacked" | "inline" | "compact";
 export type TemplateDensity = "compact" | "comfortable" | "relaxed";
+export type TemplatePhotoVariant = "soft-square" | "rounded-square" | "circle" | "framed";
+export type TemplateContactVariant = "text" | "chips";
+export type TemplateSidebarVariant = "plain" | "panel" | "tint";
 
 export type TemplateConfig = {
   id: string;
@@ -55,17 +59,37 @@ export type TemplateConfig = {
     subtleFill: boolean;
     headerIcon?: boolean;
     sectionDividers?: "none" | "thin" | "bold";
+    photoVariant: TemplatePhotoVariant;
+    contactVariant: TemplateContactVariant;
+    sidebarVariant?: TemplateSidebarVariant;
   };
   thumbnail: {
     scale: number;
   };
 };
 
-type TemplateDefinition = Omit<TemplateConfig, "isPremium">;
+type TemplateDefinition = Omit<TemplateConfig, "isPremium" | "design"> & {
+  design: Omit<
+    TemplateConfig["design"],
+    "photoVariant" | "contactVariant" | "sidebarVariant"
+  > &
+    Partial<
+      Pick<
+        TemplateConfig["design"],
+        "photoVariant" | "contactVariant" | "sidebarVariant"
+      >
+    >;
+};
 
 function defineTemplate(template: TemplateDefinition): TemplateConfig {
   return {
     ...template,
+    design: {
+      photoVariant: "soft-square",
+      contactVariant: "text",
+      sidebarVariant: template.layout === "two-column" ? "panel" : "plain",
+      ...template.design,
+    },
     isPremium: template.accessTier !== "free",
   };
 }
@@ -78,6 +102,7 @@ export const DEFAULT_SECTION_ORDER: ResumeSectionId[] = [
   "skills",
   "certifications",
   "languages",
+  "interests",
 ];
 
 export const TEMPLATES: TemplateConfig[] = [
@@ -93,7 +118,7 @@ export const TEMPLATES: TemplateConfig[] = [
     layout: "single-column",
     defaults: {
       primaryColor: "#1e293b",
-      fontFamily: "georgia",
+      fontFamily: "cormorant-garamond",
       fontSize: 11,
       lineHeight: 1.5,
       margins: 48,
@@ -111,6 +136,7 @@ export const TEMPLATES: TemplateConfig[] = [
       pageBorder: false,
       subtleFill: false,
       sectionDividers: "bold",
+      photoVariant: "framed",
     },
     legacyIds: ["classic-ats", "monarch-classic"],
     thumbnail: { scale: 0.38 },
@@ -125,7 +151,7 @@ export const TEMPLATES: TemplateConfig[] = [
     category: "Professional",
     layout: "single-column",
     defaults: {
-      primaryColor: "#0f172a",
+      primaryColor: "#16213a",
       fontFamily: "times-new-roman",
       fontSize: 10,
       lineHeight: 1.4,
@@ -144,6 +170,7 @@ export const TEMPLATES: TemplateConfig[] = [
       pageBorder: false,
       subtleFill: false,
       sectionDividers: "bold",
+      photoVariant: "rounded-square",
     },
     legacyIds: ["precision-ledger", "capital-serif"],
     thumbnail: { scale: 0.36 },
@@ -158,8 +185,8 @@ export const TEMPLATES: TemplateConfig[] = [
     category: "Professional",
     layout: "single-column",
     defaults: {
-      primaryColor: "#1f2937",
-      fontFamily: "cambria",
+      primaryColor: "#0f766e",
+      fontFamily: "merriweather",
       fontSize: 11,
       lineHeight: 1.6,
       margins: 52,
@@ -177,6 +204,7 @@ export const TEMPLATES: TemplateConfig[] = [
       pageBorder: true,
       subtleFill: true,
       sectionDividers: "none",
+      photoVariant: "circle",
     },
     legacyIds: ["boardroom-signature", "regent-outline"],
     thumbnail: { scale: 0.4 },
@@ -192,7 +220,7 @@ export const TEMPLATES: TemplateConfig[] = [
     layout: "single-column",
     defaults: {
       primaryColor: "#2563eb",
-      fontFamily: "inter",
+      fontFamily: "lexend",
       fontSize: 11,
       lineHeight: 1.5,
       margins: 44,
@@ -210,6 +238,8 @@ export const TEMPLATES: TemplateConfig[] = [
       pageBorder: false,
       subtleFill: false,
       sectionDividers: "thin",
+      photoVariant: "rounded-square",
+      contactVariant: "chips",
     },
     legacyIds: ["atlas-modern", "summit-strategy"],
     thumbnail: { scale: 0.38 },
@@ -226,7 +256,7 @@ export const TEMPLATES: TemplateConfig[] = [
     category: "Modern",
     layout: "two-column",
     sidebarPosition: "left",
-    sidebarSections: ["skills", "languages", "education", "certifications"],
+    sidebarSections: ["skills", "languages", "education", "certifications", "interests"],
     defaults: {
       primaryColor: "#334155",
       fontFamily: "inter",
@@ -247,6 +277,9 @@ export const TEMPLATES: TemplateConfig[] = [
       pageBorder: false,
       subtleFill: true,
       sectionDividers: "none",
+      photoVariant: "rounded-square",
+      contactVariant: "chips",
+      sidebarVariant: "tint",
     },
     legacyIds: ["modern-ats", "urban-signal"],
     thumbnail: { scale: 0.36 },
@@ -280,6 +313,7 @@ export const TEMPLATES: TemplateConfig[] = [
       pageBorder: false,
       subtleFill: false,
       sectionDividers: "bold",
+      photoVariant: "rounded-square",
     },
     legacyIds: ["slate-focus", "compact-slate"],
     thumbnail: { scale: 0.38 },
@@ -294,7 +328,7 @@ export const TEMPLATES: TemplateConfig[] = [
     category: "Modern",
     layout: "two-column",
     sidebarPosition: "right",
-    sidebarSections: ["skills", "languages", "certifications", "education"],
+    sidebarSections: ["skills", "languages", "certifications", "education", "interests"],
     defaults: {
       primaryColor: "#475569",
       fontFamily: "manrope",
@@ -315,6 +349,7 @@ export const TEMPLATES: TemplateConfig[] = [
       pageBorder: false,
       subtleFill: true,
       sectionDividers: "thin",
+      photoVariant: "circle",
     },
     legacyIds: ["nordic-minimal", "horizon-brief"],
     thumbnail: { scale: 0.38 },
@@ -329,8 +364,8 @@ export const TEMPLATES: TemplateConfig[] = [
     category: "Modern",
     layout: "single-column",
     defaults: {
-      primaryColor: "#7c3aed",
-      fontFamily: "montserrat",
+      primaryColor: "#8b5cf6",
+      fontFamily: "outfit",
       fontSize: 11,
       lineHeight: 1.5,
       margins: 48,
@@ -348,6 +383,8 @@ export const TEMPLATES: TemplateConfig[] = [
       pageBorder: false,
       subtleFill: false,
       sectionDividers: "bold",
+      photoVariant: "circle",
+      contactVariant: "chips",
     },
     legacyIds: ["studio-premier"],
     thumbnail: { scale: 0.38 },
@@ -364,7 +401,7 @@ export const TEMPLATES: TemplateConfig[] = [
     category: "Classic",
     layout: "single-column",
     defaults: {
-      primaryColor: "#431407",
+      primaryColor: "#7f1d1d",
       fontFamily: "playfair",
       fontSize: 12,
       lineHeight: 1.6,
@@ -383,6 +420,7 @@ export const TEMPLATES: TemplateConfig[] = [
       pageBorder: true,
       subtleFill: false,
       sectionDividers: "none",
+      photoVariant: "framed",
     },
     legacyIds: ["elegant-professional", "serif-balance"],
     thumbnail: { scale: 0.42 },
@@ -397,10 +435,10 @@ export const TEMPLATES: TemplateConfig[] = [
     category: "Classic",
     layout: "two-column",
     sidebarPosition: "left",
-    sidebarSections: ["skills", "languages", "education"],
+    sidebarSections: ["skills", "languages", "education", "certifications", "interests"],
     defaults: {
       primaryColor: "#111827",
-      fontFamily: "garamond",
+      fontFamily: "cormorant-garamond",
       fontSize: 11,
       lineHeight: 1.5,
       margins: 48,
@@ -418,6 +456,8 @@ export const TEMPLATES: TemplateConfig[] = [
       pageBorder: false,
       subtleFill: true,
       sectionDividers: "thin",
+      photoVariant: "framed",
+      sidebarVariant: "tint",
     },
     legacyIds: ["minimal-professional", "formal-outline"],
     thumbnail: { scale: 0.38 },
@@ -465,7 +505,7 @@ export const TEMPLATES: TemplateConfig[] = [
     category: "Classic",
     layout: "single-column",
     defaults: {
-      primaryColor: "#334155",
+      primaryColor: "#0f4c5c",
       fontFamily: "roboto",
       fontSize: 11,
       lineHeight: 1.5,
@@ -484,6 +524,7 @@ export const TEMPLATES: TemplateConfig[] = [
       pageBorder: false,
       subtleFill: true,
       sectionDividers: "thin",
+      contactVariant: "chips",
     },
     thumbnail: { scale: 0.38 },
   }),
@@ -497,8 +538,8 @@ export const TEMPLATES: TemplateConfig[] = [
     category: "Professional",
     layout: "single-column",
     defaults: {
-      primaryColor: "#334155",
-      fontFamily: "inter",
+      primaryColor: "#0f172a",
+      fontFamily: "space-grotesk",
       fontSize: 10,
       lineHeight: 1.4,
       margins: 36,
@@ -516,6 +557,8 @@ export const TEMPLATES: TemplateConfig[] = [
       pageBorder: false,
       subtleFill: false,
       sectionDividers: "thin",
+      photoVariant: "rounded-square",
+      contactVariant: "chips",
     },
     thumbnail: { scale: 0.35 },
   }),
@@ -529,10 +572,10 @@ export const TEMPLATES: TemplateConfig[] = [
     category: "Modern",
     layout: "two-column",
     sidebarPosition: "right",
-    sidebarSections: ["skills", "languages", "education"],
+    sidebarSections: ["skills", "languages", "education", "certifications", "interests"],
     defaults: {
       primaryColor: "#0d9488",
-      fontFamily: "manrope",
+      fontFamily: "lexend",
       fontSize: 11,
       lineHeight: 1.6,
       margins: 52,
@@ -550,6 +593,9 @@ export const TEMPLATES: TemplateConfig[] = [
       pageBorder: false,
       subtleFill: true,
       sectionDividers: "none",
+      photoVariant: "circle",
+      contactVariant: "chips",
+      sidebarVariant: "tint",
     },
     thumbnail: { scale: 0.4 },
   }),
@@ -563,7 +609,7 @@ export const TEMPLATES: TemplateConfig[] = [
     category: "Classic",
     layout: "single-column",
     defaults: {
-      primaryColor: "#ea580c",
+      primaryColor: "#c2410c",
       fontFamily: "montserrat",
       fontSize: 11,
       lineHeight: 1.5,
@@ -582,6 +628,8 @@ export const TEMPLATES: TemplateConfig[] = [
       pageBorder: false,
       subtleFill: false,
       sectionDividers: "thin",
+      photoVariant: "circle",
+      contactVariant: "chips",
     },
     thumbnail: { scale: 0.38 },
   }),
@@ -614,6 +662,7 @@ export const TEMPLATES: TemplateConfig[] = [
       pageBorder: false,
       subtleFill: false,
       sectionDividers: "thin",
+      photoVariant: "soft-square",
     },
     thumbnail: { scale: 0.4 },
   }),
@@ -627,9 +676,9 @@ export const TEMPLATES: TemplateConfig[] = [
     category: "Modern",
     layout: "two-column",
     sidebarPosition: "left",
-    sidebarSections: ["skills", "languages", "certifications"],
+    sidebarSections: ["skills", "languages", "certifications", "education", "interests"],
     defaults: {
-      primaryColor: "#1e40af",
+      primaryColor: "#1d4ed8",
       fontFamily: "roboto",
       fontSize: 10,
       lineHeight: 1.4,
@@ -648,6 +697,9 @@ export const TEMPLATES: TemplateConfig[] = [
       pageBorder: false,
       subtleFill: true,
       sectionDividers: "none",
+      photoVariant: "rounded-square",
+      contactVariant: "chips",
+      sidebarVariant: "tint",
     },
     thumbnail: { scale: 0.36 },
   }),
@@ -662,7 +714,7 @@ export const TEMPLATES: TemplateConfig[] = [
     layout: "single-column",
     defaults: {
       primaryColor: "#0f172a",
-      fontFamily: "inter",
+      fontFamily: "outfit",
       fontSize: 11,
       lineHeight: 1.5,
       margins: 48,
@@ -680,6 +732,8 @@ export const TEMPLATES: TemplateConfig[] = [
       pageBorder: false,
       subtleFill: false,
       sectionDividers: "thin",
+      photoVariant: "circle",
+      contactVariant: "chips",
     },
     thumbnail: { scale: 0.38 },
   }),
@@ -712,6 +766,7 @@ export const TEMPLATES: TemplateConfig[] = [
       pageBorder: false,
       subtleFill: false,
       sectionDividers: "bold",
+      photoVariant: "rounded-square",
     },
     thumbnail: { scale: 0.38 },
   }),
@@ -725,7 +780,7 @@ export const TEMPLATES: TemplateConfig[] = [
     category: "Professional",
     layout: "single-column",
     defaults: {
-      primaryColor: "#0f172a",
+      primaryColor: "#6d28d9",
       fontFamily: "montserrat",
       fontSize: 11,
       lineHeight: 1.5,
@@ -744,6 +799,8 @@ export const TEMPLATES: TemplateConfig[] = [
       pageBorder: false,
       subtleFill: true,
       sectionDividers: "bold",
+      photoVariant: "framed",
+      contactVariant: "chips",
     },
     thumbnail: { scale: 0.38 },
   }),
@@ -812,12 +869,26 @@ export function getTemplatePresetStyles(templateId?: string | null) {
 
 export function buildTemplatePreviewResume(templateId?: string | null) {
   const template = getTemplateConfig(templateId);
+  const previewPhotoByCategory: Record<TemplateConfig["category"], string> = {
+    Professional: "/paul-drury-avatar.png",
+    Modern: "/sarah-chen-avatar.png",
+    Classic: "/marcus-thorne-avatar.png",
+  };
 
   return {
     id: `preview-${template.id}`,
     name: "Template Preview",
     templateId: template.id,
-    sectionOrder: DEFAULT_SECTION_ORDER,
+    sectionOrder: [
+      "personal",
+      "summary",
+      "experience",
+      "projects",
+      "education",
+      "skills",
+      "certifications",
+      "languages",
+    ],
     styles: {
       ...getTemplatePresetStyles(template.id),
     },
@@ -830,10 +901,10 @@ export function buildTemplatePreviewResume(templateId?: string | null) {
         location: "London, UK",
         linkedin: "linkedin.com/in/jordanmorgan",
         website: "jordanmorgan.dev",
-        photoUrl: "",
+        photoUrl: previewPhotoByCategory[template.category],
       },
       summary:
-        "<p>ATS-safe resume sample showing clean hierarchy, measurable outcomes, and premium recruiter-friendly formatting.</p>",
+        "<p>Strategically minded Senior Product Analyst with over 6 years of experience in optimizing digital workflows and building high-performance product teams. Proven track record in leveraging quantitative insights to drive operational efficiency and revenue growth. Committed to creating ATS-optimized, visually compelling professional identities that resonate with recruiters in competitive corporate environments.</p>",
       experience: [
         {
           id: "exp-1",
@@ -841,7 +912,7 @@ export function buildTemplatePreviewResume(templateId?: string | null) {
           company: "Northbridge Labs",
           period: "2022 - Present",
           description:
-            "<ul><li>Improved reporting workflows and reduced manual review time by 38%.</li><li>Partnered with design and engineering to ship high-trust candidate tooling.</li><li>Created KPI dashboards used by product and leadership to guide weekly release decisions.</li></ul>",
+            "<ul><li>Improved reporting workflows and reduced manual review time by 38% through automated data pipeline integration.</li><li>Partnered with cross-functional design and engineering teams to ship high-trust candidate vetting tooling used by 500+ daily active users.</li><li>Created comprehensive KPI dashboards utilized by C-suite leadership to guide weekly release decisions and resource allocation.</li><li>Mentored junior analysts on SQL optimization and A/B testing methodologies, leading to a 15% increase in team experiment velocity.</li></ul>",
         },
         {
           id: "exp-2",
@@ -849,23 +920,31 @@ export function buildTemplatePreviewResume(templateId?: string | null) {
           company: "Horizon Studio",
           period: "2020 - 2022",
           description:
-            "<ul><li>Mapped user journeys, documented release dependencies, and streamlined launch checklists across 4 product teams.</li><li>Established quality-control steps that cut rework by 27% across recurring workflow updates.</li></ul>",
+            "<ul><li>Mapped complex user journeys, documented release dependencies, and streamlined launch checklists across 4 distinct product squads.</li><li>Established stringent quality-control steps that cut post-release rework by 27% across recurring workflow updates.</li><li>Conducted monthly competitor benchmarking reports, identifying 3 key product gaps that resulted in new feature prioritization.</li><li>Facilitated stakeholder feedback sessions, translating technical debt concerns into actionable sprint tasks.</li></ul>",
+        },
+        {
+          id: "exp-3",
+          title: "Data Analyst",
+          company: "Vertex Financial",
+          period: "2018 - 2020",
+          description:
+            "<ul><li>Analyzed large-scale customer datasets to identify behavioral patterns that informed acquisition strategy.</li><li>Automated monthly financial reporting for the treasury department, saving roughly 10 hours of manual labor per week.</li><li>Collaborated on the migration of legacy data architecture to cloud-based solutions, improving query performance by 45%.</li></ul>",
         },
       ],
       projects: [
         {
           id: "proj-1",
           name: "Resume Workflow Refresh",
-          url: "",
+          url: "jordanmorgan.dev/projects/resume-refresh",
           description:
-            "<p>Redesigned a cross-platform resume experience focused on print quality, ATS parsing, and mobile usability.</p>",
+            "<p>Redesigned a cross-platform resume experience focused on pixel-perfect print quality, ATS parsing, and optimal mobile usability for executive roles.</p>",
         },
         {
           id: "proj-2",
           name: "Template Intelligence System",
-          url: "",
+          url: "jordanmorgan.dev/projects/ai-templates",
           description:
-            "<p>Built a template-aware preview flow that highlights layout differences, typography choices, and output quality at a glance.</p>",
+            "<p>Built a template-aware preview engine that highlights layout differences, typography choices, and output quality at a glance using React and Tailwind CSS.</p>",
         },
       ],
       education: [
@@ -873,16 +952,19 @@ export function buildTemplatePreviewResume(templateId?: string | null) {
           id: "edu-1",
           degree: "BSc Business Information Systems",
           institution: "University of Manchester",
-          period: "2018",
+          period: "2014 - 2018",
         },
       ],
       skills: [
-        "Resume Strategy",
-        "Stakeholder Communication",
-        "ATS Optimization",
         "Product Analytics",
+        "Resume Strategy",
+        "Stakeholder Management",
+        "ATS Optimization",
         "Content Systems",
         "Workflow Design",
+        "SQL & Python",
+        "Tableau / Looker",
+        "Agile Methodology",
         "Editorial Quality",
       ],
       certifications: [
@@ -896,10 +978,16 @@ export function buildTemplatePreviewResume(templateId?: string | null) {
           name: "Google Analytics Certification",
           date: "2023",
         },
+        {
+          id: "cert-3",
+          name: "Advanced SQL for Data Science",
+          date: "2022",
+        },
       ],
       languages: [
         { language: "English", proficiency: "Native" },
         { language: "French", proficiency: "Professional Working" },
+        { language: "Spanish", proficiency: "Conversational" },
       ],
     },
   };

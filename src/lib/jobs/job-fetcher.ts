@@ -2,49 +2,54 @@ import { JobListingRecord } from "./model"
 import { JobFetchParams, JobApiAdapter } from "./adapter-interface"
 import { ArbeitnowAdapter } from "./adapters/arbeitnow-adapter"
 import { AdzunaAdapter } from "./adapters/adzuna-adapter"
+import { DevItJobsUkAdapter } from "./adapters/devitjobs-uk-adapter"
 import { ReedAdapter } from "./adapters/reed-adapter"
-import { IndeedAdapter } from "./adapters/indeed-adapter"
-import { LinkedInAdapter } from "./adapters/linkedin-adapter"
 import { LoopCvAdapter } from "./adapters/loopcv-adapter"
 import { SimpleCache } from "./cache"
 
 export class JobFetcher {
   private adapters: Record<string, JobApiAdapter> = {
-    indeed: new IndeedAdapter(),
-    linkedin: new LinkedInAdapter(),
     reed: new ReedAdapter(),
     adzuna: new AdzunaAdapter(),
+    devitjobs: new DevItJobsUkAdapter(),
     arbeitnow: new ArbeitnowAdapter(),
     loopcv: new LoopCvAdapter(),
   }
 
-  // Define priorities - Move key-required ones to after public ones if possible, 
-  // or keep broad coverage.
+  // The product is "UK live jobs" by default. Some feeds skew EU-wide and rarely/never include UK,
+  // so they are opt-in to avoid confusing "Success (raw)" with "0 UK results" outcomes.
+  private includeEuFeeds = process.env.JOBS_INCLUDE_EU_FEEDS === "true"
+
   private primary: JobApiAdapter[] = [
     this.adapters.adzuna,
-    this.adapters.arbeitnow,
-    this.adapters.loopcv,
+    this.adapters.devitjobs,
+    ...(this.includeEuFeeds ? [this.adapters.arbeitnow, this.adapters.loopcv] : []),
     this.adapters.reed,
-    this.adapters.indeed,
-    this.adapters.linkedin,
   ]
 
   private cache = new SimpleCache<JobListingRecord[]>()
   private detailCache = new SimpleCache<string>()
 
-  async fetchJobs(params: JobFetchParams): Promise<{ listings: JobListingRecord[]; fromCache: boolean }> {
+  async fetchJobs(params: JobFetchParams): Promise<{ listings: JobListingRecord[]; fromCache: boolean; diagnostics?: Record<string, string>; totals?: Record<string, number> }> {
+    const effectivePageSize = params.pageSize ?? 50
     // Determine effective location - only default to UK if nothing provided
-    const isGenericUk = !params.location || 
+    const isUkSearch = !params.location || 
                          params.location.toLowerCase() === "united kingdom" || 
                          params.location.toLowerCase() === "uk"
     
-    const effectiveLocation = isGenericUk ? "" : params.location
+    // Broad search handler: if query is "latest", treat as empty keyword for broad discovery
+    const effectiveKeywords = params.keywords?.toLowerCase() === "latest" ? "" : params.keywords
+
+    // Use "United Kingdom" as a stronger hint for generic APIs when no specific city is provided
+    const effectiveLocation = isUkSearch ? "United Kingdom" : params.location
     const effectiveParams = {
       ...params,
+      keywords: effectiveKeywords,
       location: effectiveLocation,
+      pageSize: effectivePageSize,
     }
 
-    const cacheKey = this.buildCacheKey(effectiveParams)
+    const cacheKey = this.buildCacheKey({ ...params, location: effectiveLocation, pageSize: effectivePageSize })
     const cached = this.cache.get(cacheKey)
     if (cached) {
       return { listings: cached, fromCache: true }
@@ -52,22 +57,46 @@ export class JobFetcher {
 
     let results: JobListingRecord[] = []
     const adapterStats: Record<string, string> = {}
+    const totalsByProvider: Record<string, number> = {}
 
     try {
       const sourcePromises = this.primary.map(async adapter => {
         try {
           const start = Date.now()
-          const data = await adapter.fetchJobs(effectiveParams)
+          
+          // Add a timeout to prevent an adapter from stalling the whole search
+          const timeoutPromise = new Promise<JobListingRecord[]>((_, reject) => 
+            setTimeout(() => reject(new Error("Timeout")), 8000)
+          )
+          
+          const fetchPromise = (typeof adapter.fetchJobsWithMeta === "function"
+            ? adapter.fetchJobsWithMeta(effectiveParams).then((meta) => {
+                if (typeof meta?.total === "number") {
+                  totalsByProvider[adapter.name] = meta.total
+                }
+                return meta?.listings || []
+              })
+            : adapter.fetchJobs(effectiveParams)) as Promise<JobListingRecord[]>
+          
+          const rawData = await Promise.race([fetchPromise, timeoutPromise]) as JobListingRecord[]
           const duration = Date.now() - start
           
-          if (data.length > 0) {
-            adapterStats[adapter.name] = `Success (${data.length} results in ${duration}ms)`
-          } else {
+          const data = (rawData && Array.isArray(rawData)) ? rawData : []
+          if (data.length === 0) {
             adapterStats[adapter.name] = "Returned 0 results"
+            return []
           }
-          return data
+
+          // Filter to UK at the adapter boundary so diagnostics reflect what the UI will show.
+          const ukOnly = this.filterUkResults(data)
+          adapterStats[adapter.name] =
+            ukOnly.length > 0
+              ? `Success (${ukOnly.length} UK / ${data.length} raw in ${duration}ms)`
+              : `0 UK results (${data.length} raw in ${duration}ms)`
+
+          return ukOnly
         } catch (err: any) {
-          adapterStats[adapter.name] = `Error: ${err.message || err}`
+          adapterStats[adapter.name] = `Failed: ${err.message || err}`
           console.error(`Adapter ${adapter.name} failed:`, err)
           return []
         }
@@ -79,8 +108,9 @@ export class JobFetcher {
       // Deduplicate results by ID to prevent key collisions in the UI
       const seen = new Set<string>()
       results = flatResults.filter(job => {
-        if (!job.id || seen.has(job.id)) return false
-        seen.add(job.id)
+        const uniqueId = job.id || `${job.source}-${job.externalJobId}`
+        if (!uniqueId || seen.has(uniqueId)) return false
+        seen.add(uniqueId)
         return true
       })
 
@@ -89,38 +119,39 @@ export class JobFetcher {
       // Final UK safety filter (Strict)
       results = this.filterUkResults(results)
       
-      // City Filter: If a specific location was requested (not generic UK), 
-      // loosely check if the results are relevant.
-      if (params.location && params.location.toLowerCase() !== "uk" && params.location.toLowerCase() !== "united kingdom") {
+      // Selectively filter by city if requested
+      if (params.location && !isUkSearch) {
         const requestedCity = params.location.toLowerCase().split(",")[0].trim()
-        
-        // We allow results that EITHER:
-        // 1. Explicitly mention the city
-        // 2. Are from a trust-worthy UK source (Adzuna/Reed) and contain 'UK'
-        // 3. Are marked as 'remote' (since remote jobs apply everywhere)
         results = results.filter(job => {
           const jobLoc = job.location.toLowerCase()
-          const isLocal = jobLoc.includes(requestedCity) || job.role.toLowerCase().includes(requestedCity)
-          const isRemote = job.workplaceType === "remote"
-          const isStrongUkSource = job.source === "adzuna" || job.source === "reed"
-          
-          return isLocal || isRemote || (isStrongUkSource && (jobLoc.includes("uk") || jobLoc.includes("united kingdom")))
+          const jobRole = job.role.toLowerCase()
+          // If the user explicitly selects remote-only, don't constrain by city.
+          // Otherwise, keep city filtering strict (including for remote listings),
+          // to match user expectations when they type a city.
+          const allowRemoteAnywhere = params.workplace === "remote"
+          return jobLoc.includes(requestedCity) || jobRole.includes(requestedCity) || (allowRemoteAnywhere && job.workplaceType === "remote")
         })
       }
 
-      // Fallback: The user requested NO mock jobs. 
-      // If results are empty, we return empty rather than injecting simulation.
-      if (results.length === 0) {
-        console.warn(`No real results found for ${params.keywords} in ${params.location}.`)
-      }
+      // Sort: Priority to recent
+      results = results.sort((a, b) => {
+        const getAge = (label: string) => {
+          const l = label.toLowerCase()
+          if (l.includes("today") || l.includes("just") || l.includes("hour")) return 0
+          if (l.includes("yesterday")) return 1
+          const match = l.match(/(\d+)d/)
+          return match ? parseInt(match[1]) : 100
+        }
+        return getAge(a.postedLabel) - getAge(b.postedLabel)
+      })
 
-      // Sort by "Recently" if possible, or just shuffle for variety
-      results = results.sort((a, b) => b.postedLabel.localeCompare(a.postedLabel))
+      // Enforce page size at the aggregator layer
+      results = results.slice(0, effectivePageSize)
 
       if (results.length > 0) {
         this.cache.set(cacheKey, results, 600_000) // 10 min cache
       }
-      return { listings: results, fromCache: false }
+      return { listings: results, fromCache: false, diagnostics: adapterStats, totals: totalsByProvider }
     } catch (error) {
       console.error("Job search failed:", error)
       throw new Error("Job search system failed to retrieve results.")
@@ -156,25 +187,108 @@ export class JobFetcher {
       "leeds", "glasgow", "sheffield", "liverpool", "bristol", 
       "edinburgh", "leicester", "coventry", "hull", "belfast",
       "cardiff", "england", "scotland", "wales", "northern ireland", "gb",
-      "reading", "bristol", "oxford", "cambridge", "newcastle", "york",
+      "reading", "oxford", "cambridge", "newcastle", "york",
       "nottingham", "southampton", "portsmouth", "aberdeen", "swansea",
       "brighton", "norwich", "plymouth", "derby", "wolverhampton",
-      "milton keynes", "slough", "swindon", "luton", "warrington"
+      "milton keynes", "slough", "swindon", "luton", "warrington",
+      "crawley", "st albans", "chelmsford", "basildon", "watford",
+      "sheffield", "sunderland", "newport", "derby", "salford"
+    ]
+    
+    // USA states and other non-UK indicators to exclude
+    const nonUk = [
+      "usa", "us", "america", "germany", "france", "india", "canada", 
+      "berlin", "paris", "spain", "italy", "australia", "mexico", 
+      "uae", "dubai", "singapore", "netherlands", "sweden", "china",
+      "alabama", "alaska", "arizona", "arkansas", "california", "colorado", 
+      "connecticut", "delaware", "florida", "georgia", "hawaii", "idaho", 
+      "illinois", "indiana", "iowa", "kansas", "kentucky", "louisiana", 
+      "maine", "maryland", "massachusetts", "michigan", "minnesota", 
+      "mississippi", "missouri", "montana", "nebraska", "nevada", 
+      "new hampshire", "new jersey", "new mexico", "new york", 
+      "north carolina", "north dakota", "ohio", "oklahoma", "oregon", 
+      "pennsylvania", "rhode island", "south carolina", "south dakota", 
+      "tennessee", "texas", "utah", "vermont", "virginia", "washington", 
+      "west virginia", "wisconsin", "wyoming", 
+      "united states", "hong kong", "switzerland", "dublin" // Note: Dublin is not in UK
     ]
     
     return listings.filter(job => {
-      // Source-based trust: Reed and Adzuna GB are naturally UK jobs
-      if (job.source === "reed" || job.source === "adzuna") return true
+      const location = (job.location || "").toLowerCase()
+      const role = (job.role || "").toLowerCase()
+      const description = (job.shortDescription || "").toLowerCase()
+      const hasGbpSymbol = description.includes("\u00a3") || location.includes("\u00a3")
 
-      const location = job.location.toLowerCase()
-      const isUk = ukKeywords.some(kw => location.includes(kw))
+      // Northern Ireland Safety
+      const isNorthernIreland = location.includes("northern ireland") || location.includes("belfast")
       
-      // Prevent false positives from foreign US locations or other European countries
-      const nonUk = ["usa", "germany", "france", "india", "canada", "berlin", "paris", "ny", "california", "spain", "italy", "australia", "mexico"]
-      const hasConflict = nonUk.some(country => location.includes(country))
+      // Mandatory UK indicator for global sources
+      // We use word boundaries to avoid false positives
+      const mentionsUkSpecifics = [
+          "united kingdom", "england", "scotland", "wales", "northern ireland", 
+          "inside ir35", "outside ir35", "salary in gbp", "£", "gbp", "remote uk", "london", "gb", "uk-based", "uk based"
+      ].some(term => {
+        if (term === "£") return description.includes(term) || location.includes(term)
+        // For short terms like "gb" or "uk", we are more careful
+        const regex = new RegExp(`\\b${term}\\b`, "i")
+        return regex.test(description) || regex.test(location) || regex.test(role)
+      })
       
-      return isUk && !hasConflict
+      const hasUkCity = ukKeywords.some(kw => {
+        const regex = new RegExp(`\\b${kw}\\b`, "i")
+        return regex.test(location) || regex.test(role)
+      })
+      
+      // Source-based trust: Reed and Adzuna GB are targeted UK feeds
+      if (job.source === "reed" || job.source === "adzuna" || job.source === "devitjobs") {
+        const lowerLoc = (job.location || "").toLowerCase()
+        const hasConflictMatch = nonUk.some(country => {
+            const regex = new RegExp(`\\b${country}\\b`, "i")
+            return regex.test(lowerLoc)
+        })
+        if (hasConflictMatch && !hasUkCity) return false
+        return true
+      }
+
+      // CRITICAL: Must have at least one UK indicator to pass from a global feed
+      const isLikelyUk = hasUkCity || mentionsUkSpecifics || hasGbpSymbol
+      if (!isLikelyUk) {
+        // Broad remote safety: if it mentions remote and the location (even if not city) is UK
+        const isBroadRemote = description.includes("remote") && (location.includes("uk") || location.includes("united kingdom"))
+        if (!isBroadRemote) return false
+      }
+
+      // Prevent false positives from foreign locations (with word boundaries)
+      const hasConflict = nonUk.some(country => {
+        if (country === "ireland" && isNorthernIreland) return false
+        const regex = new RegExp(`\\b${country}\\b`, "i")
+        return regex.test(location)
+      })
+      
+      if (hasConflict) return false
+
+      return true
     })
+  }
+
+  async fetchJobDetails(source: string, externalId: string): Promise<string | null> {
+    const cacheKey = `details-${source}-${externalId}`
+    const cached = this.detailCache.get(cacheKey)
+    if (cached) return cached
+
+    const adapter = this.adapters[source]
+    if (!adapter || !adapter.fetchJobDetails) return null
+
+    try {
+      const details = await adapter.fetchJobDetails(externalId)
+      if (details) {
+        this.detailCache.set(cacheKey, details, 3600_000) // 1 hr cache
+      }
+      return details
+    } catch (error) {
+      console.error(`Details fetch failed for ${source}/${externalId}:`, error)
+      return null
+    }
   }
 
   private buildCacheKey(params: JobFetchParams): string {
@@ -183,6 +297,7 @@ export class JobFetcher {
       l: params.location || "UK",
       w: params.workplace || "all",
       p: params.page || 1,
+      s: params.pageSize || 50,
     })
   }
 }

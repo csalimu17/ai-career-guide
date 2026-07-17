@@ -3,7 +3,7 @@ import { createMetadata } from "@/lib/metadata";
 
 export const metadata = createMetadata({
   title: "Create account",
-  description: "Create your AI Career Guide account to start building resumes, tailoring applications, and tracking your search in one workspace.",
+  description: "Create your AI Career Guide account to start building CVs, tailoring applications, and tracking your search in one workspace.",
   path: "/signup",
   noIndex: true,
 });
@@ -11,4 +11,3 @@ export const metadata = createMetadata({
 export default function SignupPage() {
   return <SignupPageClient />;
 }
-

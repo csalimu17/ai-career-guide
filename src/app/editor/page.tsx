@@ -1,4 +1,4 @@
-import { redirect } from "next/navigation";
+import { permanentRedirect } from "next/navigation";
 
 type SearchParams = Record<string, string | string[] | undefined>;
 
@@ -26,5 +26,5 @@ export default async function EditorRedirectPage({
   const resolvedSearchParams = await searchParams;
   const params = toUrlSearchParams(resolvedSearchParams);
   const suffix = params.toString();
-  redirect(suffix ? `/cv-editor?${suffix}` : "/cv-editor");
+  permanentRedirect(suffix ? `/cv-editor?${suffix}` : "/cv-editor");
 }

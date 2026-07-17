@@ -20,10 +20,56 @@ export const metadata = createMetadata({
   path: "/support",
 });
 
+export const revalidate = 86400;
+
 export default function SupportPage() {
+  const faqData = {
+    "@context": "https://schema.org",
+    "@type": "FAQPage",
+    "mainEntity": [
+      {
+        "@type": "Question",
+        "name": "How do I improve my ATS score?",
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": "You can improve your ATS score by using our built-in scanner to identify keyword gaps and layout compliance warnings. Optimizing your formatting by using a single-column layout and standard headers also helps significantly."
+        }
+      },
+      {
+        "@type": "Question",
+        "name": "Which file formats are supported?",
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": "The AI Career Guide editor supports exporting and scanning resumes in standard PDF and DOCX formats, which are highly compatible with HR applicant tracking systems."
+        }
+      },
+      {
+        "@type": "Question",
+        "name": "How does billing work?",
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": "Subscriptions are handled securely through Stripe. You can upgrade, downgrade, or cancel your Pro or Master plan anytime directly from your Billing dashboard."
+        }
+      },
+      {
+        "@type": "Question",
+        "name": "Can I manage multiple resumes?",
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": "Yes, your dashboard lets you create and maintain multiple versions of your resume tailored for different jobs or industries."
+        }
+      }
+    ]
+  };
+
   return (
-    <div className="min-h-screen">
-      <PublicHeader items={navigationItems} ctaHref="/signup" ctaLabel="Start free" />
+    <>
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(faqData) }}
+      />
+      <div className="min-h-screen">
+        <PublicHeader items={navigationItems} ctaHref="/signup" ctaLabel="Start free" />
 
       <main className="pb-20 pt-16 sm:pb-24 sm:pt-20">
         <section className="app-shell space-y-8">
@@ -118,6 +164,7 @@ export default function SupportPage() {
       </main>
 
       <SiteFooter />
-    </div>
+      </div>
+    </>
   );
 }

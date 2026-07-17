@@ -1,22 +1,31 @@
 import { test, expect } from '@playwright/test';
 import { Redis } from '@upstash/redis';
 
+const hasRedis = !!(process.env.UPSTASH_REDIS_URL && process.env.UPSTASH_REDIS_TOKEN);
+
 // Configure Upstash Redis client
-// Note: UPSTASH_REDIS_URL and UPSTASH_REDIS_TOKEN must be present in your environment
-const redis = new Redis({
-  url: process.env.UPSTASH_REDIS_URL || '',
-  token: process.env.UPSTASH_REDIS_TOKEN || '',
-});
+const redis = hasRedis
+  ? new Redis({
+      url: process.env.UPSTASH_REDIS_URL || '',
+      token: process.env.UPSTASH_REDIS_TOKEN || '',
+    })
+  : null;
 
 test.describe('LLM Fallback Chaos Testing & Circuit Breaking', () => {
   test.beforeEach(async () => {
+    if (!hasRedis) {
+      test.skip();
+      return;
+    }
     // Ensure clean state before each test
-    await redis.del('test:provider_failures');
+    await redis?.del('test:provider_failures');
   });
 
   test.afterAll(async () => {
-    // Clean up after all tests
-    await redis.del('test:provider_failures');
+    if (hasRedis && redis) {
+      // Clean up after all tests
+      await redis.del('test:provider_failures');
+    }
   });
 
   test('should successfully generate response using primary provider (Gemini)', async ({ page }) => {
@@ -33,7 +42,7 @@ test.describe('LLM Fallback Chaos Testing & Circuit Breaking', () => {
 
   test('should fallback to Groq when Gemini fails', async ({ page }) => {
     // Inject simulated failure for Gemini
-    await redis.hset('test:provider_failures', { gemini: 'true' });
+    await redis!.hset('test:provider_failures', { gemini: 'true' });
     
     await page.goto('/interview-prep');
     
@@ -46,7 +55,7 @@ test.describe('LLM Fallback Chaos Testing & Circuit Breaking', () => {
 
   test('should fallback to OpenRouter when both Gemini and Groq fail', async ({ page }) => {
     // Inject simulated failures for tier-1 and tier-2
-    await redis.hset('test:provider_failures', { 
+    await redis!.hset('test:provider_failures', {
       gemini: 'true',
       groq: 'true' 
     });

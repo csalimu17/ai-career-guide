@@ -32,7 +32,9 @@ import {
   AlertCircle,
   CheckCircle2,
   Trophy,
-  Paintbrush2
+  Paintbrush2,
+  Heart,
+  SpellCheck2
 } from "lucide-react"
 import Link from "next/link"
 import { useRouter, useSearchParams } from "next/navigation"
@@ -52,6 +54,8 @@ import { PrintPreviewContainer } from "./print-preview-container"
 import { PhotoUpload } from "./PhotoUpload"
 import { RichTextField } from "./rich-text-field"
 import { plainTextToRichTextHtml } from "@/lib/rich-text"
+import { ProofreaderPanel } from "./ProofreaderPanel"
+import { TitleInput } from "@/components/ui/title-input"
 
 import { cn } from "@/lib/utils"
 interface MobileEditorProps {
@@ -89,6 +93,10 @@ export function MobileEditor({ editor }: MobileEditorProps) {
     skillSuggestions,
     runSkillSuggestions,
     setSkillSuggestions,
+    isSuggestingInterests,
+    interestSuggestions,
+    runInterestSuggestions,
+    setInterestSuggestions,
     jobDescription,
     setJobDescription,
     atsResult,
@@ -110,10 +118,18 @@ export function MobileEditor({ editor }: MobileEditorProps) {
     processCrop,
     handlePhotoFileChange,
     handleDeletePhoto,
+
+    isCheckingGrammarGlobal,
+    globalGrammarIssues,
+    hasScannedGrammar,
+    runGlobalGrammarCheck,
+    applyGlobalGrammarFix,
+    dismissGlobalGrammarIssue,
   } = editor
 
   const [chatInput, setChatInput] = useState("")
   const [isTyping, setIsTyping] = useState(false)
+  const interestsVariant = resume?.content?.interestsVariant || "list"
 
   const reorderItems = <T,>(items: T[] | undefined, fromIndex: number, toIndex: number) => {
     if (!items || toIndex < 0 || toIndex >= items.length || fromIndex === toIndex) {
@@ -132,7 +148,7 @@ export function MobileEditor({ editor }: MobileEditorProps) {
   const explicitReturnTo = searchParams.get("returnTo")
   
   const sectionChipClass =
-    "shrink-0 whitespace-nowrap h-8 rounded-full px-3 text-[9px] font-bold uppercase tracking-[0.14em] transition-all shadow-sm border border-slate-100 bg-white sm:h-9 sm:px-4 sm:text-[11px]"
+    "inline-flex h-8 shrink-0 items-center gap-1.5 whitespace-nowrap rounded-full border border-slate-100 bg-white px-2.5 text-[8.5px] font-black uppercase tracking-[0.1em] shadow-sm transition-all sm:h-9 sm:px-3 sm:text-[10px]"
 
   const fallbackReturnPath = useMemo(() => {
     if (
@@ -227,16 +243,19 @@ export function MobileEditor({ editor }: MobileEditorProps) {
   const activeTemplate = getTemplateConfig(resume.templateId)
 
   const sections = [
-    { id: "target", icon: ShieldCheck, label: "Goal" },
-    { id: "personal", icon: User, label: "Header" },
-    { id: "summary", icon: Sparkles, label: "Summary" },
-    { id: "experience", icon: Briefcase, label: "Experience" },
-    { id: "education", icon: GraduationCap, label: "Education" },
-    { id: "skills", icon: Wrench, label: "Skills" },
-    { id: "projects", icon: Target, label: "Projects" },
-    { id: "certifications", icon: Award, label: "Certifications" },
-    { id: "languages", icon: Globe, label: "Languages" },
-  ]
+     { id: "target", icon: ShieldCheck, label: "Goal" },
+     { id: "personal", icon: User, label: "Header" },
+     { id: "summary", icon: Sparkles, label: "Summary" },
+     { id: "experience", icon: Briefcase, label: "Experience" },
+     { id: "volunteer", icon: Heart, label: "Volunteer" },
+     { id: "education", icon: GraduationCap, label: "Education" },
+     { id: "skills", icon: Wrench, label: "Skills" },
+     { id: "projects", icon: Target, label: "Projects" },
+     { id: "certifications", icon: Award, label: "Certifications" },
+     { id: "languages", icon: Globe, label: "Languages" },
+     { id: "interests", icon: Heart, label: "Hobbies" },
+     { id: "proofreader", icon: SpellCheck2, label: "Proofread" },
+   ]
 
   const mobileTabs = [
     { id: "content" as const, label: "Content", icon: FileText },
@@ -258,7 +277,7 @@ export function MobileEditor({ editor }: MobileEditorProps) {
               variant="ghost"
               onClick={() => setActiveTab(tab.id)}
               className={cn(
-                "h-11 min-w-0 rounded-2xl border px-2 text-[9px] font-black uppercase tracking-[0.12em] shadow-lg transition-all sm:h-12 sm:px-3 sm:text-[10px]",
+                "h-10 min-w-0 rounded-xl border px-2 text-[8.5px] font-black uppercase tracking-[0.1em] shadow-lg transition-all sm:h-11 sm:px-3 sm:text-[10px]",
                 isActive
                   ? "border-slate-900 bg-slate-900 text-white shadow-slate-900/25"
                   : "border-slate-200/80 bg-white/98 text-slate-700 shadow-slate-300/40 hover:bg-white hover:text-slate-900"
@@ -266,7 +285,7 @@ export function MobileEditor({ editor }: MobileEditorProps) {
             >
               <Icon
                 className={cn(
-                  "mr-1.5 h-4 w-4 shrink-0",
+                  "mr-1 h-3.5 w-3.5 shrink-0",
                   isActive ? "text-sky-300" : "text-slate-500"
                 )}
               />
@@ -281,33 +300,55 @@ export function MobileEditor({ editor }: MobileEditorProps) {
   )
 
   return (
-    <div className="flex h-screen max-h-screen flex-col overflow-hidden bg-white">
+    // Use 100dvh (dynamic viewport height) so the iOS Safari URL bar doesn't
+    // steal ~75px and cut off the bottom tabs. `h-screen` (=100vh) ignores
+    // browser chrome on mobile.
+    <div className="flex h-[100dvh] max-h-[100dvh] flex-col overflow-hidden bg-white">
       {/* Header */}
-      <header className="fixed top-0 z-40 flex h-14 w-full items-center justify-between border-b border-slate-50 bg-white/90 px-3 backdrop-blur-md sm:h-16 sm:px-4">
-         <div className="flex min-w-0 flex-1 items-center gap-2 pr-2">
-            <button onClick={handleBack} className="flex h-9 w-9 items-center justify-center rounded-xl p-2 transition-all hover:bg-slate-50 sm:h-10 sm:w-10">
+      <header className="fixed top-0 z-40 flex h-14 w-full items-center justify-between border-b border-slate-100 bg-white/95 px-2.5 backdrop-blur-md sm:h-16 sm:px-4">
+         <div className="flex min-w-0 flex-1 items-center gap-1.5 pr-1.5">
+            <button onClick={handleBack} aria-label="Back" className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl p-2 transition-all hover:bg-slate-50">
                <ArrowLeft className="h-5 w-5 text-slate-400" />
             </button>
             <div className="min-w-0 flex flex-col">
-               <span className="text-[9px] font-black uppercase tracking-widest text-slate-400 leading-none">Smart Editor</span>
-               <h1 className="mt-1 line-clamp-2 text-[13px] font-black leading-none tracking-tight text-slate-900 sm:text-sm">{resume.name}</h1>
+               <span className="text-[8px] font-black uppercase leading-none tracking-[0.18em] text-slate-400 min-[370px]:text-[9px]">Smart Editor</span>
+               <h1 className="mt-1 truncate text-[12px] font-black leading-none tracking-tight text-slate-900 min-[370px]:text-[13px] sm:text-sm">{resume.name}</h1>
             </div>
          </div>
-         <div className="flex shrink-0 items-center gap-2">
-            <Button 
+         <div className="flex shrink-0 items-center gap-1.5">
+            <Button
+               size="sm"
+               variant="outline"
+               onClick={() => {
+                  setActiveSection("proofreader")
+                  setMobileView("edit")
+               }}
+               className={cn(
+                  "flex h-10 items-center gap-1 rounded-xl border px-2 text-[9px] font-black uppercase tracking-[0.08em] shadow-sm min-[390px]:px-3 sm:h-11 sm:text-[10px]",
+                  activeSection === "proofreader"
+                     ? "border-slate-900 bg-slate-900 text-white"
+                     : "border-slate-100 bg-white text-slate-700"
+               )}
+            >
+               <SpellCheck2 className="h-3.5 w-3.5 text-orange-500" />
+               <span className="hidden min-[390px]:inline">Proofread</span>
+            </Button>
+
+            <Button
                size="sm"
                variant="outline"
                onClick={() => setMobileView(mobileView === "edit" ? "preview" : "edit")}
-               className="h-9 rounded-xl border-slate-100 px-3 text-[10px] font-black uppercase tracking-[0.12em] shadow-sm sm:h-10 sm:px-4"
+               className="h-10 rounded-xl border-slate-100 px-2 text-[9px] font-black uppercase tracking-[0.08em] shadow-sm min-[340px]:px-3 sm:h-11 sm:text-[10px]"
             >
-               {mobileView === "edit" ? <><Eye className="mr-1.5 h-3.5 w-3.5 text-indigo-500" /> Preview</> : <><Pencil className="mr-1.5 h-3.5 w-3.5 text-primary" /> Edit</>}
+               {mobileView === "edit" ? <><Eye className="mr-1 min-[340px]:mr-1.5 h-3.5 w-3.5 text-indigo-500" /> <span className="hidden min-[340px]:inline">Preview</span></> : <><Pencil className="mr-1 min-[340px]:mr-1.5 h-3.5 w-3.5 text-primary" /> <span className="hidden min-[340px]:inline">Edit</span></>}
             </Button>
-            <Button 
+            <Button
                onClick={handleDownloadPdf}
                disabled={isExporting}
-               className="h-9 w-9 rounded-xl bg-slate-900 p-0 text-white shadow-lg sm:h-10 sm:w-10"
+               aria-label="Save PDF"
+               className="h-10 w-10 rounded-xl bg-slate-900 p-0 text-white shadow-lg sm:h-11 sm:w-11"
             >
-               {isExporting ? <Loader2 className="h-4 w-4 animate-spin" /> : <FileDown className="h-4 w-4" />}
+               {isExporting ? <Loader2 className="h-4 w-4 animate-spin" /> : <FileDown className="h-5 w-5" />}
             </Button>
          </div>
       </header>
@@ -326,7 +367,7 @@ export function MobileEditor({ editor }: MobileEditorProps) {
                   {activeTab === "content" ? (
                      <div className="flex-1 flex flex-col overflow-hidden">
                         {/* Section Chips */}
-                        <div className="no-scrollbar z-30 flex shrink-0 items-center gap-1.5 overflow-x-auto border-b border-slate-50 bg-slate-50/70 px-3 py-2.5 backdrop-blur">
+                        <div className="no-scrollbar z-30 flex shrink-0 items-center gap-1.5 overflow-x-auto border-b border-slate-100 bg-slate-50/80 px-2.5 py-2 backdrop-blur sm:px-3">
                            {sections.map(section => (
                               <button
                                  key={section.id}
@@ -338,7 +379,8 @@ export function MobileEditor({ editor }: MobileEditorProps) {
                                        : "text-slate-500 hover:bg-white hover:border-slate-200"
                                  )}
                               >
-                                 <section.icon className="h-3.5 w-3.5 mr-2 inline" /> {section.label}
+                                 <section.icon className="h-3.5 w-3.5 shrink-0" />
+                                 <span>{section.label}</span>
                               </button>
                            ))}
                         </div>
@@ -430,9 +472,9 @@ export function MobileEditor({ editor }: MobileEditorProps) {
                               {activeSection === "personal" && (
                                 <div className="space-y-6">
                                   <PhotoUpload 
-                                    photoUrl={resume.content.personal.photo}
+                                    photoUrl={resume.content.personal?.photoUrl || resume.content.personal?.photo || ""}
                                     onFileChange={handlePhotoFileChange}
-                                    onDelete={() => handleUpdate("content.personal.photo", null)}
+                                    onDelete={handleDeletePhoto}
                                     isCropping={isCropping}
                                     setIsCropping={setIsCropping}
                                     cropImage={cropImage}
@@ -443,16 +485,16 @@ export function MobileEditor({ editor }: MobileEditorProps) {
                                   <div className="grid grid-cols-1 gap-5">
                                     <div className="space-y-2">
                                        <label className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 px-1">Full Name</label>
-                                       <Input 
-                                          value={resume.content.personal.name} 
+                                       <TitleInput
+                                          value={resume.content.personal.name}
                                           onChange={(e) => handleUpdate("content.personal.name", e.target.value)}
                                           className="h-14 rounded-2xl border-slate-100 bg-white font-bold text-slate-900 shadow-sm"
                                        />
                                     </div>
                                     <div className="space-y-2">
                                        <label className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 px-1">Target Title</label>
-                                       <Input 
-                                          value={resume.content.personal.title} 
+                                       <TitleInput
+                                          value={resume.content.personal.title}
                                           onChange={(e) => handleUpdate("content.personal.title", e.target.value)}
                                           className="h-14 rounded-2xl border-slate-100 bg-white font-bold text-slate-900 shadow-sm"
                                        />
@@ -525,23 +567,33 @@ export function MobileEditor({ editor }: MobileEditorProps) {
                                         <span className="text-[10px] font-black uppercase tracking-widest text-slate-400">Review Suggestions</span>
                                         <div className="h-px flex-1 bg-slate-100" />
                                       </div>
-                                      {summarySuggestions.map((suggestion: string, idx: number) => (
-                                        <div key={idx} className="group relative rounded-2xl border border-slate-100 bg-white p-4 shadow-sm">
-                                          <p className="text-[11px] leading-relaxed text-slate-600 mb-3 italic">
-                                            "{suggestion}"
-                                          </p>
-                                          <Button 
-                                            size="sm"
-                                            onClick={() => {
-                                              handleUpdate("content.summary", plainTextToRichTextHtml(suggestion))
-                                              setSummarySuggestions([])
-                                            }}
-                                            className="w-full h-8 rounded-lg bg-orange-600 hover:bg-orange-700 text-[10px] font-bold uppercase tracking-wider transition-colors border-none text-white"
-                                          >
-                                            Apply this version
-                                          </Button>
-                                        </div>
-                                      ))}
+                                      {summarySuggestions.map((suggestion: any, idx: number) => {
+                                        const text = typeof suggestion === 'string' ? suggestion : suggestion.summary;
+                                        const style = typeof suggestion === 'object' ? suggestion.style : null;
+
+                                        return (
+                                          <div key={idx} className="group relative rounded-2xl border border-slate-100 bg-white p-4 shadow-sm">
+                                            {style && (
+                                              <div className="mb-2 inline-block px-2 py-0.5 rounded-full bg-slate-50 text-[8px] font-black text-slate-400 uppercase tracking-wider border border-slate-100">
+                                                {style}
+                                              </div>
+                                            )}
+                                            <p className="text-[11px] leading-relaxed text-slate-600 mb-3 italic">
+                                              "{text}"
+                                            </p>
+                                            <Button 
+                                              size="sm"
+                                              onClick={() => {
+                                                handleUpdate("content.summary", plainTextToRichTextHtml(text))
+                                                setSummarySuggestions([])
+                                              }}
+                                              className="w-full h-8 rounded-lg bg-orange-600 hover:bg-orange-700 text-[10px] font-bold uppercase tracking-wider transition-colors border-none text-white"
+                                            >
+                                              Apply this version
+                                            </Button>
+                                          </div>
+                                        );
+                                      })}
                                     </div>
                                   )}
                                 </div>
@@ -595,8 +647,8 @@ export function MobileEditor({ editor }: MobileEditorProps) {
                                          <div key={exp.id || idx} className="rounded-3xl border border-slate-100 bg-white p-5 shadow-sm space-y-4">
                                             <div className="flex items-start justify-between gap-3">
                                                <div className="flex-1 space-y-3 min-w-0">
-                                                  <Input 
-                                                     value={exp.title} 
+                                                  <TitleInput
+                                                     value={exp.title}
                                                      onChange={(e) => {
                                                         const next = [...resume.content.experience]
                                                         next[idx] = { ...next[idx], title: e.target.value }
@@ -605,8 +657,8 @@ export function MobileEditor({ editor }: MobileEditorProps) {
                                                      placeholder="Job Title (e.g. Senior Developer)"
                                                      className="h-10 rounded-xl border-slate-50 font-bold text-sm"
                                                   />
-                                                  <Input 
-                                                     value={exp.company} 
+                                                  <TitleInput
+                                                     value={exp.company}
                                                      onChange={(e) => {
                                                         const next = [...resume.content.experience]
                                                         next[idx] = { ...next[idx], company: e.target.value }
@@ -780,8 +832,8 @@ export function MobileEditor({ editor }: MobileEditorProps) {
                                          <div key={edu.id || idx} className="rounded-3xl border border-slate-100 bg-white p-5 shadow-sm space-y-4">
                                             <div className="flex items-start justify-between gap-3">
                                                <div className="flex-1 space-y-3 min-w-0">
-                                                  <Input 
-                                                     value={edu.degree} 
+                                                  <TitleInput
+                                                     value={edu.degree}
                                                      onChange={(e) => {
                                                         const next = [...resume.content.education]
                                                         next[idx] = { ...next[idx], degree: e.target.value }
@@ -790,8 +842,8 @@ export function MobileEditor({ editor }: MobileEditorProps) {
                                                      placeholder="Degree (e.g. B.Sc. Computer Science)"
                                                      className="h-10 rounded-xl border-slate-50 font-bold text-sm"
                                                   />
-                                                  <Input 
-                                                     value={edu.school} 
+                                                  <TitleInput
+                                                     value={edu.school}
                                                      onChange={(e) => {
                                                         const next = [...resume.content.education]
                                                         next[idx] = { ...next[idx], school: e.target.value }
@@ -938,8 +990,8 @@ export function MobileEditor({ editor }: MobileEditorProps) {
                                          <div key={proj.id || idx} className="rounded-3xl border border-slate-100 bg-white p-5 shadow-sm space-y-4">
                                             <div className="flex items-start justify-between gap-3">
                                                <div className="flex-1 space-y-3">
-                                                  <Input 
-                                                     value={proj.name} 
+                                                  <TitleInput
+                                                     value={proj.name}
                                                      onChange={(e) => {
                                                         const next = [...resume.content.projects]
                                                         next[idx] = { ...next[idx], name: e.target.value }
@@ -1006,8 +1058,8 @@ export function MobileEditor({ editor }: MobileEditorProps) {
                                          <div key={cert.id || idx} className="rounded-3xl border border-slate-100 bg-white p-5 shadow-sm space-y-3">
                                             <div className="flex items-start justify-between gap-3">
                                                <div className="flex-1 space-y-3">
-                                                  <Input 
-                                                     value={cert.name} 
+                                                  <TitleInput
+                                                     value={cert.name}
                                                      onChange={(e) => {
                                                         const next = [...resume.content.certifications]
                                                         next[idx] = { ...next[idx], name: e.target.value }
@@ -1016,8 +1068,8 @@ export function MobileEditor({ editor }: MobileEditorProps) {
                                                      placeholder="Certification"
                                                      className="h-10 rounded-xl border-slate-50 font-bold text-sm"
                                                   />
-                                                  <Input 
-                                                     value={cert.issuer} 
+                                                  <TitleInput
+                                                     value={cert.issuer}
                                                      onChange={(e) => {
                                                         const next = [...resume.content.certifications]
                                                         next[idx] = { ...next[idx], issuer: e.target.value }
@@ -1098,10 +1150,182 @@ export function MobileEditor({ editor }: MobileEditorProps) {
                                          </div>
                                       ))}
                                    </div>
+                               </div>
+                               )}
+
+                               {activeSection === "interests" && (
+                                <div className="space-y-6">
+                                  <div className="flex flex-col gap-3 px-1 min-[380px]:flex-row min-[380px]:items-center min-[380px]:justify-between">
+                                    <div className="min-w-0">
+                                      <h3 className="text-[10px] font-black uppercase tracking-[0.22em] text-slate-400">Hobbies & Interests</h3>
+                                      <p className="mt-1 text-[11px] font-semibold leading-relaxed text-slate-500">Match the desktop editor with list or paragraph formats.</p>
+                                    </div>
+                                    <Popover
+                                      onOpenChange={(open) => {
+                                        if (open && (interestSuggestions?.length || 0) === 0) {
+                                          runInterestSuggestions?.()
+                                        }
+                                      }}
+                                    >
+                                      <PopoverTrigger asChild>
+                                        <Button
+                                          onClick={() => runInterestSuggestions?.()}
+                                          disabled={isSuggestingInterests}
+                                          className="h-9 self-start rounded-xl bg-orange-500 px-3 text-[9px] font-black uppercase tracking-[0.1em] text-white shadow-lg shadow-orange-500/15 hover:bg-orange-600 min-[380px]:self-auto"
+                                          size="sm"
+                                        >
+                                          {isSuggestingInterests ? (
+                                            <Loader2 className="mr-2 h-3.5 w-3.5 animate-spin" />
+                                          ) : (
+                                            <Sparkles className="mr-2 h-3.5 w-3.5" />
+                                          )}
+                                          AI Ideas
+                                        </Button>
+                                      </PopoverTrigger>
+                                      <PopoverContent align="end" className="w-[min(22rem,calc(100vw-2rem))] overflow-hidden rounded-2xl border-slate-200 p-0 shadow-xl">
+                                        <div className="bg-slate-950 p-4 text-white">
+                                          <h4 className="text-sm font-black tracking-tight">Hobby Suggestions</h4>
+                                          <p className="mt-1 text-[11px] leading-relaxed text-slate-300">Tap a suggestion to add it to the selected format.</p>
+                                        </div>
+                                        <div className="max-h-[18rem] space-y-2 overflow-y-auto bg-white p-3">
+                                          {isSuggestingInterests ? (
+                                            <div className="flex items-center justify-center gap-3 py-8 text-[10px] font-black uppercase tracking-[0.16em] text-slate-400">
+                                              <Loader2 className="h-4 w-4 animate-spin text-orange-500" />
+                                              Building ideas
+                                            </div>
+                                          ) : (interestSuggestions || []).length > 0 ? (
+                                            interestSuggestions.map((interest: string, idx: number) => (
+                                              <button
+                                                key={`${interest}-${idx}`}
+                                                type="button"
+                                                onClick={() => {
+                                                  if (interestsVariant === "list") {
+                                                    const current = resume.content.interests || []
+                                                    if (!current.includes(interest)) {
+                                                      handleUpdate("content.interests", [...current, interest])
+                                                    }
+                                                  } else {
+                                                    const current = resume.content.interestsContent || ""
+                                                    const divider = current.length > 0 ? "\n" : ""
+                                                    handleUpdate("content.interestsContent", current + divider + interest)
+                                                  }
+                                                  setInterestSuggestions?.((interestSuggestions || []).filter((_: any, i: number) => i !== idx))
+                                                }}
+                                                className="flex w-full items-center justify-between gap-3 rounded-xl border border-slate-100 bg-slate-50/70 p-3 text-left transition-all hover:border-orange-200 hover:bg-white"
+                                              >
+                                                <span className="text-xs font-bold leading-relaxed text-slate-700">{interest}</span>
+                                                <Plus className="h-3.5 w-3.5 shrink-0 text-orange-500" />
+                                              </button>
+                                            ))
+                                          ) : (
+                                            <div className="py-8 text-center text-xs font-semibold text-slate-400">
+                                              No suggestions yet.
+                                            </div>
+                                          )}
+                                        </div>
+                                        <div className="border-t border-slate-100 bg-slate-50 p-3 text-right">
+                                          <Button variant="ghost" size="sm" onClick={() => runInterestSuggestions?.()} className="h-8 text-[10px] font-black uppercase text-orange-600 hover:bg-orange-50">
+                                            Regenerate
+                                          </Button>
+                                        </div>
+                                      </PopoverContent>
+                                    </Popover>
+                                  </div>
+
+                                  <div className="grid grid-cols-2 gap-2 rounded-2xl border border-slate-100 bg-slate-50 p-1">
+                                    {[
+                                      { value: "list", label: "Bullets" },
+                                      { value: "text", label: "Text Box" },
+                                    ].map((option) => (
+                                      <button
+                                        key={option.value}
+                                        type="button"
+                                        onClick={() => handleUpdate("content.interestsVariant", option.value)}
+                                        className={cn(
+                                          "h-10 rounded-xl text-[10px] font-black uppercase tracking-[0.14em] transition-all",
+                                          interestsVariant === option.value
+                                            ? "bg-white text-slate-900 shadow-sm"
+                                            : "text-slate-500 hover:text-slate-900"
+                                        )}
+                                      >
+                                        {option.label}
+                                      </button>
+                                    ))}
+                                  </div>
+
+                                  {interestsVariant === "list" ? (
+                                    <div className="space-y-4">
+                                      <div className="flex justify-end px-1">
+                                        <Button
+                                          onClick={() => {
+                                            const next = [...(resume.content.interests || []), ""]
+                                            handleUpdate("content.interests", next)
+                                          }}
+                                          className="h-9 rounded-xl bg-slate-900 px-4 text-[10px] font-black uppercase tracking-wider text-white"
+                                          size="sm"
+                                        >
+                                          <Plus className="mr-2 h-3.5 w-3.5" />
+                                          Add Hobby
+                                        </Button>
+                                      </div>
+                                      <div className="grid grid-cols-1 gap-3">
+                                        {(resume.content.interests || []).map((interest: string, idx: number) => (
+                                          <div key={idx} className="flex items-center gap-3 rounded-2xl border border-slate-100 bg-white p-3 shadow-sm">
+                                            <Input
+                                              value={interest}
+                                              onChange={(e) => {
+                                                const next = [...(resume.content.interests || [])]
+                                                next[idx] = e.target.value
+                                                handleUpdate("content.interests", next)
+                                              }}
+                                              placeholder="e.g. Strategy gaming"
+                                              className="h-9 border-none bg-transparent px-0 text-sm font-bold text-slate-700 shadow-none focus-visible:ring-0"
+                                            />
+                                            <Button
+                                              variant="ghost"
+                                              size="icon"
+                                              onClick={() => {
+                                                const next = (resume.content.interests || []).filter((_: any, i: number) => i !== idx)
+                                                handleUpdate("content.interests", next)
+                                              }}
+                                              className="h-8 w-8 shrink-0 rounded-xl text-slate-300 hover:bg-red-50 hover:text-red-500"
+                                            >
+                                              <Trash2 className="h-3.5 w-3.5" />
+                                            </Button>
+                                          </div>
+                                        ))}
+                                      </div>
+                                    </div>
+                                  ) : (
+                                    <RichTextField
+                                      value={resume.content.interestsContent || ""}
+                                      onChange={(val) => handleUpdate("content.interestsContent", val)}
+                                      placeholder="Type your hobbies and interests here as a paragraph..."
+                                      minHeightClassName="min-h-[180px]"
+                                    />
+                                  )}
                                 </div>
-                              )}
-                           </div>
-                        </ScrollArea>
+                               )}
+
+                               {activeSection === "proofreader" && (
+                                 <div className="space-y-6">
+                                    <h3 className="text-[10px] font-black uppercase tracking-[0.25em] text-slate-400 px-1">Global Proofreader</h3>
+                                    <ProofreaderPanel
+                                       resume={resume}
+                                       isCheckingGrammarGlobal={isCheckingGrammarGlobal}
+                                       globalGrammarIssues={globalGrammarIssues}
+                                       hasScannedGrammar={hasScannedGrammar}
+                                       runGlobalGrammarCheck={runGlobalGrammarCheck}
+                                       applyGlobalGrammarFix={applyGlobalGrammarFix}
+                                       dismissGlobalGrammarIssue={dismissGlobalGrammarIssue}
+                                       onNavigateToSection={(sectionId) => {
+                                          setActiveSection(sectionId)
+                                       }}
+                                    />
+                                 </div>
+                               )}
+                            </div>
+                         </ScrollArea>
                      </div>
                   ) : activeTab === "ai" ? (
                      <div className="flex-1 flex flex-col overflow-hidden bg-slate-50/30">

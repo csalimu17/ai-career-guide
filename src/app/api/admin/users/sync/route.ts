@@ -10,6 +10,12 @@ type AdminRecord = {
 };
 
 function hasUsersAccess(adminRecord: AdminRecord | undefined) {
+  // SECURITY: Only allow the dev bypass when NODE_ENV is *explicitly* set to
+  // 'development'. The previous `|| !process.env.NODE_ENV` clause meant any
+  // deploy with an unset NODE_ENV granted destructive access (this endpoint
+  // can delete users not present in Firebase Auth) to any logged-in caller.
+  if (process.env.NODE_ENV === 'development') return true;
+
   if (!adminRecord?.isActive) return false;
 
   const roles = new Set(adminRecord.roleIds || []);

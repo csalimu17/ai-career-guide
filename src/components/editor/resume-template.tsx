@@ -27,6 +27,7 @@ const SECTION_LABELS: Record<Exclude<ResumeSectionId, "page-break">, string> = {
   skills: "Skills",
   certifications: "Certifications",
   languages: "Languages",
+  interests: "Hobbies & Interests",
 }
 
 function extractPrimaryBaseColor(color: string) {
@@ -71,40 +72,49 @@ function normalizeSectionOrder(sectionOrder?: string[] | null): ResumeSectionId[
 function getDensityMetrics(template: TemplateConfig, mode: ResumeRenderMode) {
   const map = {
     compact: {
-      headerGap: 22,
-      sectionGap: 22,
-      entryGap: 14,
-      headingGap: 10,
+      headerGap: 12,
+      sectionGap: 14,
+      entryGap: 8,
+      headingGap: 5,
     },
     comfortable: {
-      headerGap: 28,
-      sectionGap: 28,
-      entryGap: 16,
-      headingGap: 12,
+      headerGap: 18,
+      sectionGap: 20,
+      entryGap: 12,
+      headingGap: 8,
     },
     relaxed: {
-      headerGap: 34,
-      sectionGap: 32,
-      entryGap: 18,
-      headingGap: 14,
+      headerGap: 24,
+      sectionGap: 26,
+      entryGap: 16,
+      headingGap: 11,
     },
   }[template.design.density]
 
   if (mode === "mobile") {
     return {
-      headerGap: Math.max(18, map.headerGap - 8),
-      sectionGap: Math.max(20, map.sectionGap - 8),
-      entryGap: Math.max(12, map.entryGap - 4),
-      headingGap: Math.max(10, map.headingGap - 2),
+      headerGap: Math.max(12, Math.round(map.headerGap * 0.8)),
+      sectionGap: Math.max(14, Math.round(map.sectionGap * 0.8)),
+      entryGap: Math.max(8, Math.round(map.entryGap * 0.85)),
+      headingGap: Math.max(5, Math.round(map.headingGap * 0.8)),
     }
   }
 
   if (mode === "thumbnail") {
     return {
-      headerGap: Math.max(16, map.headerGap - 6),
-      sectionGap: Math.max(18, map.sectionGap - 8),
-      entryGap: Math.max(10, map.entryGap - 3),
-      headingGap: Math.max(8, map.headingGap - 3),
+      headerGap: Math.max(10, Math.round(map.headerGap * 0.7)),
+      sectionGap: Math.max(12, Math.round(map.sectionGap * 0.7)),
+      entryGap: Math.max(6, Math.round(map.entryGap * 0.7)),
+      headingGap: Math.max(4, Math.round(map.headingGap * 0.7)),
+    }
+  }
+
+  if (mode === "print") {
+    return {
+      headerGap: Math.max(8, Math.round(map.headerGap * 0.85)),
+      sectionGap: Math.max(10, Math.round(map.sectionGap * 0.85)),
+      entryGap: Math.max(6, Math.round(map.entryGap * 0.85)),
+      headingGap: Math.max(4, Math.round(map.headingGap * 0.85)),
     }
   }
 
@@ -121,28 +131,34 @@ function getContactItems(content: any) {
   ].filter(Boolean)
 }
 
-function getEntryShellClassName(variant: TemplateEntryVariant) {
+function getEntryShellClassName(variant: TemplateEntryVariant, mode: ResumeRenderMode) {
   switch (variant) {
     case "accented":
-      return "border-l-[3px] pl-4"
+      return "border-l-[3px] pl-3.5"
     case "outlined":
-      return "rounded-[1rem] border px-4 py-3"
+      return `${mode === "print" ? "" : "rounded-[0.55rem]"} border px-4 py-3`
     default:
       return ""
   }
 }
 
-function getEntryShellStyle(variant: TemplateEntryVariant, accent: string, subtleFill?: boolean) {
+function getEntryShellStyle(variant: TemplateEntryVariant, accent: string, mode: ResumeRenderMode, subtleFill?: boolean) {
   if (variant === "accented") {
     return {
       borderLeftColor: accent,
+      backgroundImage: mode === "print"
+        ? "none"
+        : `linear-gradient(90deg, ${hexToRgba(accent, 0.03)}, transparent 85%)`,
     }
   }
 
   if (variant === "outlined") {
     return {
-      borderColor: hexToRgba(accent, 0.18),
-      backgroundColor: subtleFill ? hexToRgba(accent, 0.04) : "#ffffff",
+      borderColor: hexToRgba(accent, 0.12),
+      backgroundColor: subtleFill ? hexToRgba(accent, 0.025) : "#ffffff",
+      boxShadow: mode === "print"
+        ? "none"
+        : `0 4px 12px -3px ${hexToRgba(accent, 0.04)}, 0 0 0 1px ${hexToRgba(accent, 0.02)}`,
     }
   }
 
@@ -150,41 +166,48 @@ function getEntryShellStyle(variant: TemplateEntryVariant, accent: string, subtl
 }
 
 function getTemplateFamilyTone(category: ResumeTemplateFamily, mode: ResumeRenderMode) {
+  const isPrint = mode === "print"
   switch (category) {
     case "Professional":
       return {
-        headerSurfaceClass:
-          mode === "thumbnail"
+        headerSurfaceClass: isPrint
+          ? ""
+          : mode === "thumbnail"
             ? "shadow-[0_16px_34px_-28px_rgba(15,23,42,0.28)]"
-            : "shadow-[0_18px_42px_-30px_rgba(15,23,42,0.26)]",
+            : "shadow-[0_18px_42px_-30px_rgba(15,23,42,0.22)]",
         headerSurfaceStyle: undefined as CSSProperties | undefined,
-        sectionLabelClass: "uppercase tracking-[0.22em]",
-        sectionDividerClass: "h-[2px] opacity-95",
-        sectionSpacingClass: "space-y-4",
+        sectionLabelClass: "uppercase tracking-[0.2em]",
+        sectionDividerClass: "h-[1.5px] opacity-90",
       }
     case "Modern":
       return {
-        headerSurfaceClass: "rounded-[1.45rem] border px-6 py-5 shadow-[0_18px_40px_-32px_rgba(37,99,235,0.16)]",
+        headerSurfaceClass: cn(
+          "rounded-[1.45rem] border px-6 py-5",
+          !isPrint && "shadow-[0_18px_40px_-32px_rgba(37,99,235,0.16)]"
+        ),
         headerSurfaceStyle: {
-          backgroundImage: "linear-gradient(135deg, rgba(37,99,235,0.04), rgba(14,165,233,0.03) 58%, rgba(255,255,255,0.92))",
+          backgroundImage: isPrint
+            ? "none"
+            : "linear-gradient(135deg, rgba(37,99,235,0.04), rgba(14,165,233,0.03) 58%, rgba(255,255,255,0.92))",
         } as CSSProperties,
-        sectionLabelClass: "rounded-full border border-blue-200/70 bg-blue-50/70 px-3 py-1 uppercase tracking-[0.18em]",
+        sectionLabelClass: "uppercase tracking-[0.18em]",
         sectionDividerClass: "h-px",
-        sectionSpacingClass: "space-y-3.5",
       }
     case "Classic":
     default:
       return {
-        headerSurfaceClass:
-          mode === "thumbnail"
+        headerSurfaceClass: isPrint
+          ? ""
+          : mode === "thumbnail"
             ? "shadow-[0_12px_26px_-24px_rgba(180,83,9,0.18)]"
             : "shadow-[0_16px_34px_-28px_rgba(180,83,9,0.16)]",
         headerSurfaceStyle: {
-          backgroundImage: "linear-gradient(180deg, rgba(255,255,255,0.98), rgba(255,248,239,0.95))",
+          backgroundImage: isPrint
+            ? "none"
+            : "linear-gradient(180deg, rgba(255,255,255,0.98), rgba(255,248,239,0.95))",
         } as CSSProperties,
         sectionLabelClass: "uppercase tracking-[0.26em]",
         sectionDividerClass: "h-px [opacity:0.85]",
-        sectionSpacingClass: "space-y-[1.125rem]",
       }
   }
 }
@@ -195,45 +218,56 @@ function ResumeSectionHeading({
   accent,
   mode,
   familyTone,
+  isSidebar,
 }: {
   title: string
   template: TemplateConfig
   accent: string
   mode: ResumeRenderMode
   familyTone: ReturnType<typeof getTemplateFamilyTone>
+  isSidebar?: boolean
 }) {
   const isUppercase = template.design.headingCase === "uppercase"
   const label = isUppercase ? title.toUpperCase() : title
-  const headingSize =
-    template.design.headingVariant === "serif"
-      ? mode === "mobile"
-        ? "text-[0.92em]"
-        : "text-[0.96em]"
-      : "text-[0.82em]"
+  const isRule = template.design.headingVariant === "rule"
+  const isSerif = template.design.headingVariant === "serif"
+  const headingSize = isSerif
+    ? mode === "mobile" ? "text-[0.94em]" : "text-[0.98em]"
+    : isRule ? "text-[0.88em]" : "text-[0.84em]"
 
   return (
-    <div 
-      className="resume-section-heading flex items-center gap-3"
-    >
+    <div className="resume-section-heading flex items-center gap-2.5" style={{ breakAfter: "avoid", pageBreakAfter: "avoid" }}>
+      {/* Accent bar indicator for rule-style headings */}
+      {isRule && !isSidebar && (
+        <span
+          className="shrink-0 self-stretch rounded-full"
+          style={{
+            width: "3px",
+            minHeight: "1em",
+            backgroundColor: accent,
+            opacity: 0.75,
+          }}
+        />
+      )}
       <div
         className={cn(
-          "shrink-0 font-bold text-slate-900",
+          "shrink-0 font-bold",
           familyTone.sectionLabelClass,
           headingSize,
-          isUppercase ? "uppercase" : "tracking-[0.08em]",
-          template.design.headingVariant === "serif" && "font-semibold tracking-[0.18em]"
+          isSidebar && "text-[0.8em]",
+          isUppercase ? "uppercase" : "tracking-[0.06em]",
+          isSerif && "font-semibold"
         )}
         style={{
           color: accent,
-          letterSpacing: template.design.headingVariant === "serif" ? "0.12em" : undefined,
-          breakAfter: "avoid",
+          letterSpacing: isSerif ? "0.12em" : isRule ? "0.18em" : undefined,
         }}
       >
         {template.design.headingVariant === "eyebrow" ? (
           <span
             className="inline-flex items-center rounded-full border px-3 py-1"
             style={{
-              borderColor: hexToRgba(accent, 0.2),
+              borderColor: hexToRgba(accent, 0.22),
               backgroundColor: hexToRgba(accent, 0.08),
             }}
           >
@@ -243,19 +277,22 @@ function ResumeSectionHeading({
           label
         )}
       </div>
-      <div
-        className={cn(
-          "flex-1",
-          familyTone.sectionDividerClass,
-          template.design.sectionDividers === "bold" ? "h-[2px]" : "h-px",
-          template.design.headingVariant === "serif" ? "opacity-80" : "opacity-100"
-        )}
-        style={{
-          backgroundColor:
-            template.design.headingVariant === "serif" ? hexToRgba(accent, 0.28) : hexToRgba(accent, 0.22),
-          height: template.design.sectionDividers === "bold" ? "2px" : undefined,
-        }}
-      />
+      {template.design.headingVariant !== "eyebrow" &&
+ (template.design.headingVariant === "rule" || template.design.sectionDividers !== "none") && (
+        <div
+          className={cn(
+            "flex-1",
+            familyTone.sectionDividerClass,
+            template.design.sectionDividers === "bold" ? "h-[2px]" : "h-px",
+            isSerif ? "opacity-60" : "opacity-90",
+            isSidebar && "opacity-30"
+          )}
+          style={{
+            backgroundColor: isSerif ? hexToRgba(accent, 0.24) : hexToRgba(accent, 0.28),
+            height: template.design.sectionDividers === "bold" ? "2px" : undefined,
+          }}
+        />
+      )}
     </div>
   )
 }
@@ -265,22 +302,38 @@ function ResumeHeaderPhoto({
   name,
   accent,
   mode,
+  variant,
 }: {
   photoUrl: string
   name?: string
   accent: string
   mode: ResumeRenderMode
+  variant: TemplateConfig["design"]["photoVariant"]
 }) {
   const size = mode === "mobile" ? 72 : mode === "thumbnail" ? 48 : 88
+  const frameClassName =
+    variant === "circle"
+      ? "rounded-full"
+      : variant === "rounded-square"
+        ? "rounded-[1rem]"
+        : variant === "framed"
+          ? "rounded-[0.95rem]"
+          : "rounded-[1.35rem]"
+  const inset = variant === "framed" ? 4 : 0
 
   return (
     <div
-      className="shrink-0 overflow-hidden rounded-[1.35rem] border bg-white"
+      className={cn("shrink-0 overflow-hidden border bg-white", frameClassName)}
       style={{
         width: `${size}px`,
         height: `${size}px`,
-        borderColor: hexToRgba(accent, 0.2),
-        boxShadow: `0 12px 24px -18px ${hexToRgba(accent, 0.5)}`,
+        padding: inset ? `${inset}px` : undefined,
+        borderColor: variant === "framed" ? hexToRgba(accent, 0.35) : hexToRgba(accent, 0.2),
+        backgroundColor: variant === "framed" ? hexToRgba(accent, 0.05) : "#ffffff",
+        boxShadow:
+          variant === "framed"
+            ? `0 16px 30px -22px ${hexToRgba(accent, 0.55)}`
+            : `0 12px 24px -18px ${hexToRgba(accent, 0.5)}`,
       }}
     >
       <Image
@@ -290,7 +343,7 @@ function ResumeHeaderPhoto({
         height={size}
         sizes={`${size}px`}
         unoptimized
-        className="h-full w-full object-cover"
+        className={cn("h-full w-full object-cover", frameClassName)}
       />
     </div>
   )
@@ -313,6 +366,7 @@ function ResumeTemplateHeader({
 }) {
   const contactItems = getContactItems(content)
   const splitLayout = template.design.contactLayout === "split" && mode !== "mobile"
+  const chipContact = template.design.contactVariant === "chips" && !splitLayout
   const photoUrl =
     typeof content?.personal?.photoUrl === "string" && content.personal.photoUrl.trim().length > 0
       ? content.personal.photoUrl
@@ -325,9 +379,9 @@ function ResumeTemplateHeader({
     splitLayout && "flex-row items-start justify-between",
     template.design.headerVariant === "classic" && "border-b pb-6",
     template.design.headerVariant === "minimal" && "border-b pb-6",
-    template.design.headerVariant === "modern" && "rounded-[1.4rem] border px-6 py-5",
-    template.design.headerVariant === "executive" && "rounded-[1.4rem] border px-6 py-5",
-    template.design.headerVariant === "elegant" && "rounded-[1.6rem] border px-6 py-6"
+    template.design.headerVariant === "modern" && cn("rounded-[1.4rem] border px-6", mode === "print" ? "py-3" : "py-5"),
+    template.design.headerVariant === "executive" && cn("rounded-[1.4rem] border px-6", mode === "print" ? "py-3" : "py-5"),
+    template.design.headerVariant === "elegant" && cn("rounded-[1.6rem] border px-6", mode === "print" ? "py-4" : "py-6")
   )
 
   const headerStyle: CSSProperties = {
@@ -350,19 +404,26 @@ function ResumeTemplateHeader({
 
   const nameClassName = cn(
     "font-black tracking-tight text-slate-900",
-    mode === "mobile" ? "text-[2.05em]" : "text-[2.45em]",
+    mode === "print"
+      ? "text-[1.85em]"
+      : mode === "mobile"
+        ? "text-[2.05em]"
+        : "text-[2.45em]",
     mode === "thumbnail" && "text-[2.0em]",
     template.design.headerVariant === "minimal" && "font-semibold",
-    template.design.headerVariant === "executive" && "text-[2.6em]"
+    template.design.headerVariant === "executive" && mode !== "print" && "text-[2.6em]"
   )
 
   const contactClassName = cn(
-    "flex text-[0.84em] font-medium text-slate-600",
+    "flex font-medium text-slate-600",
+    mode === "print" ? "text-[0.76em]" : "text-[0.84em]",
     splitLayout
       ? "max-w-[250px] flex-col gap-1.5 text-right"
-      : template.design.contactLayout === "stacked" || mode === "mobile"
+      : chipContact
+        ? "flex-wrap items-center gap-2 text-[0.78em]"
+        : (template.design.contactLayout === "stacked" && mode !== "print") || mode === "mobile"
         ? "flex-col gap-1.5"
-        : "flex-wrap items-center gap-x-3 gap-y-1",
+        : "flex-wrap items-center gap-x-2 gap-y-0.5",
     template.design.headerAlignment === "center" && !splitLayout && "items-center justify-center text-center"
   )
 
@@ -372,7 +433,19 @@ function ResumeTemplateHeader({
   )
 
   return (
-    <header className={headerClassName} style={{ ...headerStyle, breakAfter: "avoid" }}>
+    <header 
+      className={headerClassName} 
+      style={{ 
+        ...headerStyle, 
+        breakAfter: "avoid",
+        pageBreakAfter: "avoid",
+        breakInside: "avoid",
+        pageBreakInside: "avoid",
+        width: "100%",
+        maxWidth: "100%",
+        overflow: "hidden"
+      }}
+    >
       {template.design.headerBand && (
         <div
           className="absolute inset-x-0 top-0 h-1 rounded-t-[1.4rem]"
@@ -390,21 +463,30 @@ function ResumeTemplateHeader({
               name={content?.personal?.name}
               accent={accent}
               mode={mode}
+              variant={template.design.photoVariant}
             />
           ) : null}
 
-          <div className="min-w-0 space-y-3">
+          <div className={cn("min-w-0", mode === "print" ? "space-y-1.5" : "space-y-3")}>
             <div className={cn(template.design.headerAlignment === "center" && !splitLayout && "text-center")}>
-              <h1 className={nameClassName} style={{ color: accent }}>
-                {content?.personal?.name || "Your Name"}
-              </h1>
+              {mode === "thumbnail" ? (
+                <div className={nameClassName} style={{ color: accent }}>
+                  {content?.personal?.name || "Your Name"}
+                </div>
+              ) : (
+                <h1 className={nameClassName} style={{ color: accent }}>
+                  {content?.personal?.name || "Your Name"}
+                </h1>
+              )}
               {content?.personal?.title ? (
                 <p
                   className={cn(
-                    "mt-2 text-[0.95em] font-semibold uppercase tracking-[0.18em] text-slate-500",
-                    mode === "mobile" && "text-[0.92em]",
-                    mode === "thumbnail" && "text-[0.85em]"
+                    "font-medium tracking-[0.12em] uppercase",
+                    mode === "print" ? "mt-0.5 text-[0.84em]" : "mt-1.5 text-[0.9em]",
+                    mode === "mobile" && "text-[0.88em]",
+                    mode === "thumbnail" && "text-[0.82em]"
                   )}
+                  style={{ color: hexToRgba(accent, 0.6) }}
                 >
                   {content.personal.title}
                 </p>
@@ -415,10 +497,25 @@ function ResumeTemplateHeader({
               <div className={contactClassName}>
                 {contactItems.map((item: string, index: number) => (
                   <div key={`${item}-${index}`} className="flex items-center gap-2">
-                    {template.design.contactLayout === "inline" && index > 0 && mode !== "mobile" && (
-                      <span className="h-1 w-1 rounded-full bg-slate-300" />
+                    {!chipContact && (template.design.contactLayout === "inline" || mode === "print") && index > 0 && mode !== "mobile" && (
+                      <span className="h-1 w-1 rounded-full" style={{ backgroundColor: hexToRgba(accent, 0.35) }} />
                     )}
-                    <span className={cn(item.includes("@") && "break-all", item === content?.personal?.phone && "whitespace-nowrap")}>
+                    <span
+                      className={cn(
+                        item.includes("@") && "break-all",
+                        item === content?.personal?.phone && "whitespace-nowrap",
+                        chipContact && "rounded-full border px-2.5 py-1 text-[0.95em]"
+                      )}
+                      style={
+                        chipContact
+                          ? {
+                              borderColor: hexToRgba(accent, 0.18),
+                              backgroundColor: hexToRgba(accent, 0.06),
+                              color: accent,
+                            }
+                          : undefined
+                      }
+                    >
                       {item}
                     </span>
                   </div>
@@ -457,6 +554,8 @@ function ResumeSection({
   mode,
   familyTone,
   children,
+  isSidebar,
+  spacing,
 }: {
   title: string
   template: TemplateConfig
@@ -464,13 +563,17 @@ function ResumeSection({
   mode: ResumeRenderMode
   familyTone: ReturnType<typeof getTemplateFamilyTone>
   children: ReactNode
+  isSidebar?: boolean
+  spacing: ReturnType<typeof getDensityMetrics>
 }) {
   return (
-    <section 
-      className={cn("resume-section", familyTone.sectionSpacingClass)}
-    >
-      <ResumeSectionHeading title={title} template={template} accent={accent} mode={mode} familyTone={familyTone} />
-      {children}
+    <section className="resume-section block w-full max-w-full">
+      <div style={{ marginBottom: `${spacing.headingGap}px`, breakAfter: "avoid", pageBreakAfter: "avoid" }}>
+        <ResumeSectionHeading title={title} template={template} accent={accent} mode={mode} familyTone={familyTone} isSidebar={isSidebar} />
+      </div>
+      <div className={cn("block w-full max-w-full", mode !== "print" && "overflow-hidden")}>
+        {children}
+      </div>
     </section>
   )
 }
@@ -478,9 +581,11 @@ function ResumeSection({
 function Description({
   value,
   mode,
+  className,
 }: {
   value: string
   mode: ResumeRenderMode
+  className?: string
 }) {
   if (!value) return null
 
@@ -489,10 +594,13 @@ function Description({
       value={value}
       compact={mode === "print" || mode === "thumbnail"}
       className={cn(
-        "text-[0.94em] leading-relaxed text-slate-700",
-        "[&_p]:mb-2 [&_ul]:mb-2 [&_ol]:mb-2",
-        mode === "mobile" && "text-[0.98em]",
-        mode === "thumbnail" && "text-[0.9em] leading-[1.45] [&_p]:mb-1.5 [&_ul]:mb-1.5 [&_ol]:mb-1.5"
+        "text-[0.94em] text-slate-700",
+        mode === "print" ? "leading-[1.42]" : "leading-relaxed",
+        "[&_p:not(:last-child)]:mb-[0.65em] [&_ul:not(:last-child)]:mb-[0.65em] [&_ol:not(:last-child)]:mb-[0.65em]",
+        "[&_p]:[break-inside:avoid] [&_p]:[page-break-inside:avoid] [&_li]:[break-inside:avoid] [&_li]:[page-break-inside:avoid]",
+        mode === "mobile" && "text-[0.98em] leading-relaxed",
+        mode === "thumbnail" && "text-[0.9em] leading-[1.45] [&_p:not(:last-child)]:mb-1 [&_ul:not(:last-child)]:mb-1 [&_ol:not(:last-child)]:mb-1",
+        className
       )}
     />
   )
@@ -525,23 +633,22 @@ export function ResumeTemplate({
   const mobilePadding = Math.max(28, Math.round(baseMargins * 0.8))
   const thumbnailPadding = Math.max(24, Math.round(baseMargins * 0.6))
   const printPadding = Math.max(8, Math.min(14, pxToMm(baseMargins) * 0.88))
-
-  const rootStyle: CSSProperties & { WebkitPrintColorAdjust?: "exact"; printColorAdjust?: "exact" } = {
+const rootStyle: CSSProperties & { WebkitPrintColorAdjust?: "exact"; printColorAdjust?: "exact" } = {
     backgroundColor: "#ffffff",
     color: "#0f172a",
-    width: noPadding ? "100%" : renderMode === "print" ? "210mm" : "100%",
-    minHeight: renderMode === "mobile" ? undefined : "297mm",
-    height: renderMode === "print" || renderMode === "mobile" ? "auto" : undefined, // Let total height flow, rounded up in container
+    width: noPadding ? "100%" : (renderMode === "mobile" ? "100%" : (isPrint ? "210mm" : "100%")),
+    maxWidth: (renderMode === "print" && !noPadding) ? "210mm" : "100%",
+    minHeight: (isPrint && !noPadding) ? "297mm" : "auto",
+    height: "auto",
     padding: "0",
-    maskImage: undefined,
-    WebkitMaskImage: undefined,
     fontFamily: fontStack,
-    fontSize: `${renderMode === "mobile" ? Math.max(10.5, baseFontSize - 0.3) : renderMode === "thumbnail" ? Math.max(9.25, baseFontSize - 0.8) : baseFontSize}pt`,
-    lineHeight: renderMode === "mobile" ? Math.max(1.55, baseLineHeight) : renderMode === "thumbnail" ? Math.max(1.42, baseLineHeight - 0.05) : baseLineHeight,
+    fontSize: `${renderMode === "mobile" ? Math.max(10.5, baseFontSize - 0.3) : renderMode === "thumbnail" ? Math.max(9.25, baseFontSize - 0.8) : renderMode === "print" ? Math.max(9.5, baseFontSize - 0.5) : baseFontSize}pt`,
+    lineHeight: renderMode === "mobile" ? Math.max(1.55, baseLineHeight) : renderMode === "thumbnail" ? Math.max(1.42, baseLineHeight - 0.05) : renderMode === "print" ? Math.max(1.32, baseLineHeight - 0.18) : baseLineHeight,
     border: template.design.pageBorder ? `1px solid ${hexToRgba(accent, 0.16)}` : undefined,
     borderRadius: renderMode === "mobile" ? "28px" : renderMode === "print" ? "0" : "8px",
     boxSizing: "border-box",
     overflow: renderMode === "screen" ? "hidden" : "visible",
+    position: (isPrint || renderMode === "print") ? "static" : "relative",
     WebkitPrintColorAdjust: "exact",
     printColorAdjust: "exact",
   }
@@ -551,36 +658,56 @@ export function ResumeTemplate({
   }
 
   const activeEntryVariant = (styles.entryVariant || template.design.entryVariant) as TemplateEntryVariant
-  const entryShellClassName = getEntryShellClassName(activeEntryVariant)
-  const entryShellStyle = getEntryShellStyle(activeEntryVariant, accent, template.design.subtleFill)
+  const entryShellClassName = getEntryShellClassName(activeEntryVariant, renderMode)
+  const entryShellStyle = getEntryShellStyle(activeEntryVariant, accent, renderMode, template.design.subtleFill)
 
-  const renderExperience = () => {
+  const renderExperience = (isSidebar?: boolean) => {
     const items = (content?.experience || []).filter((e: any) => e.title || e.company || e.description)
     if (!items.length) return null
 
     return (
-      <ResumeSection title={SECTION_LABELS.experience} template={template} accent={accent} mode={renderMode} familyTone={familyTone}>
-        <div className="space-y-4">
-          {items.map((experience: any) => (
+      <ResumeSection title={SECTION_LABELS.experience} template={template} accent={accent} mode={renderMode} familyTone={familyTone} spacing={spacing}>
+        <div className="block">
+          {items.map((experience: any, idx: number) => (
             <article
-              key={experience.id}
-              className={cn("resume-entry space-y-1.5", entryShellClassName)}
-              style={entryShellStyle}
+              key={experience.id || `experience-${idx}`}
+              className={cn(
+                "resume-entry block",
+                entryShellClassName,
+                idx < items.length - 1 && "mb-[var(--entry-gap)]",
+                activeEntryVariant === "standard" && idx > 0 && "border-t border-slate-100 pt-[var(--entry-gap)]"
+              )}
+              style={{
+                ...entryShellStyle,
+                "--entry-gap": `${spacing.entryGap}px`,
+                breakInside: "auto",
+                pageBreakInside: "auto",
+                WebkitBoxDecorationBreak: "clone",
+                boxDecorationBreak: "clone",
+              } as any}
             >
-              <div 
-                className={cn("resume-entry-header flex flex-col gap-1 sm:flex-row sm:items-baseline sm:justify-between")}
+              <div
+                className={cn(
+                  "resume-entry-header flex gap-1",
+                  !isSidebar && (renderMode === "print" ? "flex-row items-baseline justify-between" : "flex-col sm:flex-row sm:items-baseline sm:justify-between"),
+                  isSidebar && "flex-col"
+                )}
+                style={{ breakAfter: "avoid", pageBreakAfter: "avoid" }}
               >
                 <div>
-                  <h4 className="text-[1.06em] font-bold text-slate-900">{experience.title}</h4>
-                  <p className="text-[0.92em] font-semibold text-slate-600">{experience.company}</p>
+                  <h4 className="text-[1.05em] font-bold leading-tight" style={{ color: accent }}>{experience.title}</h4>
+                  <p className="text-[0.9em] font-medium text-slate-600 mt-0.5">{experience.company}</p>
                 </div>
                 {experience.period && (
-                  <span className="text-[0.82em] font-semibold uppercase tracking-[0.14em] text-slate-500">
+                  <span
+                    className={cn("shrink-0 text-[0.76em] font-semibold whitespace-nowrap", isSidebar && "text-[0.7em]")}
+                    style={{ color: hexToRgba(accent, 0.72), letterSpacing: "0.03em" }}
+                  >
                     {experience.period}
                   </span>
                 )}
               </div>
-              <Description value={experience.description} mode={renderMode} />
+              <Description value={experience.description} mode={renderMode} className="mt-1.5" />
             </article>
           ))}
         </div>
@@ -588,35 +715,55 @@ export function ResumeTemplate({
     )
   }
 
-  const renderProjects = () => {
+  const renderProjects = (isSidebar?: boolean) => {
     const items = (content?.projects || []).filter((p: any) => p.name || p.description)
     if (!items.length) return null
 
     return (
-      <ResumeSection title={SECTION_LABELS.projects} template={template} accent={accent} mode={renderMode} familyTone={familyTone}>
-        <div className="space-y-4">
-          {items.map((project: any) => (
+      <ResumeSection title={SECTION_LABELS.projects} template={template} accent={accent} mode={renderMode} familyTone={familyTone} spacing={spacing}>
+        <div className="block">
+          {items.map((project: any, idx: number) => (
             <article
-              key={project.id}
-              className={cn("resume-entry space-y-1.5", entryShellClassName)}
-              style={entryShellStyle}
+              key={project.id || `project-${idx}`}
+              className={cn(
+                "resume-entry block",
+                entryShellClassName,
+                idx < items.length - 1 && "mb-[var(--entry-gap)]",
+                activeEntryVariant === "standard" && idx > 0 && "border-t border-slate-100 pt-[var(--entry-gap)]"
+              )}
+              style={{
+                ...entryShellStyle,
+                "--entry-gap": `${spacing.entryGap}px`,
+                breakInside: "auto",
+                pageBreakInside: "auto",
+                WebkitBoxDecorationBreak: "clone",
+                boxDecorationBreak: "clone",
+              } as any}
             >
-              <div 
-                className="flex flex-col gap-1 sm:flex-row sm:items-baseline sm:justify-between"
+              <div
+                className={cn(
+                  "resume-entry-header flex gap-1",
+                  !isSidebar && (renderMode === "print" ? "flex-row items-baseline justify-between" : "flex-col sm:flex-row sm:items-baseline sm:justify-between"),
+                  isSidebar && "flex-col"
+                )}
+                style={{ breakAfter: "avoid", pageBreakAfter: "avoid" }}
               >
                 <div>
-                  <h4 className="text-[1em] font-bold text-slate-900">{project.name}</h4>
+                  <h4 className="text-[1.02em] font-bold leading-tight" style={{ color: accent }}>{project.name}</h4>
                   {project.url ? (
-                    <span className="text-[0.82em] font-medium text-slate-500">{project.url}</span>
+                    <span className="text-[0.82em] font-medium text-slate-500 break-all">{project.url}</span>
                   ) : null}
                 </div>
                 {project.period ? (
-                  <span className="text-[0.82em] font-semibold uppercase tracking-[0.14em] text-slate-500">
+                  <span
+                    className={cn("shrink-0 text-[0.76em] font-semibold whitespace-nowrap", isSidebar && "text-[0.7em]")}
+                    style={{ color: hexToRgba(accent, 0.72), letterSpacing: "0.03em" }}
+                  >
                     {project.period}
                   </span>
                 ) : null}
               </div>
-              <Description value={project.description} mode={renderMode} />
+              <Description value={project.description} mode={renderMode} className="mt-1.5" />
             </article>
           ))}
         </div>
@@ -624,33 +771,53 @@ export function ResumeTemplate({
     )
   }
 
-  const renderEducation = () => {
-    const items = (content?.education || []).filter((e: any) => e.degree || e.institution)
+  const renderEducation = (isSidebar?: boolean) => {
+    const items = (content?.education || []).filter((e: any) => e.degree || e.school || e.institution)
     if (!items.length) return null
 
     return (
-      <ResumeSection title={SECTION_LABELS.education} template={template} accent={accent} mode={renderMode} familyTone={familyTone}>
-        <div className="space-y-4">
-          {items.map((education: any) => (
+      <ResumeSection title={SECTION_LABELS.education} template={template} accent={accent} mode={renderMode} familyTone={familyTone} isSidebar={isSidebar} spacing={spacing}>
+        <div className="block">
+          {items.map((education: any, idx: number) => (
             <article
-              key={education.id}
-              className={cn("resume-entry space-y-1.5", entryShellClassName)}
-              style={entryShellStyle}
+              key={education.id || `education-${idx}`}
+              className={cn(
+                "resume-entry block",
+                entryShellClassName,
+                idx < items.length - 1 && "mb-[var(--entry-gap)]",
+                activeEntryVariant === "standard" && idx > 0 && "border-t border-slate-100 pt-[var(--entry-gap)]"
+              )}
+              style={{
+                ...entryShellStyle,
+                "--entry-gap": `${spacing.entryGap}px`,
+                breakInside: "auto",
+                pageBreakInside: "auto",
+                WebkitBoxDecorationBreak: "clone",
+                boxDecorationBreak: "clone",
+              } as any}
             >
-              <div 
-                className="flex flex-col gap-1 sm:flex-row sm:items-baseline sm:justify-between"
+              <div
+                className={cn(
+                  "resume-entry-header flex gap-1",
+                  !isSidebar && (renderMode === "print" ? "flex-row items-baseline justify-between" : "flex-col sm:flex-row sm:items-baseline sm:justify-between"),
+                  isSidebar && "flex-col"
+                )}
+                style={{ breakAfter: "avoid", pageBreakAfter: "avoid" }}
               >
                 <div>
-                  <h4 className="text-[1.06em] font-bold text-slate-900">{education.degree}</h4>
-                  <p className="text-[0.92em] font-semibold text-slate-600">{education.institution}</p>
+                  <h4 className="text-[1.05em] font-bold leading-tight" style={{ color: accent }}>{education.degree}</h4>
+                  <p className="text-[0.9em] font-medium text-slate-600 mt-0.5">{education.school || education.institution}</p>
                 </div>
                 {education.period && (
-                  <span className="text-[0.82em] font-semibold uppercase tracking-[0.14em] text-slate-500">
+                  <span
+                    className={cn("shrink-0 text-[0.76em] font-semibold whitespace-nowrap", isSidebar && "text-[0.7em]")}
+                    style={{ color: hexToRgba(accent, 0.72), letterSpacing: "0.03em" }}
+                  >
                     {education.period}
                   </span>
                 )}
               </div>
-              <Description value={education.description} mode={renderMode} />
+              <Description value={education.description} mode={renderMode} className="mt-1.5" />
             </article>
           ))}
         </div>
@@ -658,45 +825,93 @@ export function ResumeTemplate({
     )
   }
 
-  const renderSkills = () => {
+  const renderSkills = (isSidebar?: boolean) => {
     const items = (content?.skills || []).filter((s: string) => s && s.trim().length > 0)
     if (!items.length) return null
 
+    const variant = template.design.skillVariant || (template.layout === "two-column" ? "stacked" : "compact")
+
+    if (variant === "inline") {
+      return (
+        <ResumeSection title={SECTION_LABELS.skills} template={template} accent={accent} mode={renderMode} familyTone={familyTone} isSidebar={isSidebar} spacing={spacing}>
+          <p className="text-[0.92em] leading-relaxed text-slate-700">
+            {items.join(" · ")}
+          </p>
+        </ResumeSection>
+      )
+    }
+
+    if (variant === "compact") {
+      return (
+        <ResumeSection title={SECTION_LABELS.skills} template={template} accent={accent} mode={renderMode} familyTone={familyTone} isSidebar={isSidebar} spacing={spacing}>
+          <div className="flex flex-wrap gap-1.5">
+            {items.map((skill: string, index: number) => (
+              <span
+                key={`${skill}-${index}`}
+                className="inline-flex items-center rounded-full text-[0.8em] font-medium leading-none"
+                style={{
+                  padding: renderMode === "print" ? "3px 9px" : "4px 11px",
+                  color: accent,
+                  backgroundColor: hexToRgba(accent, 0.07),
+                  border: `1px solid ${hexToRgba(accent, 0.2)}`,
+                  whiteSpace: "nowrap",
+                }}
+              >
+                {skill}
+              </span>
+            ))}
+          </div>
+        </ResumeSection>
+      )
+    }
+
     return (
-      <ResumeSection title={SECTION_LABELS.skills} template={template} accent={accent} mode={renderMode} familyTone={familyTone}>
-        <ul className="list-disc space-y-1.5 pl-5 text-[0.94em] leading-relaxed text-slate-700">
+      <ResumeSection title={SECTION_LABELS.skills} template={template} accent={accent} mode={renderMode} familyTone={familyTone} isSidebar={isSidebar} spacing={spacing}>
+        <div className="block text-[0.92em] text-slate-700">
           {items.map((skill: string, index: number) => (
-            <li key={`${skill}-${index}`}>{skill}</li>
+            <div key={`${skill}-${index}`} className="flex items-center gap-2 mb-1.5 last:mb-0">
+              <span className="h-1.5 w-1.5 shrink-0 rounded-full" style={{ backgroundColor: hexToRgba(accent, 0.45) }} />
+              <span>{skill}</span>
+            </div>
           ))}
-        </ul>
+        </div>
       </ResumeSection>
     )
   }
 
-  const renderCertifications = () => {
+  const renderCertifications = (isSidebar?: boolean) => {
     const items = (content?.certifications || []).filter((c: any) => c.name || c.date)
     if (!items.length) return null
 
     return (
-      <ResumeSection title={SECTION_LABELS.certifications} template={template} accent={accent} mode={renderMode} familyTone={familyTone}>
-        <div className="space-y-3">
-          {items.map((certification: any) => (
+      <ResumeSection title={SECTION_LABELS.certifications} template={template} accent={accent} mode={renderMode} familyTone={familyTone} isSidebar={isSidebar} spacing={spacing}>
+        <div className="block">
+          {items.map((certification: any, idx: number) => (
             <article
-              key={certification.id}
-              className={cn("resume-entry flex flex-col gap-1 sm:flex-row sm:items-baseline sm:justify-between", entryShellClassName)}
-              style={entryShellStyle}
+              key={certification.id || `certification-${idx}`}
+              className={cn(
+                "resume-entry block",
+                idx < items.length - 1 && "mb-[var(--entry-gap)]",
+                entryShellClassName
+              )}
+              style={{ ...entryShellStyle, "--entry-gap": `${Math.round(spacing.entryGap * 0.7)}px`, breakInside: "avoid" } as any}
             >
-              <div>
-                <h4 className="text-[0.98em] font-bold text-slate-900">{certification.name}</h4>
-                {certification.issuer ? (
-                  <p className="text-[0.85em] font-semibold text-slate-500">{certification.issuer}</p>
+              <div className="flex items-start justify-between gap-2">
+                <div className="min-w-0 flex-1">
+                  <h4 className="text-[0.98em] font-bold leading-tight" style={{ color: accent }}>{certification.name}</h4>
+                  {certification.issuer ? (
+                    <p className="text-[0.84em] font-medium text-slate-500 mt-0.5">{certification.issuer}</p>
+                  ) : null}
+                </div>
+                {certification.date ? (
+                  <span
+                    className="shrink-0 text-[0.75em] font-semibold whitespace-nowrap"
+                    style={{ color: hexToRgba(accent, 0.72), letterSpacing: "0.03em" }}
+                  >
+                    {certification.date}
+                  </span>
                 ) : null}
               </div>
-              {certification.date ? (
-                <span className="text-[0.82em] font-semibold uppercase tracking-[0.14em] text-slate-500">
-                  {certification.date}
-                </span>
-              ) : null}
             </article>
           ))}
         </div>
@@ -704,20 +919,61 @@ export function ResumeTemplate({
     )
   }
 
-  const renderLanguages = () => {
+  const renderLanguages = (isSidebar?: boolean) => {
     const items = (content?.languages || []).filter((l: any) => l.language || l.name)
     if (!items.length) return null
 
     return (
-      <ResumeSection title={SECTION_LABELS.languages} template={template} accent={accent} mode={renderMode} familyTone={familyTone}>
-        <div className="space-y-2 text-[0.94em] text-slate-700">
+      <ResumeSection title={SECTION_LABELS.languages} template={template} accent={accent} mode={renderMode} familyTone={familyTone} isSidebar={isSidebar} spacing={spacing}>
+        <div className="block">
           {items.map((language: any, index: number) => (
-            <p key={`${language.language || language.name}-${index}`}>
-              <span className="font-bold text-slate-900">{language.language || language.name}</span>
+            <div key={`${language.language || language.name}-${index}`} className="flex items-center justify-between gap-3 mb-1.5 last:mb-0">
+              <span className="text-[0.94em] font-semibold text-slate-800">{language.language || language.name}</span>
               {(language.proficiency || language.level) && (
-                <span className="text-slate-500"> - {language.proficiency || language.level}</span>
+                <span
+                  className="shrink-0 text-[0.78em] font-medium rounded-full px-2 py-0.5"
+                  style={{
+                    color: accent,
+                    backgroundColor: hexToRgba(accent, 0.07),
+                    border: `1px solid ${hexToRgba(accent, 0.18)}`,
+                  }}
+                >
+                  {language.proficiency || language.level}
+                </span>
               )}
-            </p>
+            </div>
+          ))}
+        </div>
+      </ResumeSection>
+    )
+  }
+
+  const renderInterests = (isSidebar?: boolean) => {
+    const variant = content?.interestsVariant || "list"
+    
+    if (variant === "text") {
+      if (!content?.interestsContent) return null
+      return (
+        <ResumeSection title={SECTION_LABELS.interests} template={template} accent={accent} mode={renderMode} familyTone={familyTone} isSidebar={isSidebar} spacing={spacing}>
+          <Description value={content.interestsContent} mode={renderMode} />
+        </ResumeSection>
+      )
+    }
+
+    const items = (content?.interests || []).filter((i: string) => i && i.trim().length > 0)
+    if (!items.length) return null
+
+    return (
+      <ResumeSection title={SECTION_LABELS.interests} template={template} accent={accent} mode={renderMode} familyTone={familyTone} isSidebar={isSidebar} spacing={spacing}>
+        <div className={cn(
+          "flex flex-wrap gap-x-4 gap-y-2 text-[0.94em] leading-relaxed text-slate-700",
+          isSidebar && "block"
+        )}>
+          {items.map((interest: string, index: number) => (
+            <div key={`${interest}-${index}`} className={cn("flex items-center gap-2", isSidebar && "mb-1 last:mb-0")}>
+              <span className="h-1.5 w-1.5 shrink-0 rounded-full" style={{ backgroundColor: hexToRgba(accent, 0.45) }} />
+              <span>{interest}</span>
+            </div>
           ))}
         </div>
       </ResumeSection>
@@ -726,22 +982,24 @@ export function ResumeTemplate({
 
   const renderSummary = () => {
     if (!content?.summary) return null
+    const summaryText = typeof content.summary === 'string' ? content.summary : (content.summary.summary || JSON.stringify(content.summary));
 
     return (
-      <ResumeSection title={SECTION_LABELS.summary} template={template} accent={accent} mode={renderMode} familyTone={familyTone}>
-        <Description value={content.summary} mode={renderMode} />
+      <ResumeSection title={SECTION_LABELS.summary} template={template} accent={accent} mode={renderMode} familyTone={familyTone} spacing={spacing}>
+        <Description value={summaryText} mode={renderMode} />
       </ResumeSection>
     )
   }
 
-  const sectionRenderers: Record<ResumeSectionId, () => ReactNode> = {
-    summary: renderSummary,
-    experience: renderExperience,
-    projects: renderProjects,
-    education: renderEducation,
-    skills: renderSkills,
-    certifications: renderCertifications,
-    languages: renderLanguages,
+  const sectionRenderers: Record<ResumeSectionId, (isSidebar?: boolean) => ReactNode> = {
+    summary: () => renderSummary(),
+    experience: (isSidebar) => renderExperience(isSidebar),
+    projects: (isSidebar) => renderProjects(isSidebar),
+    education: (isSidebar) => renderEducation(isSidebar),
+    skills: (isSidebar) => renderSkills(isSidebar),
+    certifications: (isSidebar) => renderCertifications(isSidebar),
+    languages: (isSidebar) => renderLanguages(isSidebar),
+    interests: (isSidebar) => renderInterests(isSidebar),
     "page-break": () => (
       <div
         className={cn(
@@ -766,6 +1024,25 @@ export function ResumeTemplate({
 
   const sidebarSections = new Set(template.sidebarSections ?? ["skills", "languages", "certifications", "education"])
   const isTwoColumn = template.layout === "two-column" && renderMode !== "mobile"
+  const sidebarVariant = template.design.sidebarVariant ?? "plain"
+  const sidebarUsesPanel = sidebarVariant !== "plain"
+  const sidebarStyle: CSSProperties =
+    sidebarVariant === "tint"
+      ? {
+          backgroundImage: `linear-gradient(180deg, ${hexToRgba(accent, 0.11)}, ${hexToRgba(accent, 0.045)})`,
+          border: `1px solid ${hexToRgba(accent, 0.16)}`,
+          boxShadow: renderMode === "print" ? "none" : `0 16px 32px -28px ${hexToRgba(accent, 0.28)}`,
+        }
+      : sidebarUsesPanel
+        ? {
+            backgroundColor: hexToRgba(accent, template.design.subtleFill ? 0.055 : 0.032),
+            border: `1px solid ${hexToRgba(accent, 0.1)}`,
+            boxShadow: renderMode === "print" ? "none" : `0 12px 28px -26px ${hexToRgba(accent, 0.22)}`,
+          }
+        : {
+            backgroundColor: template.design.subtleFill ? hexToRgba(accent, 0.04) : "transparent",
+            border: template.design.subtleFill ? `1px solid ${hexToRgba(accent, 0.1)}` : "none",
+          }
 
   return (
     <div
@@ -806,9 +1083,10 @@ export function ResumeTemplate({
       )}
 
       <div 
-        className="flex flex-col relative z-0 w-full" 
+        className="block w-full max-w-full" 
         style={{
-          ...sectionGapStyle,
+          position: (isPrint || renderMode === "print") ? "static" : "relative",
+          zIndex: 0,
           padding: 
             noPadding ? "0" : 
             renderMode === "print" ? `${printPadding}mm` : 
@@ -832,19 +1110,66 @@ export function ResumeTemplate({
 
         {isTwoColumn ? (
           <div
-            className={cn(
-              "grid w-full gap-8",
-              template.sidebarPosition === "right" ? "grid-cols-[1fr_260px]" : "grid-cols-[260px_1fr]"
-            )}
+            className="block w-full"
+            style={{
+              display: "block",
+              clear: "both",
+              marginTop: `${spacing.sectionGap}px`,
+            }}
           >
-            <div className={cn("flex flex-col", template.sidebarPosition === "right" ? "order-1" : "order-2")} style={sectionGapStyle}>
+            {/* Sidebar — floated, never a BFC so CSS columns can fragment around it */}
+            <div
+              className={cn("block", sidebarUsesPanel && "rounded-[1rem] p-5")}
+              style={{
+                width: "68.8mm",
+                float: template.sidebarPosition === "right" ? "right" : "left",
+                marginLeft: template.sidebarPosition === "right" ? "8.5mm" : "0",
+                marginRight: template.sidebarPosition === "left" ? "8.5mm" : "0",
+                display: "block",
+                boxSizing: "border-box",
+                breakInside: "avoid",
+                pageBreakInside: "avoid",
+                ...sidebarStyle,
+              }}
+            >
+              {sectionOrder
+                .filter((id) => sidebarSections.has(id))
+                .map((sectionId, index) => {
+                  const renderedSection = sectionRenderers[sectionId]?.(true)
+                  if (!renderedSection) return null
+                  return (
+                    <div
+                      key={`${sectionId}-${index}`}
+                      className="block"
+                      style={{ marginBottom: `${Math.round(spacing.sectionGap * 0.7)}px` }}
+                    >
+                      {renderedSection}
+                    </div>
+                  )
+                })}
+            </div>
+            {/* Main column — explicit margin keeps it beside the sidebar without
+                creating a BFC (BFC would make CSS columns treat the whole block
+                as unbreakable, leaving a blank first page). */}
+            <div
+              className="block"
+              style={{
+                display: "block",
+                marginLeft: template.sidebarPosition === "right" ? 0 : "77.3mm",
+                marginRight: template.sidebarPosition === "right" ? "77.3mm" : 0,
+              }}
+            >
               {sectionOrder
                 .filter((id) => !sidebarSections.has(id))
                 .map((sectionId, index) => {
-                  const renderedSection = sectionRenderers[sectionId]?.()
+                  const renderedSection = sectionRenderers[sectionId]?.(false)
                   if (!renderedSection) return null
                   return (
-                    <div key={`${sectionId}-${index}`} className="contents">
+                    <div
+                      key={`${sectionId}-${index}`}
+                      className="block"
+                      style={{ marginBottom: `${spacing.sectionGap}px` }}
+                    >
                       {renderedSection}
                       {template.design.sectionDividers === "thin" && (
                         <div className="h-px w-full bg-slate-100" />
@@ -856,42 +1181,23 @@ export function ResumeTemplate({
                   )
                 })}
             </div>
-            <div
-              className={cn(
-                "flex flex-col gap-6 rounded-[1rem] p-5",
-                template.sidebarPosition === "right" ? "order-2" : "order-1"
-              )}
-              style={{
-                backgroundColor: template.design.subtleFill ? hexToRgba(accent, 0.04) : "transparent",
-                border: template.design.subtleFill ? `1px solid ${hexToRgba(accent, 0.1)}` : "none",
-              }}
-            >
-              {sectionOrder
-                .filter((id) => sidebarSections.has(id))
-                .map((sectionId, index) => {
-                  const renderedSection = sectionRenderers[sectionId]?.()
-                  if (!renderedSection) return null
-                  return (
-                    <div key={`${sectionId}-${index}`} className="contents">
-                      {renderedSection}
-                    </div>
-                  )
-                })}
-            </div>
+            {/* Clearfix — ensures this wrapper grows to contain the sidebar float */}
+            <div style={{ clear: "both", display: "block" }} />
           </div>
         ) : (
-          <main 
-            className="block-layout" 
-            style={{ 
-              "--resume-section-gap": `${spacing.sectionGap}px` 
-            } as any}
+          <main
+            className="block w-full"
+            style={{ marginTop: `${spacing.sectionGap}px` }}
           >
             {sectionOrder.map((sectionId, index) => {
-              const renderedSection = sectionRenderers[sectionId]?.()
+              const renderedSection = sectionRenderers[sectionId]?.(false)
               if (!renderedSection) return null
-
               return (
-                <div key={`${sectionId}-${index}`} className="contents">
+                <div
+                  key={`${sectionId}-${index}`}
+                  className="block"
+                  style={{ marginBottom: `${spacing.sectionGap}px` }}
+                >
                   {renderedSection}
                   {template.design.sectionDividers === "thin" && (
                     <div className="h-px w-full bg-slate-100" />

@@ -1,6 +1,12 @@
-import { AppProviders } from "@/components/app/app-providers"
+import type { ReactNode } from "react";
+import { createMetadata } from "@/lib/metadata";
 
-export default function PrintLayout({ children }: { children: React.ReactNode }) {
-  return <AppProviders>{children}</AppProviders>
+export const metadata = createMetadata({
+  title: "Print Preview",
+  description: "Private print preview for resume exports.",
+  noIndex: true,
+});
+
+export default function PrintLayout({ children }: { children: ReactNode }) {
+  return children;
 }
-

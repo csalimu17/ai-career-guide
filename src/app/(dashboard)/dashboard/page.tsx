@@ -41,6 +41,7 @@ import { cn } from "@/lib/utils"
 import { getSafeJobSource, JOB_SOURCE_CONFIG, JOB_STATUS_CONFIG, type JobTrackingStatus } from "@/lib/jobs/model"
 import { getTemplateConfig } from "@/lib/templates-config"
 import { PLAN_LIMITS, type PlanType } from "@/lib/product-rules"
+import { GuardianIntelligence } from "@/components/dashboard/GuardianIntelligence"
 
 // --- Types & Helpers ---
 type ResumeRecord = { id: string; name: string; templateId?: string; updatedAt?: { toDate?: () => Date } }
@@ -685,6 +686,9 @@ export default function DashboardPage() {
         {/* RIGHT COLUMN: Sidebar Stats & Health */}
         <div className="space-y-6 lg:col-span-4">
           
+          {/* Dan's Proactive Guardian */}
+          <GuardianIntelligence />
+
           {/* Readiness Bento Card */}
           <BentoCard glow className="p-8">
             <div className="space-y-2">
@@ -942,7 +946,7 @@ function MobileDashboardExperience({
                 key={v}
                 onClick={() => setInsightView(v)}
                 className={cn(
-                  "min-h-[34px] rounded-xl px-3 py-2 text-[0.68rem] font-black uppercase tracking-[0.16em] transition-all duration-300 border",
+                  "min-h-[44px] rounded-xl px-3 py-2 text-[0.68rem] font-black uppercase tracking-[0.16em] transition-all duration-300 border",
                   insightView === v
                     ? "bg-slate-950 text-white shadow-lg shadow-slate-200 border-slate-950"
                     : "text-slate-500 bg-white/50 border-slate-100 hover:bg-white hover:text-slate-900 hover:border-slate-200"

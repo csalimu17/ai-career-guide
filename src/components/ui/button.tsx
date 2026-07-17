@@ -10,13 +10,13 @@ const buttonVariants = cva(
     variants: {
       variant: {
         default:
-          "brand-gradient-bg text-white shadow-[0_20px_50px_-26px_rgba(113,88,255,0.48)] hover:brightness-[1.03] md:shadow-[0_26px_60px_-30px_rgba(113,88,255,0.52)] md:hover:shadow-[0_32px_75px_-34px_rgba(113,88,255,0.56)]",
+          "brand-gradient-bg text-white shadow-[0_20px_50px_-26px_rgba(85,60,255,0.38)] hover:brightness-[1.03] md:shadow-[0_26px_60px_-30px_rgba(85,60,255,0.42)] md:hover:shadow-[0_32px_75px_-34px_rgba(85,60,255,0.48)]",
         destructive:
           "bg-destructive text-destructive-foreground shadow-[0_16px_40px_-22px_hsl(var(--destructive))] hover:bg-destructive/90 md:shadow-[0_20px_44px_-28px_hsl(var(--destructive))] md:hover:shadow-[0_26px_54px_-30px_hsl(var(--destructive))]",
         outline:
-          "border border-white/90 bg-white/88 text-foreground shadow-[0_16px_38px_-28px_rgba(68,84,124,0.26)] hover:border-primary/15 hover:bg-white md:hover:shadow-[0_22px_50px_-30px_rgba(68,84,124,0.3)]",
+          "border border-white/90 bg-white/88 text-foreground shadow-[0_16px_38px_-28px_rgba(85,60,255,0.14)] hover:border-primary/15 hover:bg-white md:hover:shadow-[0_22px_50px_-30px_rgba(85,60,255,0.2)]",
         secondary:
-          "bg-[linear-gradient(135deg,rgba(124,99,255,0.12),rgba(51,184,255,0.1),rgba(255,159,110,0.12))] text-primary shadow-[0_16px_34px_-24px_rgba(83,97,144,0.26)] hover:brightness-[1.02] md:hover:shadow-[0_20px_42px_-28px_rgba(83,97,144,0.3)]",
+          "bg-[linear-gradient(135deg,rgba(85,60,255,0.08),rgba(0,102,255,0.06))] text-primary shadow-[0_16px_34px_-24px_rgba(85,60,255,0.15)] hover:brightness-[1.02] md:hover:shadow-[0_20px_42px_-28px_rgba(85,60,255,0.2)]",
         ghost: "text-muted-foreground hover:bg-muted/80 hover:text-foreground md:hover:bg-muted/70",
         link: "text-primary underline-offset-4 hover:underline md:hover:opacity-90",
       },

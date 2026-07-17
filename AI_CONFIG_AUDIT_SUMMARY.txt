@@ -72,7 +72,7 @@ ESTIMATED RISK:         CRITICAL - Complete service failure possible
 ================================================================================
 
 GOOGLE GEMINI
-  API Key:        Valid (AIzaSyBAMxuJy2kp3xh3x9DJzzA3uL0F7fs_Po0)
+  API Key:        Valid (<redacted-google-api-key>)
   Status:         VALID (503 rate limit - temporary)
   Models:         gemini-flash-latest, gemini-flash-lite-latest
   Fallback:       None available

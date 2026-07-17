@@ -66,7 +66,7 @@ export default async function OpenGraphImage() {
                 color: "transparent",
               }}
             >
-              Ai Career Guide.
+              AI Career Guide
             </div>
           </div>
 
@@ -79,7 +79,7 @@ export default async function OpenGraphImage() {
                 fontWeight: 800,
               }}
             >
-              Build sharper resumes. Win better interviews.
+              Build sharper CVs. Win better interviews.
             </div>
             <div
               style={{

@@ -38,7 +38,7 @@ const DEFAULT_SYSTEM_SETTINGS = {
   maintenanceMode: false,
   maintenanceMessage: "System is currently undergoing scheduled maintenance. Please check back soon.",
   supportEmail: siteConfig.supportEmail,
-  aiModel: "googleai/gemini-2.5-pro",
+  aiModel: "googleai/gemini-flash-latest",
   globalRateLimit: 60,
 }
 

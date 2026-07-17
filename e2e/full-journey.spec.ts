@@ -90,7 +90,7 @@ async function assertEditorLoads(page: import("@playwright/test").Page, isMobile
     await expect(page.getByText(/design/i)).toBeVisible();
   } else {
     await expect(
-      page.getByRole("button", { name: /resume assistant|return to preview/i })
+      page.getByRole("button", { name: /ai assistant|resume assistant|return to preview/i })
     ).toBeVisible();
     await expect(page.getByText(/live sync active/i)).toBeVisible();
   }
@@ -203,7 +203,7 @@ async function checkAtsScan(page: import("@playwright/test").Page) {
 
   await page.waitForTimeout(3000);
   await expect(page.locator("body")).not.toContainText(/Analysis failed/i);
-  await expect(page.getByText(/match score/i)).toBeVisible();
+  await expect(page.getByText(/match score/i).first()).toBeVisible();
 }
 
 test("First-time user journey works end-to-end", async ({ page, isMobile }, testInfo) => {
@@ -224,13 +224,14 @@ test("First-time user journey works end-to-end", async ({ page, isMobile }, test
   }
 
   await page.waitForURL(/\/(dashboard|onboarding|cv-editor)/i, { timeout: 120_000 });
+  
+  // Wait up to 5 seconds to see if it redirects us to the onboarding calibration flow
+  try {
+    await page.waitForURL(/\/onboarding/i, { timeout: 5000 });
+  } catch {}
+
   if (page.url().includes("/onboarding")) {
     await completeOnboarding(page);
-  } else if (page.url().includes("/dashboard")) {
-    await page.waitForTimeout(1500);
-    if (page.url().includes("/onboarding")) {
-      await completeOnboarding(page);
-    }
   }
 
   if (!page.url().includes("/cv-editor")) {

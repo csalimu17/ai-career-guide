@@ -1,22 +1,14 @@
 export const dynamic = "force-dynamic";
 
 import { type NextRequest, NextResponse } from "next/server";
-import OpenAI from "openai";
 import { PRODUCT_CTA_MAP, normalizeProduct, type ProductKey } from "@/lib/marketing-bot/config";
 import { postLeadToWebhook } from "@/lib/marketing-bot/leadWebhook";
 import { getBotPrompt } from "@/lib/marketing-bot/prompt";
 import { checkRateLimit } from "@/lib/marketing-bot/rateLimiter";
-import { getAi } from "@/ai/genkit";
+import { getAi, hasAnyAiProvider } from "@/ai/genkit";
 import { generateWithFallback } from "@/ai/generate-helper";
-import { getGeminiModel, getFallbackGeminiModel } from "@/ai/model-router";
+import { getGeminiModel } from "@/ai/model-router";
 import { z } from "zod";
-
-const getOpenAI = () => {
-  const apiKey = process.env.OPENAI_API_KEY || "sk-build-time-dummy";
-  return new OpenAI({
-    apiKey,
-  });
-};
 
 // -- GENKIT TOOLS --
 const ai = getAi();
@@ -172,30 +164,15 @@ function buildFallbackResponse(message: string) {
   };
 }
 
-async function isFlagged(message: string) {
-  // If no key is configured, skip moderation
-  if (!process.env.OPENAI_API_KEY) {
-    return false;
-  }
+function isFlagged(message: string) {
+  const blockedPatterns = [
+    /\b(?:kill myself|suicide|self-harm)\b/i,
+    /\b(?:make a bomb|build a bomb|explosive device)\b/i,
+    /\b(?:hack|phish|steal passwords|credit card fraud)\b/i,
+    /\b(?:sexual abuse of a child|csam)\b/i,
+  ];
 
-  try {
-    const moderation = await getOpenAI().moderations.create({
-      model: "omni-moderation-latest",
-      input: message,
-    });
-
-    return Boolean(moderation.results?.[0]?.flagged);
-  } catch (error: any) {
-    // If we hit a 429 (Too Many Requests) on moderation, we don't want to block the user.
-    // We'll log the warning and allow the request to proceed (best-effort resilience).
-    if (error.status === 429) {
-      console.warn("[marketing-bot:moderation] OpenAI 429 throttling detected. Proceeding without moderation check.");
-      return false;
-    }
-    
-    console.warn("[marketing-bot:moderation] Unexpected moderation failure:", error.message || error);
-    return false;
-  }
+  return blockedPatterns.some((pattern) => pattern.test(message));
 }
 
 
@@ -232,11 +209,11 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Message is required." }, { status: 400 });
     }
 
-    if (!process.env.OPENAI_API_KEY) {
+    if (!hasAnyAiProvider) {
       return NextResponse.json(buildFallbackResponse(message));
     }
 
-    if (await isFlagged(message)) {
+    if (isFlagged(message)) {
       return NextResponse.json({
         reply: "I can help with career planning, CV improvement, ATS questions, and choosing the right AI Career Guide tool, but I cannot help with that request.",
         responseId: body?.previousResponseId ?? null,
@@ -248,7 +225,6 @@ export async function POST(req: NextRequest) {
 
     const instructions = getBotPrompt();
     const model = await getGeminiModel("marketingChat");
-    const fallbackModel = getFallbackGeminiModel("marketingChat");
 
     const userEnvelope = {
       user_message: message,
@@ -262,7 +238,7 @@ export async function POST(req: NextRequest) {
       system: instructions,
       prompt: JSON.stringify(userEnvelope),
       tools: [recommendProductTool, save_lead_tool_legacy_compatible_alias],
-    }, fallbackModel || undefined);
+    });
 
     const actions: any[] = [];
     let leadSaved = false;
@@ -304,4 +280,3 @@ export async function POST(req: NextRequest) {
 
 // Support for slightly different naming in the loops above
 const save_lead_tool_legacy_compatible_alias = saveLeadTool;
-

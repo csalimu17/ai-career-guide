@@ -1,11 +1,135 @@
-import path from 'path';
 import type {NextConfig} from 'next';
-
-const projectRoot = path.resolve(__dirname);
 
 const nextConfig: NextConfig = {
   /* config options here */
   serverExternalPackages: ["pdf-parse", "pdfjs-dist", "canvas", "@opentelemetry/instrumentation"],
+  async redirects() {
+    return [
+      {
+        source: "/:path*",
+        has: [
+          {
+            type: "header",
+            key: "host",
+            value: "aicareerguide.co.uk",
+          },
+        ],
+        destination: "https://aicareerguide.uk/:path*",
+        permanent: true,
+      },
+      {
+        source: "/:path*",
+        has: [
+          {
+            type: "header",
+            key: "host",
+            value: "www.aicareerguide.co.uk",
+          },
+        ],
+        destination: "https://aicareerguide.uk/:path*",
+        permanent: true,
+      },
+      {
+        source: "/:path*",
+        has: [
+          {
+            type: "header",
+            key: "host",
+            value: "www.aicareerguide.uk",
+          },
+        ],
+        destination: "https://aicareerguide.uk/:path*",
+        permanent: true,
+      },
+      {
+        source: "/resume-builder",
+        destination: "/cv-builder",
+        permanent: true,
+      },
+      {
+        source: "/resume-checker",
+        destination: "/ats-cv-checker",
+        permanent: true,
+      },
+    ];
+  },
+  async headers() {
+    return [
+      {
+        source: "/:path*",
+        has: [
+          {
+            type: "query",
+            key: "_rsc",
+          },
+        ],
+        headers: [
+          {
+            key: "X-Robots-Tag",
+            value: "noindex, nofollow",
+          },
+          {
+            key: "Cache-Control",
+            value: "public, s-maxage=3600, stale-while-revalidate=86400",
+          },
+        ],
+      },
+      {
+        source: "/robots.txt",
+        headers: [
+          {
+            key: "Cache-Control",
+            value: "public, s-maxage=86400, stale-while-revalidate=604800",
+          },
+        ],
+      },
+      {
+        source: "/sitemap.xml",
+        headers: [
+          {
+            key: "Cache-Control",
+            value: "public, s-maxage=3600, stale-while-revalidate=86400",
+          },
+        ],
+      },
+      {
+        source: "/feed.xml",
+        headers: [
+          {
+            key: "Cache-Control",
+            value: "public, s-maxage=1200, stale-while-revalidate=86400",
+          },
+        ],
+      },
+      {
+        source: "/llms.txt",
+        headers: [
+          {
+            key: "Cache-Control",
+            value: "public, s-maxage=86400, stale-while-revalidate=604800",
+          },
+        ],
+      },
+      {
+        source: "/llms-full.txt",
+        headers: [
+          {
+            key: "Cache-Control",
+            value: "public, s-maxage=86400, stale-while-revalidate=604800",
+          },
+        ],
+      },
+      {
+        source: "/:path*\\.(png|jpg|jpeg|webp|avif|gif|svg|ico|woff|woff2)",
+        headers: [
+          {
+            key: "Cache-Control",
+            value: "public, max-age=31536000, immutable",
+          },
+        ],
+      },
+    ];
+  },
   outputFileTracingIncludes: {
     "/*": [
       "node_modules/pdf-parse/dist/**/*",
@@ -16,12 +140,6 @@ const nextConfig: NextConfig = {
     serverActions: {
       bodySizeLimit: '20mb',
     },
-  },
-  typescript: {
-    ignoreBuildErrors: true,
-  },
-  eslint: {
-    ignoreDuringBuilds: true,
   },
   images: {
     remotePatterns: [

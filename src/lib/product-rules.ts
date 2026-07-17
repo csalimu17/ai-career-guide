@@ -26,7 +26,7 @@ export const PLAN_LIMITS: Record<PlanType, PlanEntitlements> = {
   pro: {
     maxResumes: 10,
     aiGenerations: 50,
-    atsChecks: 25,
+    atsChecks: 50,
     premiumTemplates: true,
     jobTracker: true,
     coverLetters: 5,

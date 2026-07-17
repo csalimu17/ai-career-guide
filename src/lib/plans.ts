@@ -21,7 +21,7 @@ export const PLANS: Record<PlanId, Plan> = {
     name: "Free",
     price: "\u00A30",
     stripePriceId: null,
-    features: ["1 AI Resume", "3 ATS Scans", "5 ATS-safe templates", "Community Chat"],
+    features: ["1 AI CV", "3 ATS Scans", "5 ATS-safe templates", "Community Chat"],
     limits: {
       maxResumes: 1,
       atsChecks: 3,
@@ -39,9 +39,9 @@ export const PLANS: Record<PlanId, Plan> = {
     stripePriceId: "price_1TED7BBn4UHJM6HhiXH4EA9h",
     stripePriceIdAliases: ["price_1TD8OsB6KiU2Sp65vyiGVJar"],
     features: [
-      "10 Resumes",
+      "10 CVs",
       "50 ATS Scans",
-      "10 resume templates",
+      "10 CV templates",
       "Cover Letter Generator",
       "AI Interview Prep",
     ],
@@ -66,9 +66,10 @@ export const PLANS: Record<PlanId, Plan> = {
       "price_1TD8OtB6KiU2Sp65EiBLETK",
     ],
     features: [
+      "100 CVs",
+      "1,000 ATS Scans",
       "20 full-library templates",
-      "Unlimited Everything",
-      "Personal Career Strategist (AI)",
+      "AI Career Assistant (1,000 generations)",
       "Priority Support",
     ],
     limits: {
@@ -84,14 +85,13 @@ export const PLANS: Record<PlanId, Plan> = {
   agency: {
     id: "agency",
     name: "Agency",
-    price: "\u00A349.99",
+    price: "Custom",
     stripePriceId: null,
     features: [
-      "For Recruitment Agencies",
-      "Unlimited Resumes",
-      "Unlimited ATS Scans",
-      "Custom Branding",
-      "Dedicated Account Manager",
+      "White-labelled Candidate Portals",
+      "Unified ATS Integrations (Merge.dev)",
+      "Agency Template Enforcer",
+      "Recruiter Analytics Dashboard",
     ],
     limits: {
       maxResumes: 9999,

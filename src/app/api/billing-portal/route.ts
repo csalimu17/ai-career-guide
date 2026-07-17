@@ -48,6 +48,11 @@ export async function POST(req: Request) {
     return NextResponse.json({ url: session.url });
   } catch (error: any) {
     console.error("Stripe Billing Portal Error:", error);
-    return NextResponse.json({ error: error.message || "Unable to open billing portal" }, { status: 500 });
+    // SECURITY: Don't leak Stripe internal error messages (which can contain
+    // customer IDs, request IDs, or account hints) to the client.
+    return NextResponse.json(
+      { error: "Unable to open billing portal. Please try again or contact support." },
+      { status: 500 }
+    );
   }
 }

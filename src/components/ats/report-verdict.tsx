@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button"
 
 export const ReportVerdict = ({ visibleReport, builderHref, formatDate }: { visibleReport: any, builderHref: string, formatDate: (val: any) => string }) => {
   return (
-     <div className="magic-card relative overflow-hidden bg-slate-900 p-8 md:p-14 text-white shadow-2xl">
+      <div className="magic-card relative overflow-hidden bg-gradient-to-br from-slate-900 to-slate-950 p-8 md:p-14 text-white shadow-2xl">
         <div className="absolute top-0 right-0 p-16 opacity-5 pointer-events-none rotate-12">
            <Target className="w-64 h-64" />
         </div>
@@ -28,24 +28,24 @@ export const ReportVerdict = ({ visibleReport, builderHref, formatDate }: { visi
               <div className="space-y-4 text-center lg:text-left">
                  <div className="flex items-center justify-center lg:justify-start gap-4">
                     <Badge variant="outline" className="border-brand-teal/30 bg-brand-teal/10 text-brand-teal px-3 py-1 font-black uppercase text-[10px] tracking-widest">Diagnostic Verdict</Badge>
-                    <div className="flex items-center gap-2 text-[10px] font-black text-slate-500 tracking-widest">
+                    <div className="flex items-center gap-2 text-[10px] font-black text-slate-400/80 tracking-widest">
                        <History className="w-3.5 h-3.5" /> {formatDate(visibleReport.createdAt)}
                     </div>
                  </div>
                  <h2 className="text-[2rem] font-black leading-tight tracking-tighter md:text-5xl lg:max-w-xl">
                     {visibleReport.headline || "Analysis Complete"}
                  </h2>
-                 <p className="max-w-2xl text-base font-medium text-slate-400 leading-relaxed md:text-lg">
+                 <p className="max-w-2xl text-base font-medium text-slate-300 leading-relaxed md:text-lg">
                     {visibleReport.matchSummary}
                  </p>
               </div>
            </div>
            
            <div className="hidden shrink-0 space-y-4 lg:block">
-              <Button className="h-16 rounded-[1.8rem] bg-white px-10 text-base font-black text-slate-900 transition-all hover:bg-slate-100 hover:scale-[1.02]" asChild>
+              <Button className="h-16 rounded-[1.8rem] bg-white bg-none px-10 text-base font-black text-slate-900 transition-all hover:bg-slate-100 hover:scale-[1.02]" asChild>
                  <Link href={builderHref}>Apply to Editor <ArrowRight className="ml-3 h-5 w-5" /></Link>
               </Button>
-              <p className="text-center text-[10px] font-bold text-slate-500 uppercase tracking-widest">Save and fix keywords</p>
+              <p className="text-center text-[10px] font-bold text-slate-400/80 uppercase tracking-widest">Save and fix keywords</p>
            </div>
         </div>
      </div>

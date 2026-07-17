@@ -121,7 +121,10 @@ const SidebarProvider = React.forwardRef<
         state,
         open,
         setOpen,
-        isMobile,
+        // useIsMobile() can now return undefined during SSR; coerce to false
+        // for this context's downstream consumers, which all read it as a
+        // plain boolean flag.
+        isMobile: !!isMobile,
         openMobile,
         setOpenMobile,
         toggleSidebar,

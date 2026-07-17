@@ -1,9 +1,10 @@
 'use client';
 
 import Link from "next/link";
-import { useRouter } from "next/navigation";
-import { useEffect, useState, type Dispatch, type FormEvent, type SetStateAction } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
+import { useEffect, useRef, useState, type Dispatch, type FormEvent, type SetStateAction } from "react";
 import { doc, updateDoc, serverTimestamp } from "firebase/firestore";
+import { sendEmailVerification } from "firebase/auth";
 import { useAuth, useUser, useFirestore, useDoc, useMemoFirebase } from "@/firebase";
 import { initiateSignOut } from "@/firebase/non-blocking-login";
 import { BILLING_PLANS } from "@/lib/plans";
@@ -45,6 +46,7 @@ async function parseJsonResponse(response: Response) {
 export default function SettingsPage() {
   const auth = useAuth();
   const router = useRouter();
+  const searchParams = useSearchParams();
   const { user } = useUser();
   const db = useFirestore();
   const isMobile = useIsMobile();
@@ -65,6 +67,7 @@ export default function SettingsPage() {
   const [isUpgrading, setIsUpgrading] = useState<string | null>(null);
   const [isLaunchingPortal, setIsLaunchingPortal] = useState(false);
   const [isSigningOut, setIsSigningOut] = useState(false);
+  const didResumeCheckout = useRef(false);
 
   const settingsActionButtonBase =
     "group h-11 rounded-[1.15rem] px-4 text-[0.82rem] font-black tracking-tight transition-all duration-300"
@@ -138,6 +141,39 @@ export default function SettingsPage() {
       });
 
       const data = await parseJsonResponse(response);
+
+      if (response.status === 403 && data?.code === "ANONYMOUS_USER") {
+        toast({
+          variant: "destructive",
+          title: "Guest Account",
+          description: "You must create a full account before upgrading to a paid plan. Please sign out and sign up with an email or Google account.",
+        });
+        return;
+      }
+
+      // Server rejects checkout for unverified email addresses.
+      // Automatically send a verification email so the user doesn't have to hunt for a resend button.
+      if (response.status === 403 && data?.code === "EMAIL_NOT_VERIFIED") {
+        try {
+          if (user && !user.emailVerified) {
+            await sendEmailVerification(user);
+          }
+          toast({
+            variant: "destructive",
+            title: "Verification email sent",
+            description: `We just sent a verification link to ${user?.email ?? "your email"}. Please click it, then try upgrading again.`,
+          });
+        } catch (sendError: any) {
+          console.error("sendEmailVerification failed:", sendError);
+          toast({
+            variant: "destructive",
+            title: "Please verify your email",
+            description: "We couldn't automatically send a new link. Please verify your email or contact support.",
+          });
+        }
+        return;
+      }
+
       if (!response.ok || !data.url) {
         throw new Error(data.error || "Failed to create checkout session");
       }
@@ -154,6 +190,17 @@ export default function SettingsPage() {
       setIsUpgrading(null);
     }
   };
+
+  useEffect(() => {
+    const requestedPlan = searchParams.get("plan");
+    if (searchParams.get("checkout") !== "1" || !user || isLoading || didResumeCheckout.current) return;
+    if (requestedPlan !== "pro" && requestedPlan !== "master") return;
+    didResumeCheckout.current = true;
+    router.replace("/settings");
+    void handleUpgrade(requestedPlan);
+    // handleUpgrade intentionally runs once for the validated query intent.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isLoading, router, searchParams, user]);
 
   const handleLaunchPortal = async () => {
     if (!user) return;

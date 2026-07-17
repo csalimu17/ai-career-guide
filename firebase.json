@@ -15,21 +15,12 @@
     }
   },
   "firestore": {
-    "rules": "firestore.rules"
+    "rules": "firestore.rules",
+    "database": "(default)"
   },
   "storage": {
-    "rules": "storage.rules"
-  },
-  "hosting": {
-    "source": ".",
-    "ignore": [
-      "firebase.json",
-      "**/.*",
-      "**/node_modules/**"
-    ],
-    "frameworksBackend": {
-      "region": "us-central1"
-    }
+    "rules": "storage.rules",
+    "bucket": "studio-3704831244-a5638.firebasestorage.app"
   },
   "apphosting": {
     "backendId": "studio",
@@ -51,7 +42,6 @@
       "firebase-debug.log",
       "firebase-debug.*.log",
       "functions",
-      "scripts",
       "experimental_scripts",
       "build_output.txt",
       "build.log",
@@ -96,6 +86,7 @@
       ".launch-*",
       ".localhost-*",
       ".next-*"
-    ]
+    ],
+    "alwaysDeployFromSource": true
   }
 }

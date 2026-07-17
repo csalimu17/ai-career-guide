@@ -48,7 +48,7 @@ export function PrintPreviewContainer({ resume, className, defaultFitMode = "pag
     if (!contentRef.current) return
     const scrollW = contentRef.current.scrollWidth
     // In column layout, page count is determined by how many columns wide the content is
-    const pages = Math.max(1, Math.ceil(scrollW / contentW))
+    const pages = Math.max(1, Math.ceil((scrollW + 40) / (contentW + 40)))
     setPageCount(pages)
   }, [resume, contentW])
 
@@ -167,8 +167,8 @@ export function PrintPreviewContainer({ resume, className, defaultFitMode = "pag
       {/* ── Preview Area ── */}
       <div
         ref={containerRef}
-        className={cn("relative flex-1 overflow-auto", chromeTone)}
-        style={{ scrollbarColor: "#475569 #1e293b", scrollbarWidth: "thin" }}
+        className={cn("relative flex-1 overflow-auto [&::-webkit-scrollbar]:hidden", chromeTone)}
+        style={{ scrollbarWidth: "none" }}
       >
         {/* Centering wrapper - sets the correct scrollable height */}
         <div
@@ -197,12 +197,13 @@ export function PrintPreviewContainer({ resume, className, defaultFitMode = "pag
               ref={contentRef}
               className="absolute left-0 top-0 opacity-0 pointer-events-none"
               style={{ 
-                width: contentW,
-                height: contentH,
+                width: `${contentW}px`, 
+                height: `${contentH}px`,
                 columnWidth: `${contentW}px`,
-                columnGap: 0,
+                columnGap: "40px",
                 columnFill: "auto",
-                overflow: "hidden"
+                overflow: "hidden",
+                boxSizing: "border-box"
               }}
               aria-hidden="true"
             >
@@ -213,7 +214,7 @@ export function PrintPreviewContainer({ resume, className, defaultFitMode = "pag
             {Array.from({ length: pageCount }).map((_, i) => (
               <div
                 key={i}
-                className="relative bg-white ring-1 ring-black/20 overflow-hidden group shrink-0"
+                className="relative bg-white overflow-hidden group shrink-0"
                 style={{
                   width:  PAGE_W,
                   height: PAGE_H,
@@ -229,19 +230,19 @@ export function PrintPreviewContainer({ resume, className, defaultFitMode = "pag
                   }}
                 >
                   <div className="relative w-full h-full overflow-hidden">
-                    {/* 
-                      Display current page's column. 
+                    {/*
+                      Display current page's column.
                       TranslateX(-i * width) reveals the i-th column segment.
                     */}
                     <div
                       className="absolute inset-y-0 left-0"
-                      style={{ 
+                      style={{
                         width: "100%",
                         height: contentH,
                         columnWidth: `${contentW}px`,
-                        columnGap: 0,
+                        columnGap: "40px",
                         columnFill: "auto",
-                        transform: `translateX(-${i * contentW}px)` 
+                        transform: `translateX(-${i * (contentW + 40)}px)`
                       }}
                     >
                       <ResumeTemplate
@@ -252,18 +253,6 @@ export function PrintPreviewContainer({ resume, className, defaultFitMode = "pag
                       />
                     </div>
                   </div>
-                </div>
-
-                {/* Print margin guides (shown on hover) - aligned with A4_MARGIN_PX */}
-                <div className="absolute inset-0 pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity duration-300">
-                  {/* Top margin */}
-                  <div className="absolute top-[48px] inset-x-[48px] border-t border-dashed border-indigo-300/40" />
-                  {/* Bottom margin */}
-                  <div className="absolute bottom-[48px] inset-x-[48px] border-b border-dashed border-indigo-300/40" />
-                  {/* Left margin */}
-                  <div className="absolute left-[48px] inset-y-[48px] border-l border-dashed border-indigo-300/40" />
-                  {/* Right margin */}
-                  <div className="absolute right-[48px] inset-y-[48px] border-r border-dashed border-indigo-300/40" />
                 </div>
 
                 {/* Page number badge */}

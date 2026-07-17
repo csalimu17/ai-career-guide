@@ -560,7 +560,7 @@ function ResumeCard({
 
   return (
     <Card className="group relative flex h-full flex-col overflow-hidden rounded-[1.45rem] border-muted/20 bg-card/40 backdrop-blur-sm transition-all duration-300 hover:border-primary/50 hover:shadow-xl hover:shadow-primary/5 md:rounded-2xl">
-      <Link href={`/cv-editor?id=${resume.id}&returnTo=${encodeURIComponent("/resumes")}`} className="absolute inset-x-0 top-0 h-[70%] z-0" />
+      <Link href={`/cv-editor?id=${resume.id}&returnTo=${encodeURIComponent("/resumes")}`} className="absolute inset-x-0 top-0 h-[70%] z-10" />
       
       <div className="relative flex h-36 w-full items-center justify-center overflow-hidden border-b border-muted/10 bg-muted/30 md:h-44">
         <div className="absolute inset-0 bg-gradient-to-br from-primary/5 to-transparent pointer-events-none" />
@@ -571,12 +571,14 @@ function ResumeCard({
         </div>
 
         <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-all duration-300 flex items-center justify-center opacity-0 group-hover:opacity-100 pointer-events-none">
-          <Button variant="secondary" className="rounded-full pointer-events-auto h-10 px-6 font-semibold shadow-lg">
-            Open Editor
+          <Button variant="secondary" className="rounded-full pointer-events-auto h-10 px-6 font-semibold shadow-lg" asChild>
+            <Link href={`/cv-editor?id=${resume.id}&returnTo=${encodeURIComponent("/resumes")}`}>
+              Open Editor
+            </Link>
           </Button>
         </div>
 
-        <div className="absolute top-3 right-3 z-10 flex gap-2">
+        <div className="absolute top-3 right-3 z-20 flex gap-2">
           <TooltipProvider>
             <Tooltip>
               <TooltipTrigger asChild>

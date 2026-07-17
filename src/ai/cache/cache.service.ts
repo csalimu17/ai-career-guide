@@ -1,6 +1,7 @@
-import { Redis } from '@upstash/redis';
 import pino from 'pino';
 import crypto from 'crypto';
+import type { Redis } from '@upstash/redis';
+import { getRedis } from '@/lib/server/upstash';
 
 const logger = pino();
 
@@ -15,17 +16,16 @@ export interface CachedResponse {
 }
 
 export class CacheService {
-  private redis: Redis;
+  private redis: Redis | null;
   private readonly defaultTTL = 3600; // 1 hour
 
   constructor() {
-    this.redis = new Redis({
-      url: process.env.UPSTASH_REDIS_URL || '',
-      token: process.env.UPSTASH_REDIS_TOKEN || '',
-    });
+    this.redis = getRedis();
   }
 
   async get(key: string): Promise<CachedResponse | null> {
+    if (!this.redis) return null;
+
     try {
       const cached = await this.redis.get(key);
       if (cached) {
@@ -45,6 +45,8 @@ export class CacheService {
     response: any,
     ttl: number = this.defaultTTL
   ): Promise<void> {
+    if (!this.redis) return;
+
     try {
       const cached: CachedResponse = {
         id: key,
@@ -69,6 +71,8 @@ export class CacheService {
   }
 
   async delete(key: string): Promise<void> {
+    if (!this.redis) return;
+
     try {
       await this.redis.del(key);
       logger.debug({ msg: '[Cache Delete]', key });
@@ -78,6 +82,8 @@ export class CacheService {
   }
 
   async deletePattern(pattern: string): Promise<void> {
+    if (!this.redis) return;
+
     try {
       const keys = await this.redis.keys(pattern);
       if (keys.length > 0) {

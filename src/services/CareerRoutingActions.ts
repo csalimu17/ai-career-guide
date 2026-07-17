@@ -1,7 +1,7 @@
 "use server";
 
-import { getAi } from "@/ai/genkit";
 import { reasoningGeminiModel } from "@/ai/genkit";
+import { generateWithFallback } from "@/ai/generate-helper";
 import { z } from "zod";
 import { AgentRole, CAREER_AGENTS, RoutingResult } from "./CareerAgents";
 
@@ -12,10 +12,9 @@ const RoutingSchema = z.object({
 
 export const classifyCareerRouting = async (text: string): Promise<RoutingResult> => {
   const roles = Object.keys(CAREER_AGENTS).join(", ");
-  const ai = getAi();
   
   try {
-    const { output } = await ai.generate({
+    const { output } = await generateWithFallback({
       model: reasoningGeminiModel,
       prompt: `
         Classify this career-related query into one of the following roles: ${roles}.
@@ -46,10 +45,9 @@ export const getCareerAgentResponse = async (
   resumeContext: any
 ): Promise<string> => {
   const agent = CAREER_AGENTS[role];
-  const ai = getAi();
   
   try {
-    const { text: responseText } = await ai.generate({
+    const { text: responseText } = await generateWithFallback({
       model: reasoningGeminiModel,
       system: agent.systemPrompt + "\n\nUse the following resume context to provide specific help:\n" + JSON.stringify(resumeContext, null, 2),
       prompt: text,

@@ -17,6 +17,7 @@ export const JOB_SOURCES = [
   "company_site",
   "arbeitnow",
   "loopcv",
+  "devitjobs",
   "adzuna",
   "reed",
 ] as const
@@ -210,6 +211,14 @@ export const JOB_SOURCE_CONFIG: Record<
     integrationMode: "redirect",
     plannedCapabilities: [],
   },
+  devitjobs: {
+    label: "DevITjobs UK",
+    shortLabel: "DevITjobs",
+    applyLabel: "Apply",
+    badgeClassName: "border-slate-200 bg-slate-100 text-slate-700",
+    integrationMode: "redirect",
+    plannedCapabilities: [],
+  },
   adzuna: {
     label: "Adzuna",
     shortLabel: "Adzuna",
@@ -236,6 +245,7 @@ export const JOB_SOURCE_DEFAULT_URLS: Record<JobSource, string> = {
   company_site: "https://careers.google.com/",
   arbeitnow: "https://www.arbeitnow.com/",
   loopcv: "https://www.loopcv.pro/",
+  devitjobs: "https://devitjobs.uk/",
   adzuna: "https://www.adzuna.co.uk/",
   reed: "https://www.reed.co.uk/",
 }

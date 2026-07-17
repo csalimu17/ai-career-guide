@@ -1,15 +1,12 @@
 import { AIProviderStrategy, AIProviderResponse, ProviderError } from '../providers/base.strategy';
 import { GenerateOptions } from 'genkit';
 import { CacheService } from '../cache/cache.service';
-import { Redis } from '@upstash/redis';
 import pino from 'pino';
+import { getRedis } from '@/lib/server/upstash';
 
 const logger = pino();
 
-const redis = new Redis({
-  url: process.env.UPSTASH_REDIS_URL || '',
-  token: process.env.UPSTASH_REDIS_TOKEN || '',
-});
+const redis = getRedis();
 
 export interface RequestCoordinationContext {
   requestId: string;
@@ -71,7 +68,7 @@ export class RequestCoordinator {
       // Check for simulated failure (test-only; skip if Redis is unavailable)
       let isSimulatedFailure: string | null = null;
       try {
-        isSimulatedFailure = await redis.hget('test:provider_failures', provider);
+        isSimulatedFailure = await redis?.hget('test:provider_failures', provider) ?? null;
       } catch {
         // Redis unreachable — treat as no simulated failure
       }

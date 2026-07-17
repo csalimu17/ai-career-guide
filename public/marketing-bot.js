@@ -233,13 +233,13 @@
   button.setAttribute("aria-label", "Ask Dan");
   button.setAttribute("title", "Ask Dan");
   button.innerHTML = `
-    <img src="/dan-avatar.png" class="acg-bot-fab-avatar" alt="Dan" />
+    <img src="/dan-avatar-160.webp" class="acg-bot-fab-avatar" alt="Dan" />
     <span>Ask Dan</span>
   `;
 
   panel.innerHTML = `
     <div class="acg-bot-header">
-      <img src="/dan-avatar.png" class="acg-bot-header-avatar" alt="Dan" />
+      <img src="/dan-avatar-160.webp" class="acg-bot-header-avatar" alt="Dan" />
       <div class="acg-bot-header-titles">
         <p class="acg-bot-header-title">${escapeHtml(config.title)}</p>
         <p class="acg-bot-header-copy">Personal Assistant: Dan</p>

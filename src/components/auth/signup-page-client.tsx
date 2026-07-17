@@ -2,11 +2,12 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { ArrowRight, Loader2, Lock, Mail, User } from "lucide-react";
 import { collection, doc, limit, query } from "firebase/firestore";
+import { sendEmailVerification } from "firebase/auth";
 import { useAuth, useCollection, useDoc, useFirestore, useMemoFirebase, useUser } from "@/firebase";
-import { initiateEmailSignUp, initiateGoogleSignIn } from "@/firebase/non-blocking-login";
+import { initiateEmailSignUp, initiateGoogleSignIn, consumeGoogleRedirectResult } from "@/firebase/non-blocking-login";
 import { toast } from "@/hooks/use-toast";
 import { AuthShell } from "@/components/auth/auth-shell";
 import { GoogleSignInButton } from "@/components/auth/google-sign-in-button";
@@ -14,19 +15,21 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { getPostAuthDestination, upsertUserProfile } from "@/lib/user-profile";
+import { clearAuthIntent, getIntentDestination, loadAuthIntent, readAuthIntent, saveAuthIntent } from "@/lib/auth-intent";
+import { trackMarketingEvent } from "@/lib/marketing-analytics";
 
 export default function SignupPageClient() {
   const auth = useAuth();
   const db = useFirestore();
   const { user, isUserLoading, uid } = useUser();
   const router = useRouter();
+  const searchParams = useSearchParams();
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [firstName, setFirstName] = useState("");
   const [lastName, setLastName] = useState("");
   const [isSigningUp, setIsSigningUp] = useState(false);
-  const [termsAccepted, setTermsAccepted] = useState(false);
 
   const userDocRef = useMemoFirebase(() => {
     if (!db || !uid) return null;
@@ -43,22 +46,48 @@ export default function SignupPageClient() {
   const { data: resumes, isLoading: isResumesLoading } = useCollection(resumesQuery);
 
   useEffect(() => {
-    if (user && !isUserLoading) {
-      router.replace("/dashboard");
+    if (searchParams) saveAuthIntent(readAuthIntent(searchParams));
+  }, [searchParams]);
+
+  useEffect(() => {
+    // Wait for the Firestore profile + resumes existence check before
+    // redirecting — for Google sign-in this might be a returning user, so
+    // honour their onboardingComplete state instead of always hitting
+    // /dashboard and bouncing.
+    if (!user || isUserLoading || isProfileLoading || isResumesLoading) return;
+
+    const hasWorkspaceData = Array.isArray(resumes) && resumes.length > 0;
+    const destination = getIntentDestination(loadAuthIntent(), hasWorkspaceData);
+    if (destination) {
+      clearAuthIntent();
+      router.replace(destination);
+      return;
     }
-  }, [user, isUserLoading, router]);
+
+    router.replace(getPostAuthDestination(profile as any, hasWorkspaceData));
+  }, [user, isUserLoading, isProfileLoading, isResumesLoading, profile, resumes, router]);
+
+  // Consume any pending Google redirect (mobile / popup-blocked fallback)
+  // so the Firestore user profile is created before the dashboard loads.
+  useEffect(() => {
+    if (!auth || !db) return;
+    let cancelled = false;
+    consumeGoogleRedirectResult(auth, db).catch((error: any) => {
+      if (cancelled) return;
+      toast({
+        variant: "destructive",
+        title: "Google sign-up failed",
+        description: error.message || "We couldn't finish Google account setup right now.",
+      });
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [auth, db]);
 
   const handleSignup = async (event: React.FormEvent) => {
     event.preventDefault();
-
-    if (!termsAccepted) {
-      toast({
-        variant: "destructive",
-        title: "Agreement required",
-        description: "Please agree to the Terms of Service and Privacy Policy to continue.",
-      });
-      return;
-    }
+    trackMarketingEvent("signup_start", { method: "email" });
 
     if (password.length < 8) {
       toast({
@@ -73,6 +102,16 @@ export default function SignupPageClient() {
     try {
       const userCredential = await initiateEmailSignUp(auth, email, password);
       if (userCredential.user) {
+        // Kick off email verification in the background. Firebase doesn't
+        // do this automatically on signup; without it, users can't reach
+        // paid checkout (which now enforces email_verified) until they
+        // separately trigger a resend from settings. Failures here are
+        // intentionally swallowed — the user can always trigger a resend
+        // from the settings/billing flow.
+        sendEmailVerification(userCredential.user).catch((err) => {
+          console.warn("sendEmailVerification on signup failed:", err);
+        });
+
         await upsertUserProfile({
           db,
           uid: userCredential.user.uid,
@@ -82,19 +121,18 @@ export default function SignupPageClient() {
           photoURL: userCredential.user.photoURL,
           emailVerified: userCredential.user.emailVerified,
         });
-        router.replace("/dashboard");
+        // Brand-new email signup → straight to onboarding. The useEffect
+        // above would also land us here once profile loads, but pushing
+        // immediately removes the visible /dashboard flash.
       }
-    } catch (error: any) {
+    } catch {
+      // initiateEmailSignUp already toasted the Firebase error message.
       setIsSigningUp(false);
-      toast({
-        variant: "destructive",
-        title: "Account creation failed",
-        description: error.message || "We couldn't create your account. Please try again.",
-      });
     }
   };
 
   const handleGoogleSignup = async () => {
+    trackMarketingEvent("signup_start", { method: "google" });
     setIsSigningUp(true);
     try {
       const result = await initiateGoogleSignIn(auth);
@@ -109,43 +147,42 @@ export default function SignupPageClient() {
           photoURL: result.user.photoURL,
           emailVerified: result.user.emailVerified,
         });
-        router.replace("/dashboard");
+        // Don't push explicitly here — the useEffect above will pick the
+        // right destination once the profile/resumes finish loading.
+        // (Returning Google users with completed onboarding go straight
+        // to /dashboard; new users land on /onboarding.)
       } else {
         setIsSigningUp(false);
       }
     } catch (error: any) {
       setIsSigningUp(false);
-      toast({
-        variant: "destructive",
-        title: "Google sign-up failed",
-        description: error.message || "We couldn't finish Google account setup right now.",
-      });
+      // initiateGoogleSignIn toasts most errors itself; surface the clean
+      // unauthorized-domain throw so the user gets a helpful message.
+      if (error?.code === "auth/unauthorized-domain") {
+        toast({
+          variant: "destructive",
+          title: "Domain not authorized",
+          description: error.message,
+        });
+      }
     }
   };
-
-  if (isUserLoading) {
-    return (
-      <div className="flex min-h-screen items-center justify-center">
-        <Loader2 className="h-8 w-8 animate-spin text-primary" />
-      </div>
-    );
-  }
 
   return (
     <AuthShell
       eyebrow="Create account"
-      title="Launch a more organized, higher-converting job search"
-      description="Start free and get a guided onboarding flow, premium-ready resume templates, ATS analysis, and one place to manage applications."
-      supportingTitle="Build a stronger application stack from day one."
-      supportingCopy="AI Career Guide helps you move faster without sacrificing clarity, polish, or ATS safety. Set up once, then tailor every application with less busywork."
+      title="Create your account and save your CV"
+      description="Start free, keep your progress and move straight into the CV task you selected."
+      supportingTitle="Your CV workspace is ready when you are."
+      supportingCopy="Build or upload a CV, improve the evidence and check it against a role—all without losing your place."
       highlights={[
         {
           title: "Guided onboarding",
           description: "Capture your goals, target roles, and experience level so the product can tailor every suggestion.",
         },
         {
-          title: "Resume + ATS workflow",
-          description: "Create a master resume, score it against real jobs, and iterate from a clean editor and preview.",
+          title: "CV + ATS workflow",
+          description: "Create a master CV, compare it with real jobs, and iterate from a clean editor and preview.",
         },
         {
           title: "Upgrade only when it helps",
@@ -233,35 +270,18 @@ export default function SignupPageClient() {
               value={password}
               onChange={(event) => setPassword(event.target.value)}
               required
+              minLength={8}
+              aria-describedby="password-help"
             />
           </div>
-        </div>
-
-        <div className="flex items-start space-x-3 pb-2 pt-1">
-          <div className="flex h-5 items-center">
-            <input
-              id="terms"
-              type="checkbox"
-              className="h-4 w-4 rounded border-input bg-transparent text-primary focus:ring-primary"
-              checked={termsAccepted}
-              onChange={(e) => setTermsAccepted(e.target.checked)}
-              required
-            />
-          </div>
-          <div className="text-[0.85rem] leading-tight text-muted-foreground">
-            <label htmlFor="terms">
-              I agree to the{" "}
-              <Link href="/terms" className="font-medium text-primary hover:underline" target="_blank">Terms of Service</Link>
-              {" "}and{" "}
-              <Link href="/privacy" className="font-medium text-primary hover:underline" target="_blank">Privacy Policy</Link>.
-            </label>
-          </div>
+          <p id="password-help" className="text-xs leading-5 text-muted-foreground">Use at least 8 characters.</p>
         </div>
 
         <Button type="submit" className="h-12 w-full" disabled={isSigningUp}>
           {isSigningUp ? <Loader2 className="h-4 w-4 animate-spin" /> : "Create account"}
           {!isSigningUp && <ArrowRight className="h-4 w-4" />}
         </Button>
+        <p className="text-center text-xs leading-5 text-muted-foreground">By creating an account, you agree to our <Link className="underline hover:text-primary" href="/terms">Terms</Link> and acknowledge our <Link className="underline hover:text-primary" href="/privacy">Privacy Policy</Link>.</p>
       </form>
 
       <div className="relative my-6">

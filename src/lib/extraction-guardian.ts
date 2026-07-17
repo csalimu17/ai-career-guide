@@ -1,6 +1,6 @@
 import "server-only";
 
-import { getAi } from "@/ai/genkit";
+import { generateWithFallback } from "@/ai/generate-helper";
 import { getGeminiModel } from "@/ai/model-router";
 import { buildRecoveredExtractionFromText, getExtractionQuality, hasMeaningfulExtraction } from "@/lib/resume-text-recovery";
 import { CvDataExtractionOutput, CvDataExtractionOutputSchema, ResumeDataSchema } from "@/types/cv";
@@ -279,7 +279,7 @@ export async function runGuardedCvExtraction(input: ExtractionGuardianInput): Pr
   if (rawText.trim().length >= 80) {
     try {
       const model = await getGeminiModel("structuredExtraction");
-      const response = await getAi().generate({
+      const response = await generateWithFallback({
         model,
         config: { temperature: 0.1 },
         system: `You are a resume extraction recovery agent.

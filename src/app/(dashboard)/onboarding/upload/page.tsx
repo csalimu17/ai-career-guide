@@ -19,6 +19,7 @@ import {
   Zap,
   CloudLightning
 } from "lucide-react"
+import { motion, AnimatePresence } from "framer-motion"
 import { extractCvAction } from "@/app/actions/cv-actions"
 import { toast } from "@/hooks/use-toast"
 import { extractClientDocumentText } from "@/lib/client-document-text"
@@ -26,18 +27,29 @@ import { buildRecoveredExtractionFromText, getExtractionQuality, hasMeaningfulEx
 import { cn } from "@/lib/utils"
 import Link from "next/link"
 
-async function reportQualitySignal(payload: Record<string, unknown>) {
+/**
+ * Fire-and-forget quality signal. /api/quality/report now requires auth,
+ * so we attach the caller's Firebase ID token. Silently skipped if the
+ * user isn't signed in (this page is dashboard-gated so that shouldn't
+ * happen in practice).
+ */
+async function reportQualitySignal(
+  user: { getIdToken: (forceRefresh?: boolean) => Promise<string> } | null | undefined,
+  payload: Record<string, unknown>
+) {
+  if (!user) return;
   try {
-    await fetch("/api/quality/report", {
+    const idToken = await user.getIdToken();
+    fetch("/api/quality/report", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
+        Authorization: `Bearer ${idToken}`,
       },
       body: JSON.stringify(payload),
-      keepalive: true,
-    })
-  } catch (error) {
-    console.warn("Failed to report upload quality signal:", error)
+    }).catch((err) => console.debug("Silent quality report fail", err));
+  } catch {
+    // Complete silence
   }
 }
 
@@ -65,6 +77,20 @@ export default function UploadCvPage() {
   const [status, setStatus] = useState<'idle' | 'uploading' | 'parsing' | 'complete' | 'error'>('idle')
   const [error, setError] = useState<string | null>(null)
   const [parsingProgress, setParsingProgress] = useState(0)
+  const [loadingStep, setLoadingStep] = useState(0)
+
+  // Cycle loading messages during parsing
+  useEffect(() => {
+    let interval: NodeJS.Timeout
+    if (status === 'parsing') {
+      interval = setInterval(() => {
+        setLoadingStep(prev => (prev + 1) % 4)
+      }, 3000)
+    } else {
+      setLoadingStep(0)
+    }
+    return () => clearInterval(interval)
+  }, [status])
 
   // Simulate parsing progress
   useEffect(() => {
@@ -87,7 +113,7 @@ export default function UploadCvPage() {
     const selected = e.target.files?.[0]
     if (selected) {
       if (selected.size > 10 * 1024 * 1024) {
-        void reportQualitySignal({
+        void reportQualitySignal(user, {
           category: "upload",
           eventType: "cv_upload_rejected_size",
           status: "warning",
@@ -111,7 +137,7 @@ export default function UploadCvPage() {
         /\.(pdf|docx|doc|txt|png|jpg|jpeg|tiff|bmp)$/i.test(selected.name)
 
       if (!isSupportedFile) {
-        void reportQualitySignal({
+        void reportQualitySignal(user, {
           category: "upload",
           eventType: "cv_upload_rejected_type",
           status: "warning",
@@ -129,7 +155,7 @@ export default function UploadCvPage() {
       setFile(selected)
       setError(null)
 
-      void reportQualitySignal({
+      void reportQualitySignal(user, {
         category: "upload",
         eventType: "cv_upload_selected",
         status: "healthy",
@@ -156,7 +182,7 @@ export default function UploadCvPage() {
       const preflightTextPromise = extractClientDocumentText(file)
       const fileDataUriPromise = fileToDataUri(file)
 
-      void reportQualitySignal({
+      void reportQualitySignal(user, {
         category: "upload",
         eventType: "cv_upload_started",
         status: "healthy",
@@ -171,7 +197,7 @@ export default function UploadCvPage() {
       const fileDataUri = await fileDataUriPromise
       setUploadProgress(100)
 
-      void reportQualitySignal({
+      void reportQualitySignal(user, {
         category: "upload",
         eventType: "cv_upload_prepared",
         status: "healthy",
@@ -241,7 +267,7 @@ export default function UploadCvPage() {
       setStatus('error')
       setError(err.message || "Failed to analyze document.")
       if (!extractionStarted) {
-        void reportQualitySignal({
+        void reportQualitySignal(user, {
           category: "upload",
           eventType: "cv_upload_or_preparation_failed",
           status: "critical",
@@ -339,49 +365,129 @@ export default function UploadCvPage() {
               )}
 
               {(status === 'uploading' || status === 'parsing') && (
-                  <div className="relative overflow-hidden rounded-[1.5rem] bg-white/40 px-4 py-8 backdrop-blur-sm sm:px-10 sm:py-16 text-center">
-                    <div className="relative mx-auto flex max-w-xl flex-col items-center justify-center space-y-8">
-                      <div className="cyber-loader relative">
-                        <div className="h-24 w-24 animate-spin-slow rounded-full border-4 border-primary/10 border-t-primary shadow-[0_0_30px_rgba(101,88,245,0.15)]" />
-                        <div className="absolute inset-0 flex items-center justify-center">
-                          {status === 'uploading' ? (
-                            <Upload className="h-8 w-8 text-accent animate-bounce" />
-                          ) : (
-                            <Sparkles className="h-8 w-8 text-primary animate-pulse" />
-                          )}
-                        </div>
-                      </div>
+                  <div className="relative overflow-hidden rounded-[1.5rem] bg-white px-4 py-12 shadow-2xl sm:px-10 sm:py-20 text-center">
+                    <div className="absolute inset-x-0 top-0 h-1 bg-slate-100">
+                       <motion.div 
+                          className="h-full bg-gradient-to-r from-blue-600 via-indigo-500 to-orange-500"
+                          initial={{ width: "0%" }}
+                          animate={{ width: `${status === 'uploading' ? uploadProgress : parsingProgress}%` }}
+                          transition={{ duration: 0.5 }}
+                       />
+                    </div>
 
-                      <div className="space-y-3">
-                        <Badge variant="outline" className="eyebrow-chip border-primary/20 bg-primary/5">
-                          {status === 'uploading' ? 'Phase 1: Secure Preparation' : 'Phase 2: Multimodal Extraction'}
-                        </Badge>
-                        <h2 className="text-2xl font-black text-primary sm:text-3xl">
-                          {status === 'uploading' ? `Calibrating Payload... ${Math.round(uploadProgress)}%` : 'Gemini AI Deep Scan'}
-                        </h2>
-                        <p className="mx-auto max-w-md text-sm font-medium leading-relaxed text-slate-500 sm:text-base">
-                          {status === 'uploading'
-                            ? 'Preparing your experience files for high-fidelity extraction.'
-                            : 'Retrieving your contact details, career experience, and technical core.'}
-                        </p>
-                      </div>
-
-                      <div className="w-full max-w-md space-y-3">
-                        <div className="relative h-2.5 overflow-hidden rounded-full border border-slate-200/50 bg-slate-100/50 shadow-inner">
-                          <div
-                            className={cn(
-                              "absolute inset-y-0 left-0 rounded-full transition-[width] duration-700 ease-out",
-                              status === 'uploading'
-                                ? "bg-accent shadow-[0_0_15px_rgba(255,152,0,0.5)]"
-                                : "brand-gradient-bg shadow-[0_0_20px_rgba(124,58,237,0.4)]"
+                    <div className="relative mx-auto flex max-w-xl flex-col items-center justify-center space-y-10">
+                      <div className="relative flex items-center justify-center">
+                         <motion.div 
+                           animate={{ rotate: 360 }}
+                           transition={{ duration: 8, repeat: Infinity, ease: "linear" }}
+                           className="h-32 w-32 rounded-full border-[3px] border-slate-100 border-t-indigo-500 border-r-indigo-500/30" 
+                         />
+                         <motion.div 
+                           animate={{ rotate: -360 }}
+                           transition={{ duration: 6, repeat: Infinity, ease: "linear" }}
+                           className="absolute h-24 w-24 rounded-full border-[3px] border-slate-50 border-t-orange-500/40 border-l-orange-500" 
+                         />
+                         <div className="absolute flex items-center justify-center">
+                            {status === 'uploading' ? (
+                               <div className="flex h-24 w-24 items-center justify-center rounded-full bg-white shadow-xl ring-1 ring-slate-100">
+                                  <Upload className="h-10 w-10 text-blue-600 animate-bounce" />
+                               </div>
+                            ) : (
+                               <motion.div 
+                                 className="absolute flex h-24 w-24 items-center justify-center rounded-full bg-white shadow-2xl ring-1 ring-slate-100"
+                                 initial={{ scale: 0.8 }}
+                                 animate={{ 
+                                   scale: [1, 1.15, 1],
+                                 }}
+                                 transition={{ 
+                                   duration: 3,
+                                   repeat: Infinity,
+                                   ease: "easeInOut"
+                                 }}
+                               >
+                                 <div className="relative h-56 w-56">
+                                   <Image
+                                     src="/logo-mascot.png"
+                                     alt="AI Strategist"
+                                     fill
+                                     className="object-contain" 
+                                     priority
+                                   />
+                                 </div>
+                               </motion.div>
                             )}
-                            style={{ width: `${status === 'uploading' ? uploadProgress : parsingProgress}%` }}
-                          />
-                        </div>
-                        <div className="flex justify-between px-1 text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">
-                          <span className={cn(status === 'uploading' ? "text-accent" : "")}>Secure Preparation</span>
-                          <span className={cn(status === 'parsing' ? "text-primary" : "")}>Neural Extraction</span>
-                        </div>
+                         </div>
+                         
+                         {/* Orbital Particles */}
+                         {[0, 1, 2].map((i) => (
+                           <motion.div
+                             key={i}
+                             animate={{ 
+                               rotate: 360,
+                               scale: [1, 1.2, 1]
+                             }}
+                             transition={{ 
+                               duration: 3 + i, 
+                               repeat: Infinity, 
+                               ease: "linear" 
+                             }}
+                             className="absolute h-full w-full"
+                           >
+                              <div className={cn(
+                                "h-2 w-2 rounded-full mt-[-4px] ml-[50%] -translate-x-1/2 shadow-lg",
+                                i === 0 ? "bg-blue-500" : i === 1 ? "bg-orange-500" : "bg-indigo-500"
+                              )} />
+                           </motion.div>
+                         ))}
+                      </div>
+
+                      <div className="space-y-4">
+                        <AnimatePresence mode="wait">
+                          <motion.div
+                            key={status === 'uploading' ? 'uploading' : `step-${loadingStep}`}
+                            initial={{ opacity: 0, y: 10 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            exit={{ opacity: 0, y: -10 }}
+                            className="space-y-3"
+                          >
+                             <Badge variant="outline" className="rounded-full border-slate-200 bg-slate-50 px-4 py-1 text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">
+                               {status === 'uploading' ? 'Phase 1: Secure Preparation' : 'Phase 2: Neural Extraction'}
+                             </Badge>
+                             <h2 className="text-3xl font-black tracking-tight text-slate-900 sm:text-4xl">
+                               {status === 'uploading' 
+                                 ? `Calibrating Payload... ${Math.round(uploadProgress)}%` 
+                                 : ["Gemini AI Deep Scan", "Neural OCR Active", "Mapping Career Genes", "Synthesizing Professional DNA"][loadingStep]
+                               }
+                             </h2>
+                             <p className="mx-auto max-w-sm text-[13px] font-semibold leading-relaxed text-slate-500">
+                               {status === 'uploading'
+                                 ? 'Preparing your experience files for high-fidelity extraction.'
+                                 : [
+                                     'Retrieving your contact details and core profile data.',
+                                     'Scanning historical documents for hidden achievements.',
+                                     'Structuring skills into industry-standard benchmarks.',
+                                     'Finalizing your digital career signature for review.'
+                                   ][loadingStep]
+                               }
+                             </p>
+                          </motion.div>
+                        </AnimatePresence>
+                      </div>
+
+                      <div className="w-full max-w-xs space-y-4 pt-4">
+                         <div className="flex justify-between text-[9px] font-black uppercase tracking-[0.2em] text-slate-400">
+                           <span className={cn(status === 'uploading' ? "text-blue-600" : "text-emerald-500")}>
+                              {status === 'uploading' ? "In Flight" : "Verified"}
+                           </span>
+                           <span className="text-slate-900">{Math.round(status === 'uploading' ? uploadProgress : parsingProgress)}%</span>
+                         </div>
+                         <div className="relative h-1.5 overflow-hidden rounded-full bg-slate-100">
+                            <motion.div 
+                               className="absolute inset-y-0 left-0 bg-slate-900"
+                               initial={{ width: "0%" }}
+                               animate={{ width: `${status === 'uploading' ? uploadProgress : parsingProgress}%` }}
+                            />
+                         </div>
                       </div>
                     </div>
                   </div>

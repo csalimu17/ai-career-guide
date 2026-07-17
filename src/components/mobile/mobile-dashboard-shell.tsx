@@ -4,6 +4,7 @@ import { useMemo, useState } from "react"
 import Link from "next/link"
 import { usePathname } from "next/navigation"
 import { LogOut, Menu, ShieldCheck, Sparkles, Zap } from "lucide-react"
+import { motion } from "framer-motion"
 
 import { initiateSignOut } from "@/firebase/non-blocking-login"
 import { useAuth } from "@/firebase"
@@ -297,7 +298,7 @@ export function MobileDashboardShell({
       </main>
 
       {!isEditor && (
-        <nav className="no-print fixed inset-x-0 bottom-0 z-[95] border-t border-white/70 bg-white/94 px-3 pb-[max(0.65rem,env(safe-area-inset-bottom))] pt-2 shadow-[0_-18px_40px_-28px_rgba(15,23,42,0.28)] backdrop-blur-xl">
+        <nav className="no-print fixed inset-x-0 bottom-0 z-[95] border-t border-white/40 bg-white/70 saturate-150 px-3 pb-[max(0.65rem,env(safe-area-inset-bottom))] pt-2 shadow-[0_-18px_40px_-28px_rgba(15,23,42,0.28)] backdrop-blur-2xl">
           <div
             className="mx-auto grid max-w-[42rem] gap-2"
             style={{ gridTemplateColumns: `repeat(${MOBILE_PRIMARY_NAV_ITEMS.length}, minmax(0, 1fr))` }}
@@ -309,14 +310,23 @@ export function MobileDashboardShell({
                   key={item.href}
                   href={item.href}
                   className={cn(
-                    "flex min-h-[3.55rem] flex-col items-center justify-center gap-1 rounded-[1rem] px-1 text-center transition-all",
-                    active ? "bg-primary text-white shadow-lg shadow-primary/15" : "text-muted-foreground hover:bg-muted/60 hover:text-primary"
+                    "relative flex min-h-[3.55rem] flex-col items-center justify-center gap-1 rounded-[1rem] px-1 text-center outline-none active:scale-95 transition-transform",
+                    active ? "text-white" : "text-muted-foreground hover:text-primary"
                   )}
                 >
-                  <item.icon className="h-4.5 w-4.5" />
-                  <span className="text-[0.65rem] font-bold uppercase tracking-[0.12em]">
-                    {item.shortLabel}
-                  </span>
+                  {active && (
+                    <motion.div
+                      layoutId="mobile-nav-pill"
+                      className="absolute inset-0 z-0 rounded-[1rem] bg-primary shadow-lg shadow-primary/20"
+                      transition={{ type: "spring", stiffness: 350, damping: 30 }}
+                    />
+                  )}
+                  <div className="relative z-10 flex flex-col items-center gap-1">
+                    <item.icon className="h-4.5 w-4.5" />
+                    <span className="text-[0.65rem] font-bold uppercase tracking-[0.12em]">
+                      {item.shortLabel}
+                    </span>
+                  </div>
                 </Link>
               )
             })}

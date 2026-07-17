@@ -1,4 +1,5 @@
 import DashboardLayoutClient from "@/components/dashboard/dashboard-layout-client";
+import { AppProviders } from "@/components/app/app-providers";
 import { createMetadata } from "@/lib/metadata";
 
 export const metadata = createMetadata({
@@ -12,5 +13,9 @@ export default function DashboardLayout({
 }: {
   children: React.ReactNode;
 }) {
-  return <DashboardLayoutClient>{children}</DashboardLayoutClient>;
+  return (
+    <AppProviders>
+      <DashboardLayoutClient>{children}</DashboardLayoutClient>
+    </AppProviders>
+  );
 }

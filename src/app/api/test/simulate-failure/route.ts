@@ -1,10 +1,5 @@
 import { NextResponse } from 'next/server';
-import { Redis } from '@upstash/redis';
-
-const redis = new Redis({
-  url: process.env.UPSTASH_REDIS_URL || '',
-  token: process.env.UPSTASH_REDIS_TOKEN || '',
-});
+import { getRedis } from '@/lib/server/upstash';
 
 /**
  * SECURITY: This endpoint mutates shared Redis state used by production AI
@@ -27,6 +22,9 @@ export async function GET() {
   if (blocked) return blocked;
 
   try {
+    const redis = getRedis();
+    if (!redis) return NextResponse.json({ states: {} });
+
     const states = await redis.hgetall('test:provider_failures');
     return NextResponse.json({ states: states || {} });
   } catch (error: any) {
@@ -44,6 +42,11 @@ export async function POST(req: Request) {
   if (blocked) return blocked;
 
   try {
+    const redis = getRedis();
+    if (!redis) {
+      return NextResponse.json({ error: 'Redis is not configured for failure simulation.' }, { status: 503 });
+    }
+
     const { provider, enabled } = await req.json();
     if (!provider) {
       return NextResponse.json({ error: 'Provider is required' }, { status: 400 });

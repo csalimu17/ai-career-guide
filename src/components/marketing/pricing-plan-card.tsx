@@ -16,7 +16,7 @@ export function PricingPlanCard({ plan, compact = false }: PricingPlanCardProps)
       className={cn(
         "relative flex h-full flex-col overflow-hidden border border-border/70 bg-white/90",
         plan.highlight &&
-          "border-primary/20 bg-[linear-gradient(180deg,rgba(248,246,255,0.98),rgba(240,247,255,0.96))] text-foreground shadow-[0_30px_80px_-46px_rgba(113,88,255,0.28)]"
+          "border-primary/20 bg-[linear-gradient(180deg,rgba(244,246,255,0.98),rgba(238,240,255,0.96))] text-foreground shadow-[0_30px_80px_-46px_rgba(85,60,255,0.22)]"
       )}
     >
       {plan.highlight && (
@@ -31,15 +31,19 @@ export function PricingPlanCard({ plan, compact = false }: PricingPlanCardProps)
           <CardTitle className={cn("text-xl sm:text-2xl", plan.highlight && "text-primary")}>{plan.name}</CardTitle>
           <p className={cn("text-sm leading-relaxed text-muted-foreground", plan.highlight && "text-foreground/68")}>
             {plan.id === "free"
-              ? "Start building and validating your first resume at no cost."
+              ? "Start building and validating your first CV at no cost."
               : plan.id === "pro"
               ? "Ideal for active job seekers who want stronger tailoring and more ATS coverage."
-              : "For power users who want the fullest workflow, fastest iteration, and premium support."}
+              : plan.id === "master"
+              ? "For power users who want the fullest workflow, fastest iteration, and premium support."
+              : "For recruitment agencies, universities, and professional CV writing teams."}
           </p>
         </div>
         <div className="flex items-end gap-2">
           <span className="text-4xl font-black tracking-tight sm:text-5xl">{plan.price}</span>
-          <span className={cn("pb-2 text-sm text-muted-foreground", plan.highlight && "text-foreground/60")}>/ month</span>
+          {plan.price !== "Custom" && (
+            <span className={cn("pb-2 text-sm text-muted-foreground", plan.highlight && "text-foreground/60")}>/ month</span>
+          )}
         </div>
       </CardHeader>
 
@@ -58,7 +62,13 @@ export function PricingPlanCard({ plan, compact = false }: PricingPlanCardProps)
           className={cn("w-full", plan.highlight && "bg-white/92 text-primary hover:bg-white")}
           asChild
         >
-          <Link href="/signup">{plan.id === "free" ? "Start free" : `Choose ${plan.name}`}</Link>
+          <Link href={plan.id === "free" ? "/signup?intent=create-cv" : plan.id === "agency" ? "/support?topic=agency-pricing" : `/signup?plan=${plan.id}`}>
+            {plan.id === "free"
+              ? "Build My CV Free"
+              : plan.id === "agency"
+              ? "Request Agency Pricing"
+              : `Choose ${plan.name}`}
+          </Link>
         </Button>
       </CardFooter>
     </Card>

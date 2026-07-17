@@ -132,7 +132,7 @@ export function AuthShell({
         </section>
 
         <div className="flex flex-col items-center justify-between gap-3 border-t border-white/70 pt-3 text-center text-[0.72rem] font-medium text-muted-foreground sm:pt-4 sm:flex-row sm:text-left">
-          <p>AI Career Guide helps you build sharper resumes, better applications, and faster career momentum.</p>
+          <p>AI Career Guide helps you build sharper CVs, better applications, and faster career momentum.</p>
           <Link href="/pricing" className="inline-flex items-center gap-2 font-semibold text-primary transition-opacity hover:opacity-80">
             View plans <ArrowRight className="h-3.5 w-3.5" />
           </Link>

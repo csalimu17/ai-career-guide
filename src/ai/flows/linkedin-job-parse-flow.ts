@@ -1,4 +1,5 @@
-import { getAi, fastGeminiModel } from '@/ai/genkit';
+import { fastGeminiModel } from '@/ai/genkit';
+import { generateWithFallback } from '@/ai/generate-helper';
 import { z } from 'zod';
 
 export const LinkedInJobParseSchema = z.object({
@@ -18,10 +19,9 @@ export const LinkedInJobParseSchema = z.object({
  * Parses messy clipboard text from LinkedIn "My Jobs" or "Applied" pages.
  */
 export async function parseLinkedInJobs(input: { text: string }): Promise<z.infer<typeof LinkedInJobParseSchema>> {
-  const ai = getAi();
   const { text } = input;
 
-      const response = await ai.generate({
+      const response = await generateWithFallback({
         model: fastGeminiModel,
         system: `You are a professional career assistant specialization...`,
         prompt: `TEXT TO PARSE:

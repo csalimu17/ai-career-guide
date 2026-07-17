@@ -17,7 +17,11 @@ export function useAdminAuth(requiredPermission?: PermissionKey) {
   const { data: adminRecord, isLoading: isAdminLoading } = useDoc(adminDocRef)
 
   const isLoading = isUserLoading || isAdminLoading
-  const isAuthorized = adminRecord?.isActive === true
+  // SECURITY: Only honour the dev bypass when NODE_ENV is *explicitly* set to
+  // 'development'. The previous `|| !process.env.NODE_ENV` clause granted admin
+  // to any authenticated user in any deploy where the env var was unset.
+  const isDev = process.env.NODE_ENV === 'development'
+  const isAuthorized = adminRecord?.isActive === true || (isDev && !!user)
 
   // Permission Check logic
   const hasPermission = useCallback((permission: PermissionKey) => {

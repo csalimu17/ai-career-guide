@@ -5,15 +5,9 @@ import { SiteFooter } from "@/components/marketing/site-footer";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
+import { marketingHeaderItems } from "@/lib/marketing-nav";
 import { absoluteUrl, createMetadata } from "@/lib/metadata";
 import { siteConfig } from "@/lib/site";
-
-const navigationItems = [
-  { label: "ATS CV Checker", href: "/ats-cv-checker" },
-  { label: "CV Builder", href: "/cv-builder" },
-  { label: "Workflow", href: "/#workflow" },
-  { label: "Pricing", href: "/#pricing" },
-];
 
 const checkerCards = [
   {
@@ -89,6 +83,8 @@ export const metadata = createMetadata({
   ],
 });
 
+export const revalidate = 86400;
+
 export default function AtsCvCheckerPage() {
   const structuredData = [
     {
@@ -140,12 +136,30 @@ export default function AtsCvCheckerPage() {
         },
       })),
     },
+    {
+      "@context": "https://schema.org",
+      "@type": "BreadcrumbList",
+      itemListElement: [
+        {
+          "@type": "ListItem",
+          position: 1,
+          name: "Home",
+          item: absoluteUrl("/"),
+        },
+        {
+          "@type": "ListItem",
+          position: 2,
+          name: "ATS CV Checker",
+          item: absoluteUrl("/ats-cv-checker"),
+        },
+      ],
+    },
   ];
 
   return (
     <div className="min-h-screen">
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(structuredData) }} />
-      <PublicHeader items={navigationItems} ctaHref="/signup" ctaLabel="Check my CV" />
+      <PublicHeader items={marketingHeaderItems} ctaHref="/signup?intent=ats-check" ctaLabel="Check My CV" />
 
       <main className="pb-24">
         <section className="relative overflow-hidden pb-16 pt-12 sm:pb-24 sm:pt-20">
@@ -170,7 +184,7 @@ export default function AtsCvCheckerPage() {
               <div className="grid gap-3 sm:flex sm:flex-row">
                 <Button size="lg" asChild>
                   <Link href="/signup">
-                    Check my CV
+                    Check My CV
                     <ArrowRight className="h-4 w-4" />
                   </Link>
                 </Button>
@@ -264,7 +278,7 @@ export default function AtsCvCheckerPage() {
                   Build, check, and tailor inside one connected search cluster.
                 </h2>
                 <p className="max-w-3xl text-[0.95rem] leading-relaxed text-muted-foreground sm:text-base">
-                  This is where we can outperform weaker competitors: tighter connections between ATS checking, resume building, and CV editing instead of isolated landing pages.
+                  AI Career Guide keeps your tools connected: move seamlessly from ATS scans directly into the CV editor and builder, instead of bouncing between isolated, disconnected apps.
                 </p>
               </div>
               <div className="flex flex-col gap-3 sm:flex-row lg:flex-col">
@@ -272,7 +286,7 @@ export default function AtsCvCheckerPage() {
                   <Link href="/cv-builder">View CV builder</Link>
                 </Button>
                 <Button variant="outline" asChild>
-                  <Link href="/signup">Start free trial</Link>
+                  <Link href="/signup?intent=create-cv">Build My CV Free</Link>
                 </Button>
               </div>
             </div>

@@ -80,7 +80,7 @@ export const WorkspaceArea = ({
                      value={cvContent}
                      onChange={e => setCvContent(e.target.value)}
                      placeholder="Paste your CV here..."
-                     className="min-h-[320px] rounded-3xl border-slate-100 bg-slate-50/50 p-6 text-sm leading-relaxed transition-all focus:bg-white focus:ring-brand-purple/10"
+                     className="min-h-[180px] md:min-h-[320px] rounded-3xl border-slate-100 bg-slate-50/50 p-6 text-sm leading-relaxed transition-all focus:bg-white focus:ring-brand-purple/10"
                   />
                 </div>
                 <div className="space-y-3">
@@ -92,7 +92,7 @@ export const WorkspaceArea = ({
                      value={jobDescription}
                      onChange={e => setJobDescription(e.target.value)}
                      placeholder="Paste the Job Description here..."
-                     className="min-h-[320px] rounded-3xl border-slate-100 bg-slate-50/50 p-6 text-sm leading-relaxed transition-all focus:bg-white focus:ring-brand-purple/10"
+                     className="min-h-[180px] md:min-h-[320px] rounded-3xl border-slate-100 bg-slate-50/50 p-6 text-sm leading-relaxed transition-all focus:bg-white focus:ring-brand-purple/10"
                   />
                 </div>
               </div>

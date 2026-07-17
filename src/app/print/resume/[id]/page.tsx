@@ -12,22 +12,43 @@ import { useDoc, useFirestore, useMemoFirebase, useUser } from "@/firebase"
 import { getTemplateConfig } from "@/lib/templates-config"
 import { cn } from "@/lib/utils"
 
+const PAGE_W = 794 // 210mm at 96 DPI
+const PAGE_H = 1123 // 297mm at 96 DPI
+const MARGIN_PX = 48 // ~12.7mm or 0.5 inches
+const CONTENT_W = PAGE_W - MARGIN_PX * 2 // 698
+const CONTENT_H = PAGE_H - MARGIN_PX * 2 // 1027
+const PREVIEW_GUTTER_PX = 32 // matches px-4 (16px each side) on the print-pages container
+
 function waitForAnimationFrame() {
   return new Promise((resolve) => window.requestAnimationFrame(() => resolve(null)))
 }
 
-async function reportQualitySignal(payload: Record<string, unknown>) {
+/**
+ * Fire a quality-engineer signal to the server, attaching a Firebase ID
+ * token so the (now-authenticated) /api/quality/report endpoint accepts it.
+ * Pass `user` as the first arg from the component scope.
+ *
+ * `keepalive: true` is kept so the request survives the brief
+ * print-then-navigate window without being torn down.
+ */
+async function reportQualitySignal(
+  user: { getIdToken: (forceRefresh?: boolean) => Promise<string> } | null | undefined,
+  payload: Record<string, unknown>
+) {
+  if (!user) return; // Not signed in — endpoint will 401; just skip.
   try {
+    const idToken = await user.getIdToken();
     await fetch("/api/quality/report", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
+        Authorization: `Bearer ${idToken}`,
       },
       body: JSON.stringify(payload),
       keepalive: true,
-    })
+    });
   } catch (error) {
-    console.warn("Failed to report print quality signal:", error)
+    console.warn("Failed to report print quality signal:", error);
   }
 }
 
@@ -42,7 +63,7 @@ type PrintLayoutInspection = {
 export default function ResumePrintPage() {
   const params = useParams<{ id: string }>()
   const searchParams = useSearchParams()
-  const { uid, isUserLoading } = useUser()
+  const { user, uid, isUserLoading } = useUser()
   const db = useFirestore()
   const resumeId = useMemo(() => {
     if (typeof params?.id === "string") return params.id
@@ -57,6 +78,29 @@ export default function ResumePrintPage() {
   const [isPrinting, setIsPrinting] = useState(false)
   const [printStatus, setPrintStatus] = useState<string | null>(null)
   const resumeSurfaceRef = useRef<HTMLDivElement | null>(null)
+  const measureRef = useRef<HTMLDivElement | null>(null)
+  const [pageCount, setPageCount] = useState(1)
+  const [previewScale, setPreviewScale] = useState(1)
+
+  // Scale the on-screen A4 preview down to fit narrow viewports (mobile).
+  // The actual print/PDF output is unaffected: globals.css `@media print`
+  // resets transform/dimensions back to true A4.
+  useEffect(() => {
+    if (typeof window === "undefined") return
+
+    const computeScale = () => {
+      const available = window.innerWidth - PREVIEW_GUTTER_PX
+      setPreviewScale(Math.min(1, available / PAGE_W))
+    }
+
+    computeScale()
+    window.addEventListener("resize", computeScale)
+    window.addEventListener("orientationchange", computeScale)
+    return () => {
+      window.removeEventListener("resize", computeScale)
+      window.removeEventListener("orientationchange", computeScale)
+    }
+  }, [])
 
   const resumeRef = useMemoFirebase(
     () => (localResume || !db || !uid || !resumeId ? null : doc(db, "users", uid, "resumes", resumeId)),
@@ -99,12 +143,15 @@ export default function ResumePrintPage() {
   const inspectPrintLayout = useCallback((): PrintLayoutInspection | null => {
     if (typeof window === "undefined") return null
 
-    const surface = resumeSurfaceRef.current
+    const surface = measureRef.current
     if (!surface) return null
 
-    const printableHeightPx = ((297 - 24) * 96) / 25.4
+    // For column-based layout, we measure horizontal overflow
+    const scrollW = surface.scrollWidth
+    const calculatedPageCount = Math.max(1, Math.ceil((scrollW + 40) / (CONTENT_W + 40)))
+    
+    // We can still look for crossing blocks vertically within the columns
     const surfaceRect = surface.getBoundingClientRect()
-    const surfaceHeight = Math.max(surface.scrollHeight, surfaceRect.height)
     const blocks = Array.from(
       surface.querySelectorAll<HTMLElement>(".resume-header, .resume-section-heading, .resume-entry, .resume-manual-break")
     )
@@ -112,7 +159,7 @@ export default function ResumePrintPage() {
     let manualBreaks = 0
     let crossingBlocks = 0
     let headingRisks = 0
-    const oversizedBlockThreshold = printableHeightPx * 0.62
+    const oversizedBlockThreshold = CONTENT_H * 0.75
 
     for (const block of blocks) {
       if (block.classList.contains("resume-manual-break")) {
@@ -121,27 +168,43 @@ export default function ResumePrintPage() {
       }
 
       const rect = block.getBoundingClientRect()
+      if (rect.height <= 0) continue
+
+      // Position relative to the top of the content flow
+      // In CSS columns, elements are physically moved, so we use their left position to find the logical top
+      // pageIndex = Math.round(rect.left / CONTENT_W)
+      // logicalTop = (rect.top - surfaceRect.top) + (pageIndex * CONTENT_H)
+      
+      // Actually, since we use column-fill: auto with a fixed height, the vertical position 
+      // in the scrollable container is what we want.
       const top = rect.top - surfaceRect.top
       const bottom = rect.bottom - surfaceRect.top
-      if (rect.height <= 0 || bottom <= 0) continue
 
-      const startPage = Math.floor(top / printableHeightPx)
-      const endPage = Math.floor(Math.max(top, bottom - 1) / printableHeightPx)
-      if (endPage > startPage && rect.height >= oversizedBlockThreshold) {
+      const startPage = Math.floor(top / (CONTENT_H + 1))
+      const endPage = Math.floor((bottom - 1) / (CONTENT_H + 1))
+
+      if (startPage !== endPage) {
+        // This block crosses a page break
         crossingBlocks += 1
       }
 
       if (block.classList.contains("resume-section-heading")) {
-        const distanceToPageBottom = (startPage + 1) * printableHeightPx - top
-        if (distanceToPageBottom < 56) {
+        // Heading risk: too close to the bottom of its page
+        const distanceToBottom = (CONTENT_H + 1) - (bottom % (CONTENT_H + 1))
+        if (distanceToBottom < 45) { // If less than ~12mm from bottom
           headingRisks += 1
         }
+      }
+
+      // Check for oversized blocks that simply won't fit on one page
+      if (rect.height > oversizedBlockThreshold) {
+        crossingBlocks += 1
       }
     }
 
     return {
       status: crossingBlocks > 0 || headingRisks > 0 ? "warning" : "healthy",
-      pageCount: Math.max(1, Math.ceil(surfaceHeight / printableHeightPx)),
+      pageCount: calculatedPageCount,
       manualBreaks,
       crossingBlocks,
       headingRisks,
@@ -192,7 +255,7 @@ export default function ResumePrintPage() {
         window.focus()
         window.print()
 
-        void reportQualitySignal({
+        void reportQualitySignal(user, {
           category: "print",
           eventType: "resume_print_requested",
           status: "healthy",
@@ -208,7 +271,7 @@ export default function ResumePrintPage() {
         await new Promise((resolve) => window.setTimeout(resolve, 1500))
 
         if (!sawPrintLifecycle) {
-          void reportQualitySignal({
+          void reportQualitySignal(user, {
             category: "print",
             eventType: "print_dialog_not_detected",
             status: "warning",
@@ -223,7 +286,7 @@ export default function ResumePrintPage() {
         }
       } catch (error) {
         console.error("Mobile print failed:", error)
-        void reportQualitySignal({
+        void reportQualitySignal(user, {
           category: "print",
           eventType: "resume_print_failed",
           status: "critical",
@@ -243,7 +306,7 @@ export default function ResumePrintPage() {
         setIsPrinting(false)
       }
     },
-    [isPrinting, resume, shouldAutoPrint, uid]
+    [isPrinting, resume, shouldAutoPrint, uid, user]
   )
 
   useEffect(() => {
@@ -261,10 +324,20 @@ export default function ResumePrintPage() {
 
       if (cancelled) return
 
+      if (measureRef.current) {
+        const scrollW = measureRef.current.scrollWidth
+        const pages = Math.max(1, Math.ceil(scrollW / CONTENT_W))
+        setPageCount(pages)
+        await waitForAnimationFrame()
+        await waitForAnimationFrame()
+      }
+
+      if (cancelled) return
+
       setIsPrintReady(true)
       const layoutInspection = inspectPrintLayout()
 
-      void reportQualitySignal({
+      void reportQualitySignal(user, {
         category: "print",
         eventType: "print_surface_ready",
         status: "healthy",
@@ -279,7 +352,7 @@ export default function ResumePrintPage() {
       if (layoutInspection) {
         if (layoutInspection.status === "warning") {
           setPrintStatus("Page-break guard found a section that may split awkwardly. Review the preview before saving as PDF.")
-          void reportQualitySignal({
+          void reportQualitySignal(user, {
             category: "print",
             eventType: "print_layout_risk_detected",
             status: "warning",
@@ -289,7 +362,7 @@ export default function ResumePrintPage() {
             metadata: layoutInspection,
           })
         } else {
-          void reportQualitySignal({
+          void reportQualitySignal(user, {
             category: "print",
             eventType: "print_layout_verified",
             status: "healthy",
@@ -316,7 +389,7 @@ export default function ResumePrintPage() {
     return () => {
       cancelled = true
     }
-  }, [handlePrint, hasTriggeredAutoPrint, inspectPrintLayout, resume, shouldAutoPrint, uid])
+  }, [handlePrint, hasTriggeredAutoPrint, inspectPrintLayout, resume, shouldAutoPrint, uid, user])
 
   useEffect(() => {
     if (typeof window === "undefined") return
@@ -377,7 +450,7 @@ export default function ResumePrintPage() {
   }
 
   return (
-    <div className={cn("relative min-h-screen text-primary", pageTone)}>
+    <div className={cn("relative min-h-screen text-primary resume-print-page", pageTone)}>
       <header className="no-print sticky top-0 z-20 border-b border-white/80 bg-white/90 backdrop-blur-xl">
         <div className="mx-auto w-full max-w-5xl px-4 py-3 md:px-6">
           <div className="rounded-[1.4rem] border border-white/80 bg-[linear-gradient(135deg,rgba(255,255,255,0.98),rgba(244,247,250,0.94))] px-4 py-4 shadow-[0_18px_48px_-34px_rgba(15,23,42,0.28)] md:px-5">
@@ -445,9 +518,74 @@ export default function ResumePrintPage() {
         </div>
       </header>
 
-      <main className="mx-auto w-full max-w-5xl px-3 py-4 md:px-6 md:py-8">
-        <div ref={resumeSurfaceRef} className="mx-auto w-full max-w-[210mm]">
-          <ResumeTemplate data={resume} isPrint={true} className="resume-paper-shadow" />
+      {/* Hidden measuring div — same column layout as preview, used to count pages */}
+      <div
+        ref={measureRef}
+        aria-hidden="true"
+        className="no-print absolute opacity-0 pointer-events-none"
+        style={{
+          left: -9999,
+          top: 0,
+          width: CONTENT_W,
+          height: CONTENT_H,
+          columnWidth: CONTENT_W,
+          columnGap: 40,
+          columnFill: "auto" as const,
+          overflow: "hidden",
+          boxSizing: "border-box" as const,
+        }}
+      >
+        <ResumeTemplate data={resume} isPrint={true} noPadding={true} />
+      </div>
+
+      {/* Print pages — each page is an explicit A4 div, same column-slice technique as the editor preview */}
+      <main className="resume-print-main">
+        <div className="print-pages flex flex-col items-center gap-8 py-8 px-4">
+          {Array.from({ length: pageCount }).map((_, i) => (
+            <div
+              key={i}
+              className="print-sheet-scaler shrink-0"
+              style={{
+                width: PAGE_W * previewScale,
+                height: PAGE_H * previewScale,
+              }}
+            >
+              <div
+                className="print-sheet bg-white"
+                style={{
+                  width: PAGE_W,
+                  height: PAGE_H,
+                  overflow: "hidden",
+                  padding: MARGIN_PX,
+                  boxSizing: "border-box" as const,
+                  boxShadow: "0 20px 60px -12px rgba(0,0,0,0.25), 0 4px 16px -4px rgba(0,0,0,0.15)",
+                  borderRadius: 2,
+                  transform: previewScale < 1 ? `scale(${previewScale})` : undefined,
+                  transformOrigin: "top left",
+                }}
+              >
+                <div style={{ width: "100%", height: "100%", overflow: "hidden" }}>
+                  <div
+                    style={{
+                      width: "100%",
+                      height: CONTENT_H,
+                      columnWidth: CONTENT_W,
+                      columnGap: 40,
+                      columnFill: "auto" as const,
+                      transform: `translateX(-${i * (CONTENT_W + 40)}px)`,
+                    }}
+                  >
+                    <ResumeTemplate
+                      data={resume}
+                      isPrint={true}
+                      noPadding={true}
+                      className="!border-none !shadow-none !rounded-none"
+                    />
+                  </div>
+                </div>
+              </div>
+            </div>
+          ))}
         </div>
       </main>
     </div>

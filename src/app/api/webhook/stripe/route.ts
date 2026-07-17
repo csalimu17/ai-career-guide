@@ -17,16 +17,58 @@ function getPeriodEndDate(unixSeconds: number | null | undefined) {
     : null;
 }
 
+/**
+ * Idempotency guard: claim the event.id by creating a marker doc.
+ * `.create()` fails atomically if the doc already exists, so two parallel
+ * deliveries of the same event will only let one through.
+ * Returns true if this is a fresh event we should process, false if it has
+ * already been processed (Stripe should be ack'd with 200).
+ */
+async function claimEvent(event: Stripe.Event): Promise<boolean> {
+  try {
+    await db.collection('stripeWebhookEvents').doc(event.id).create({
+      type: event.type,
+      receivedAt: FieldValue.serverTimestamp(),
+      stripeCreated: event.created,
+    });
+    return true;
+  } catch (error: any) {
+    // Firestore returns code 6 (ALREADY_EXISTS) when create() collides.
+    if (error?.code === 6 || /already exists/i.test(error?.message || '')) {
+      console.log(`[Stripe] Skipping duplicate event ${event.id} (${event.type})`);
+      return false;
+    }
+    // Any other error: log and process anyway, since refusing to handle a
+    // legitimate event is worse than potentially double-processing it.
+    console.error('[Stripe] claimEvent error:', error);
+    return true;
+  }
+}
+
 async function syncSubscriptionState(
   customerId: string,
   subscription: Stripe.Subscription,
-  eventType: string
+  event: Stripe.Event
 ) {
   const userDoc = await findUserByStripeCustomerId(customerId);
   const activePriceId = subscription.items.data[0]?.price?.id ?? null;
   const activePlan = activePriceId ? getBillingPlanByPriceId(activePriceId) : null;
 
   if (!userDoc || !activePlan) return;
+
+  // Ordering guard: Stripe can deliver subscription events out of order.
+  // Skip the write if we've already applied an event with a newer
+  // event.created timestamp for this customer.
+  const existing = userDoc.data() as { lastStripeEventCreated?: number } | undefined;
+  if (
+    typeof existing?.lastStripeEventCreated === 'number' &&
+    existing.lastStripeEventCreated > event.created
+  ) {
+    console.log(
+      `[Stripe] Ignoring stale subscription event ${event.id} (${event.type}) — newer event already applied for customer ${customerId}`
+    );
+    return;
+  }
 
   await userDoc.ref.set({
     plan: activePlan.id,
@@ -36,7 +78,8 @@ async function syncSubscriptionState(
     stripePriceId: activePriceId,
     stripeCurrentPeriodEnd: getPeriodEndDate((subscription as any).current_period_end),
     billingNeedsAttention: false,
-    lastStripeEvent: eventType,
+    lastStripeEvent: event.type,
+    lastStripeEventCreated: event.created,
     updatedAt: FieldValue.serverTimestamp(),
   }, { merge: true });
 }
@@ -62,6 +105,13 @@ export async function POST(req: Request) {
   } catch (err: any) {
     console.error(`Webhook Error: ${err.message}`);
     return NextResponse.json({ error: `Webhook Error: ${err.message}` }, { status: 400 });
+  }
+
+  // Idempotency: refuse to re-process the same event. Stripe re-delivers
+  // events that didn't return 2xx within 5s, so replays are common.
+  const shouldProcess = await claimEvent(event);
+  if (!shouldProcess) {
+    return NextResponse.json({ received: true, duplicate: true });
   }
 
   // Handle the event
@@ -92,16 +142,28 @@ export async function POST(req: Request) {
       const session = event.data.object as Stripe.Checkout.Session;
       const userId = session.client_reference_id || session.metadata?.userId;
       const plan = session.metadata?.plan ? getBillingPlan(session.metadata.plan) : null;
-      
+
       if (userId && plan) {
         try {
           const userRef = db.collection('users').doc(userId);
+          // Ordering guard: do not let a stale checkout.session.completed
+          // overwrite a newer subscription state that's already been written.
+          const existing = (await userRef.get()).data() as { lastStripeEventCreated?: number } | undefined;
+          if (
+            typeof existing?.lastStripeEventCreated === 'number' &&
+            existing.lastStripeEventCreated > event.created
+          ) {
+            console.log(`[Stripe] Ignoring stale checkout.session.completed ${event.id} for user ${userId}`);
+            break;
+          }
+
           await userRef.set({
             plan: plan.id,
             stripeCustomerId: typeof session.customer === 'string' ? session.customer : null,
             stripeSubscriptionId: typeof session.subscription === 'string' ? session.subscription : null,
             stripeSubscriptionStatus: session.status ?? null,
             lastStripeEvent: event.type,
+            lastStripeEventCreated: event.created,
             updatedAt: FieldValue.serverTimestamp(),
           }, { merge: true });
           console.log(`Successfully updated plan to ${plan.id} for user ${userId}`);
@@ -116,7 +178,7 @@ export async function POST(req: Request) {
       const updatedSubscription = event.data.object as Stripe.Subscription;
       if (typeof updatedSubscription.customer === 'string') {
         try {
-          await syncSubscriptionState(updatedSubscription.customer, updatedSubscription, event.type);
+          await syncSubscriptionState(updatedSubscription.customer, updatedSubscription, event);
         } catch (error) {
           console.error(`Error updating user on ${event.type}:`, error);
         }
@@ -130,6 +192,15 @@ export async function POST(req: Request) {
           const userDoc = await findUserByStripeCustomerId(deletedSubscription.customer);
 
           if (userDoc) {
+            const existing = userDoc.data() as { lastStripeEventCreated?: number } | undefined;
+            if (
+              typeof existing?.lastStripeEventCreated === 'number' &&
+              existing.lastStripeEventCreated > event.created
+            ) {
+              console.log(`[Stripe] Ignoring stale subscription.deleted ${event.id} for customer ${deletedSubscription.customer}`);
+              break;
+            }
+
             await userDoc.ref.set({
               plan: 'free',
               stripeCustomerId: deletedSubscription.customer,
@@ -137,6 +208,7 @@ export async function POST(req: Request) {
               stripeSubscriptionStatus: deletedSubscription.status ?? 'canceled',
               billingNeedsAttention: false,
               lastStripeEvent: event.type,
+              lastStripeEventCreated: event.created,
               updatedAt: FieldValue.serverTimestamp(),
             }, { merge: true });
           }

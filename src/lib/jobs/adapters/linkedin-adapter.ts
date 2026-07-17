@@ -39,7 +39,8 @@ export class LinkedInAdapter implements JobApiAdapter {
         body: JSON.stringify({
           search_terms: keywords || "Jobs",
           location: safeLocation,
-          page: String(page)
+          page: String(page),
+          total: 50
         })
       })
 

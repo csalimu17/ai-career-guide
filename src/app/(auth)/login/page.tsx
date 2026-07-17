@@ -3,7 +3,7 @@ import { createMetadata } from "@/lib/metadata";
 
 export const metadata = createMetadata({
   title: "Log in",
-  description: "Sign in to AI Career Guide to continue editing resumes, checking ATS scores, and managing your job search workspace.",
+  description: "Sign in to AI Career Guide to continue editing CVs, checking ATS scores, and managing your job search workspace.",
   path: "/login",
   noIndex: true,
 });
@@ -11,4 +11,3 @@ export const metadata = createMetadata({
 export default function LoginPage() {
   return <LoginPageClient />;
 }
-

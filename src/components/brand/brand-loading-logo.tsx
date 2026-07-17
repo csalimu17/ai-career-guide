@@ -8,23 +8,33 @@ interface BrandLoadingLogoProps {
 
 export function BrandLoadingLogo({ className, size = "md" }: BrandLoadingLogoProps) {
   const sizeClasses = {
-    sm: "h-8 w-8",
-    md: "h-14 w-14",
-    lg: "h-20 w-20",
+    sm: "h-12 w-12",
+    md: "h-20 w-20",
+    lg: "h-32 w-32",
   };
 
   return (
-    <div className={cn("relative flex items-center justify-center", className)}>
-      <div className={cn("relative shrink-0 overflow-hidden animate-pulse-subtle", sizeClasses[size])}>
+    <div className={cn("brand-loading-logo relative flex items-center justify-center", sizeClasses[size], className)}>
+      <div className="brand-loading-logo__halo" aria-hidden="true" />
+      <div className="brand-loading-logo__mark relative h-full w-full shrink-0 overflow-visible">
         <Image 
-          src="/brand-resume-transparent.png" 
-          alt="Ai Career Guide Logo"
+          src="/brand-resume-mark-256.webp" 
+          alt="AI Career Guide logo"
           fill
-          className="object-contain"
+          className="brand-loading-logo__image object-contain"
           priority
         />
+        <div className="brand-loading-logo__cv-layer" aria-hidden="true">
+          <span className="brand-loading-logo__card brand-loading-logo__card--top" />
+          <span className="brand-loading-logo__line brand-loading-logo__line--one" />
+          <span className="brand-loading-logo__line brand-loading-logo__line--two" />
+          <span className="brand-loading-logo__line brand-loading-logo__line--three" />
+          <span className="brand-loading-logo__line brand-loading-logo__line--four" />
+          <span className="brand-loading-logo__card brand-loading-logo__card--bottom" />
+        </div>
+        <span className="brand-loading-logo__spark brand-loading-logo__spark--one" aria-hidden="true" />
+        <span className="brand-loading-logo__spark brand-loading-logo__spark--two" aria-hidden="true" />
       </div>
-      <div className="absolute inset-0 animate-ping-slow rounded-full border-2 border-primary/20" />
     </div>
   );
 }

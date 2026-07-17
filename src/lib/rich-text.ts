@@ -108,8 +108,16 @@ export function sanitizeRichTextHtml(value: string) {
   return html
 }
 
-export function normalizeRichTextValue(value: string | null | undefined) {
-  const safeValue = value ?? ""
+export function normalizeRichTextValue(value: any) {
+  if (value === null || value === undefined) return ""
+  
+  let safeValue = ""
+  if (typeof value === 'object') {
+    safeValue = value.summary || value.text || String(value)
+  } else {
+    safeValue = String(value)
+  }
+
   if (!safeValue.trim()) return ""
 
   if (!RICH_TEXT_TAG_PATTERN.test(safeValue)) {

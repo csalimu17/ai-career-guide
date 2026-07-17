@@ -1,4 +1,5 @@
 import AdminLayoutClient from "@/components/admin/admin-layout-client";
+import { AppProviders } from "@/components/app/app-providers";
 import { createMetadata } from "@/lib/metadata";
 
 export const metadata = createMetadata({
@@ -12,5 +13,9 @@ export default function AdminLayout({
 }: {
   children: React.ReactNode;
 }) {
-  return <AdminLayoutClient>{children}</AdminLayoutClient>;
+  return (
+    <AppProviders>
+      <AdminLayoutClient>{children}</AdminLayoutClient>
+    </AppProviders>
+  );
 }

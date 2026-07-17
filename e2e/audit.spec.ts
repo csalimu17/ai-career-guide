@@ -25,7 +25,7 @@ import { test, expect, type Page, type TestInfo } from "@playwright/test";
 import fs from "node:fs";
 import path from "node:path";
 
-import { AUTH_FILE } from "./audit.setup";
+const AUTH_FILE = path.join(__dirname, ".auth", "user.json");
 
 test.use({ storageState: AUTH_FILE });
 

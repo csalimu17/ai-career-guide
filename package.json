@@ -3,14 +3,23 @@
   "version": "0.1.0",
   "private": true,
   "engines": {
-    "node": "22"
+    "node": "22.x"
   },
   "scripts": {
     "dev": "next dev -p 3000",
     "genkit:dev": "genkit start -- tsx src/ai/dev.ts",
     "genkit:watch": "genkit start -- tsx --watch src/ai/dev.ts",
     "build": "next build",
+    "postbuild": "node scripts/copy-public.mjs",
     "start": "next start",
+    "indexnow": "node scripts/submit-indexnow.mjs",
+    "indexnow:dry-run": "node scripts/submit-indexnow.mjs --dry-run",
+    "indexnow:production": "node scripts/submit-indexnow.mjs --production",
+    "seo:audit": "node scripts/seo-audit.mjs",
+    "remotion:studio": "remotion studio src/remotion/index.ts",
+    "remotion:render": "remotion render src/remotion/index.ts AppActionVideo public/app-action-video.mp4 --crf=16",
+    "remotion:render:desktop": "remotion render src/remotion/index.ts DesktopAppDemo public/desktop-app-demo.mp4 --crf=16",
+    "remotion:render:mobile": "remotion render src/remotion/index.ts MobileAppDemo public/mobile-app-demo.mp4 --crf=16",
     "lint": "eslint .",
     "typecheck": "tsc --noEmit -p tsconfig.typecheck.json",
     "e2e": "playwright test",
@@ -84,6 +93,7 @@
   },
   "devDependencies": {
     "@playwright/test": "^1.51.1",
+    "@remotion/cli": "^4.0.476",
     "@types/node": "^20",
     "@types/react": "^19.2.1",
     "@types/react-dom": "^19.2.1",
@@ -94,6 +104,7 @@
     "genkit-cli": "^1.28.0",
     "playwright": "^1.51.1",
     "postcss": "^8",
+    "remotion": "^4.0.476",
     "tailwindcss": "^3.4.1",
     "typescript": "^5"
   }

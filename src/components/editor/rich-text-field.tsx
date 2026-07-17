@@ -1,10 +1,11 @@
 "use client"
 
 import { useCallback, useEffect, useRef, useState } from "react"
-import { Bold, Italic, List, ListOrdered, Pilcrow, Redo, Underline, Undo } from "lucide-react"
+import { Bold, Italic, List, ListOrdered, Pilcrow, Redo, Underline, Undo, SpellCheck2, X } from "lucide-react"
 
 import { Button } from "@/components/ui/button"
-import { isRichTextEmpty, normalizeRichTextValue, sanitizeRichTextHtml } from "@/lib/rich-text"
+import { isRichTextEmpty, normalizeRichTextValue, richTextToPlainText, sanitizeRichTextHtml } from "@/lib/rich-text"
+import { checkGrammar, type GrammarIssue } from "@/lib/grammar-check"
 import { cn } from "@/lib/utils"
 
 interface RichTextFieldProps {
@@ -44,6 +45,9 @@ export function RichTextField({
   const [formatState, setFormatState] = useState<FormatState>(DEFAULT_FORMAT_STATE)
   const [isFocused, setIsFocused] = useState(false)
   const [isEmpty, setIsEmpty] = useState(isRichTextEmpty(value))
+  const [grammarIssues, setGrammarIssues] = useState<GrammarIssue[]>([])
+  const [isCheckingGrammar, setIsCheckingGrammar] = useState(false)
+  const lastCheckedTextRef = useRef<string>("")
 
   const normalizedValue = normalizeRichTextValue(value)
 
@@ -83,11 +87,34 @@ export function RichTextField({
 
     const content = editorRef.current.innerHTML
     const nextValue = isRichTextEmpty(content) ? "" : content
-    
+
     setIsEmpty(!nextValue)
     onChange(nextValue)
     updateToolbarState()
   }, [onChange, updateToolbarState])
+
+  const runGrammarCheck = useCallback(async () => {
+    if (!editorRef.current) return
+    const plain = richTextToPlainText(editorRef.current.innerHTML)
+    if (!plain || plain === lastCheckedTextRef.current) return
+    lastCheckedTextRef.current = plain
+    setIsCheckingGrammar(true)
+    const issues = await checkGrammar(plain)
+    setGrammarIssues(issues)
+    setIsCheckingGrammar(false)
+  }, [])
+
+  const applyFix = useCallback((issue: GrammarIssue, issueIdx: number) => {
+    if (!editorRef.current) return
+    const html = editorRef.current.innerHTML
+    editorRef.current.innerHTML = html.replace(issue.bad, issue.suggestions[0])
+    emitChange()
+    setGrammarIssues(prev => prev.filter((_, i) => i !== issueIdx))
+  }, [emitChange])
+
+  const dismissIssue = useCallback((issueIdx: number) => {
+    setGrammarIssues(prev => prev.filter((_, i) => i !== issueIdx))
+  }, [])
 
   useEffect(() => {
     if (!editorRef.current) return
@@ -262,6 +289,29 @@ export function RichTextField({
         >
           Reset
         </Button>
+
+        {/* Grammar check trigger */}
+        <Button
+          type="button"
+          variant="ghost"
+          size="sm"
+          aria-label="Check grammar"
+          title="Check spelling & grammar"
+          disabled={isCheckingGrammar}
+          className={cn(
+            toolbarButtonClassName, toolbarIconButtonClassName,
+            grammarIssues.length > 0 && "border-amber-300 bg-amber-50 text-amber-600"
+          )}
+          onMouseDown={(event) => event.preventDefault()}
+          onClick={runGrammarCheck}
+        >
+          {isCheckingGrammar ? (
+            <div className="h-3.5 w-3.5 rounded-full border-2 border-current border-t-transparent animate-spin" />
+          ) : (
+            <SpellCheck2 className="h-3.5 w-3.5" />
+          )}
+          <span className="sr-only">Check Grammar</span>
+        </Button>
       </div>
 
       <div className="relative px-2.5 py-2.5 sm:px-3 sm:py-3">
@@ -276,6 +326,7 @@ export function RichTextField({
           aria-multiline="true"
           contentEditable
           suppressContentEditableWarning
+          spellCheck
           className={cn(
             "resume-rich-text-editor outline-none text-[13px] leading-relaxed text-primary sm:text-sm break-words",
             "[&_p]:mb-3 [&_p:last-child]:mb-0 w-full max-w-full",
@@ -292,6 +343,8 @@ export function RichTextField({
           onBlur={() => {
             setIsFocused(false)
             emitChange()
+            // Delay to let emitChange fire first, then run grammar check in background
+            setTimeout(runGrammarCheck, 400)
           }}
           onInput={emitChange}
           onKeyUp={updateToolbarState}
@@ -303,6 +356,57 @@ export function RichTextField({
           }}
         />
       </div>
+
+      {/* Grammar & spelling suggestions panel */}
+      {grammarIssues.length > 0 && (
+        <div className="border-t border-amber-100 bg-amber-50/60 px-3 py-2.5">
+          <div className="flex items-center justify-between mb-2">
+            <span className="flex items-center gap-1.5 text-[10px] font-black uppercase tracking-widest text-amber-700">
+              <SpellCheck2 className="h-3 w-3" />
+              {grammarIssues.length} suggestion{grammarIssues.length !== 1 ? "s" : ""}
+            </span>
+            <button
+              onClick={() => setGrammarIssues([])}
+              className="text-[10px] font-bold text-amber-500 hover:text-amber-700 transition-colors"
+            >
+              Dismiss all
+            </button>
+          </div>
+          <div className="space-y-1.5">
+            {grammarIssues.map((issue, i) => (
+              <div key={i} className="flex items-center justify-between gap-2 rounded-lg bg-white/70 px-2.5 py-1.5 text-[11px]">
+                <div className="min-w-0 flex-1 leading-snug">
+                  <span className="font-semibold text-red-500 line-through">{issue.bad}</span>
+                  <span className="mx-1 text-slate-400">→</span>
+                  <span className="font-semibold text-emerald-700">{issue.suggestions[0]}</span>
+                  <span className="ml-1.5 text-[10px] text-slate-400">{issue.message}</span>
+                </div>
+                <div className="flex shrink-0 items-center gap-1">
+                  <button
+                    onClick={() => applyFix(issue, i)}
+                    className="rounded-md px-2 py-0.5 text-[10px] font-bold text-emerald-600 transition-colors hover:bg-emerald-50 hover:text-emerald-800"
+                  >
+                    Apply
+                  </button>
+                  <button
+                    onClick={() => dismissIssue(i)}
+                    className="flex h-4 w-4 items-center justify-center rounded text-slate-400 transition-colors hover:text-slate-600"
+                  >
+                    <X className="h-3 w-3" />
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {isCheckingGrammar && (
+        <div className="border-t border-slate-100 px-3 py-2 text-[10px] font-bold uppercase tracking-widest text-slate-400 flex items-center gap-2">
+          <div className="h-3 w-3 rounded-full border-2 border-slate-300 border-t-slate-500 animate-spin" />
+          Checking spelling & grammar…
+        </div>
+      )}
     </div>
   )
 }

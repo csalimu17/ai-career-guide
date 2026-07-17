@@ -1,5 +1,6 @@
-import { Redis } from '@upstash/redis';
 import pino from 'pino';
+import type { Redis } from '@upstash/redis';
+import { getRedis } from '@/lib/server/upstash';
 
 const logger = pino();
 
@@ -16,17 +17,10 @@ export const DEFAULT_QUOTAS: Record<string, UserUsageQuota> = {
 };
 
 export class UsageManager {
-  private redis: Redis;
+  private redis: Redis | null;
 
   constructor(redisOverride?: Redis) {
-    if (redisOverride) {
-      this.redis = redisOverride;
-    } else {
-      this.redis = new Redis({
-        url: process.env.UPSTASH_REDIS_URL || '',
-        token: process.env.UPSTASH_REDIS_TOKEN || '',
-      });
-    }
+    this.redis = redisOverride || getRedis();
   }
 
   private getDayKey(userId: string): string {
@@ -39,6 +33,8 @@ export class UsageManager {
     cost: number,
     tokens: number
   ): Promise<void> {
+    if (!this.redis) return;
+
     const key = this.getDayKey(userId);
     try {
       await this.redis.hincrbyfloat(key, 'cost', cost);
@@ -53,6 +49,8 @@ export class UsageManager {
     userId: string,
     tier: string = 'free'
   ): Promise<{ allowed: boolean; reason?: string }> {
+    if (!this.redis) return { allowed: true };
+
     const key = this.getDayKey(userId);
     const quota = DEFAULT_QUOTAS[tier] || DEFAULT_QUOTAS.free;
 
@@ -85,6 +83,8 @@ export class UsageManager {
   }
 
   async getUsage(userId: string): Promise<{ cost: number; tokens: number }> {
+    if (!this.redis) return { cost: 0, tokens: 0 };
+
     const key = this.getDayKey(userId);
     try {
       const usage = await this.redis.hgetall(key);

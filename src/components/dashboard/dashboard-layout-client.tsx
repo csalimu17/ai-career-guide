@@ -107,6 +107,7 @@ export default function DashboardLayoutClient({
   }
 
   const isOnboarding = pathname.startsWith("/onboarding");
+  const isEditor = pathname.startsWith("/cv-editor") || pathname.startsWith("/editor");
 
   const handleStopImpersonation = () => {
     clearImpersonation();
@@ -142,12 +143,27 @@ export default function DashboardLayoutClient({
               <Loader2 className="h-3.5 w-3.5 animate-spin" />
               Viewing as {impersonatedUid}
             </div>
-            <Button variant="ghost" size="sm" onClick={handleStopImpersonation} className="h-7 bg-white/10 text-[0.68rem] hover:bg-white/20">
+            <Button variant="ghost" size="sm" onClick={handleStopImpersonation} className="h-10 bg-white/10 text-[0.68rem] hover:bg-white/20">
               End session
             </Button>
           </div>
         )}
           {children}
+        <Toaster />
+      </div>
+    );
+  }
+
+  if (isEditor) {
+    return (
+      <div className="h-screen overflow-hidden">
+        {impersonatedUid && (
+          <div className="sticky top-0 z-[100] flex items-center justify-between border-b border-white/10 bg-destructive px-4 py-2 text-[0.68rem] font-semibold uppercase tracking-[0.22em] text-destructive-foreground shadow-lg">
+            Administrative shadowing active
+            <Button size="sm" variant="ghost" onClick={handleStopImpersonation} className="h-10 px-3 text-[10px]">Exit</Button>
+          </div>
+        )}
+        {children}
         <Toaster />
       </div>
     );
@@ -185,7 +201,7 @@ export default function DashboardLayoutClient({
           <div className="flex min-w-0 items-center gap-2">
             <SidebarTrigger className="-ml-2 h-10 w-10 rounded-xl hover:bg-primary/5" />
             <React.Suspense fallback={<div className="h-9 w-18" />}>
-              <HistoryButtons fallbackHref="/dashboard" buttonClassName="h-9 w-9 rounded-xl" />
+              <HistoryButtons fallbackHref="/dashboard" buttonClassName="h-11 w-11 rounded-xl" />
             </React.Suspense>
           </div>
 

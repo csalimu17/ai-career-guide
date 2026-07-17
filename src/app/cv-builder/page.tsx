@@ -5,16 +5,9 @@ import { SiteFooter } from "@/components/marketing/site-footer";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
+import { marketingHeaderItems } from "@/lib/marketing-nav";
 import { absoluteUrl, createMetadata } from "@/lib/metadata";
 import { siteConfig } from "@/lib/site";
-
-const navigationItems = [
-  { label: "CV Builder", href: "/cv-builder" },
-  { label: "Platform", href: "/#platform" },
-  { label: "Workflow", href: "/#workflow" },
-  { label: "Pricing", href: "/#pricing" },
-  { label: "Support", href: "/support" },
-];
 
 const benefitCards = [
   {
@@ -108,6 +101,8 @@ export const metadata = createMetadata({
   ],
 });
 
+export const revalidate = 86400;
+
 export default function CvBuilderPage() {
   const structuredData = [
     {
@@ -159,12 +154,30 @@ export default function CvBuilderPage() {
         },
       })),
     },
+    {
+      "@context": "https://schema.org",
+      "@type": "BreadcrumbList",
+      itemListElement: [
+        {
+          "@type": "ListItem",
+          position: 1,
+          name: "Home",
+          item: absoluteUrl("/"),
+        },
+        {
+          "@type": "ListItem",
+          position: 2,
+          name: "CV Builder",
+          item: absoluteUrl("/cv-builder"),
+        },
+      ],
+    },
   ];
 
   return (
     <div className="min-h-screen">
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(structuredData) }} />
-      <PublicHeader items={navigationItems} ctaHref="/signup" ctaLabel="Build my CV" />
+      <PublicHeader items={marketingHeaderItems} ctaHref="/signup?intent=create-cv" ctaLabel="Build My CV Free" />
 
       <main className="pb-24">
         <section className="relative overflow-hidden pb-16 pt-12 sm:pb-24 sm:pt-20">
@@ -188,8 +201,8 @@ export default function CvBuilderPage() {
 
               <div className="grid gap-3 sm:flex sm:flex-row">
                 <Button size="lg" asChild>
-                  <Link href="/signup">
-                    Build my CV
+                  <Link href="/signup?intent=create-cv">
+                    Build My CV Free
                     <ArrowRight className="h-4 w-4" />
                   </Link>
                 </Button>
@@ -252,7 +265,7 @@ export default function CvBuilderPage() {
                 Built for job seekers who want better outcomes, not just prettier templates.
               </h2>
               <p className="text-[0.95rem] leading-relaxed text-muted-foreground sm:text-base">
-                A strong CV builder should help you write more clearly, tailor faster, and keep your applications moving. That is the job this page is designed to do.
+                Write a clear, role-specific CV, check it against each vacancy, and keep every application moving from one focused workspace.
               </p>
             </div>
 
@@ -282,7 +295,7 @@ export default function CvBuilderPage() {
                 A simple workflow for creating and refining your CV online.
               </h2>
               <p className="text-[0.95rem] leading-relaxed text-muted-foreground sm:text-base">
-                This keeps the page relevant for people searching how to build a CV while also matching what the product actually helps them do.
+                Start with your experience, strengthen the evidence in each section, then tailor and check the finished CV before you apply.
               </p>
             </div>
 
@@ -308,20 +321,23 @@ export default function CvBuilderPage() {
           <div className="app-shell">
             <div className="surface-card grid gap-6 px-5 py-6 sm:px-8 sm:py-8 lg:grid-cols-[1fr_auto] lg:items-center">
               <div className="space-y-3 sm:space-y-4">
-                <p className="eyebrow-chip w-fit">Internal next step</p>
+                <p className="eyebrow-chip w-fit">UK CV resources</p>
                 <h2 className="font-display text-[1.9rem] font-semibold tracking-tight text-primary sm:text-4xl">
-                  Start with the CV builder, then move into ATS checks and job tracking.
+                  Build faster with examples, format guidance, and graduate templates.
                 </h2>
                 <p className="max-w-3xl text-[0.95rem] leading-relaxed text-muted-foreground sm:text-base">
-                  The strongest ranking pages also help users continue deeper into the product. Once they arrive here, we want them to discover the broader workflow naturally.
+                  If you are not sure what to write first, start with the UK CV format guide, compare CV examples, or use the graduate template structure before tailoring your document.
                 </p>
               </div>
-              <div className="flex flex-col gap-3 sm:flex-row lg:flex-col">
-                <Button asChild>
-                  <Link href="/signup">Start free</Link>
+              <div className="grid gap-3 sm:grid-cols-3 lg:min-w-[27rem]">
+                <Button variant="outline" asChild>
+                  <Link href="/cv-examples">CV examples</Link>
                 </Button>
                 <Button variant="outline" asChild>
-                  <Link href="/pricing">Compare plans</Link>
+                  <Link href="/uk-cv-format">UK CV format</Link>
+                </Button>
+                <Button variant="outline" asChild>
+                  <Link href="/graduate-cv-template">Graduate CV</Link>
                 </Button>
               </div>
             </div>

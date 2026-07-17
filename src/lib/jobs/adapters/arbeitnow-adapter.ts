@@ -49,7 +49,7 @@ export class ArbeitnowAdapter implements JobApiAdapter {
       return rawJobs.map((raw: any) => this.mapToJobListing(raw))
     } catch (error) {
       console.error("Arbeitnow fetch error:", error)
-      return []
+      throw error
     }
   }
 
@@ -115,9 +115,17 @@ export class ArbeitnowAdapter implements JobApiAdapter {
     return html.replace(/<[^>]*>?/gm, "")
   }
 
-  private formatDate(dateStr: string): string {
+  private formatDate(dateStr: string | number): string {
     if (!dateStr) return "Recently"
-    const date = new Date(dateStr)
+    
+    let date: Date
+    if (typeof dateStr === "number") {
+      // If it's a timestamp in seconds (Arbeitnow sometimes returns this), convert to ms
+      date = new Date(dateStr < 10000000000 ? dateStr * 1000 : dateStr)
+    } else {
+      date = new Date(dateStr)
+    }
+
     if (isNaN(date.getTime())) return "Recently"
     
     const diffMs = Date.now() - date.getTime()

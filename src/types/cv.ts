@@ -75,6 +75,8 @@ export const CvDataExtractionOutputSchema = z.object({
       appliedFixes: z.array(z.string()),
       lastError: z.string().optional(),
     }).optional(),
+    sourceLanguage: z.string().optional(),
+    isTranslated: z.boolean().optional(),
   }).optional(),
 });
 

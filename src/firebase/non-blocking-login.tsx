@@ -7,9 +7,12 @@ import {
   GoogleAuthProvider,
   signInWithPopup,
   signInWithRedirect,
+  getRedirectResult,
   signOut,
 } from 'firebase/auth';
+import type { Firestore } from 'firebase/firestore';
 import { toast } from '@/hooks/use-toast';
+import { upsertUserProfile } from '@/lib/user-profile';
 
 function shouldUseRedirectForGoogleSignIn() {
   if (typeof window === 'undefined') return false;
@@ -95,22 +98,63 @@ export async function initiateGoogleSignIn(authInstance: Auth) {
       return null;
     }
 
-    // Only show toast if the user didn't intentionally close the popup
+    // Surface unauthorized-domain through the normal error path so the
+    // caller can reset its loading state and we don't double-toast.
     if (error.code === 'auth/unauthorized-domain') {
-      toast({
-        variant: 'destructive',
-        title: 'Domain Not Authorized',
-        description: 'Please add this domain to the Authorized Domains list in your Firebase Console.',
-      });
-    } else if (error.code !== 'auth/popup-closed-by-user') {
-      toast({
-        variant: 'destructive',
-        title: 'Google Login Error',
-        description: error.message,
-      });
-      throw error;
+      const friendly = new Error(
+        'This domain is not authorized for Google sign-in. Add it under Firebase Console → Authentication → Settings → Authorized Domains.'
+      );
+      (friendly as any).code = 'auth/unauthorized-domain';
+      throw friendly;
     }
-    return null;
+
+    // User intentionally closed the popup — silent.
+    if (error.code === 'auth/popup-closed-by-user' || error.code === 'auth/cancelled-popup-request') {
+      return null;
+    }
+
+    toast({
+      variant: 'destructive',
+      title: 'Google Login Error',
+      description: error.message,
+    });
+    throw error;
+  }
+}
+
+/**
+ * Consume the result of a `signInWithRedirect` round-trip. Call this once
+ * on auth-page mount: if the user landed here from a Google redirect, we
+ * pull the credential out and upsert their Firestore profile so the rest
+ * of the app can rely on `users/{uid}` existing.
+ *
+ * Returns `null` when there is no pending redirect (the common case).
+ */
+export async function consumeGoogleRedirectResult(authInstance: Auth, db: Firestore) {
+  try {
+    const result = await getRedirectResult(authInstance);
+    if (!result?.user) return null;
+
+    const [firstName = '', lastName = ''] = result.user.displayName?.split(' ') || [];
+    await upsertUserProfile({
+      db,
+      uid: result.user.uid,
+      email: result.user.email,
+      firstName,
+      lastName,
+      photoURL: result.user.photoURL,
+      emailVerified: result.user.emailVerified,
+    });
+    return result;
+  } catch (error: any) {
+    if (error?.code === 'auth/unauthorized-domain') {
+      const friendly = new Error(
+        'This domain is not authorized for Google sign-in. Add it under Firebase Console → Authentication → Settings → Authorized Domains.'
+      );
+      (friendly as any).code = 'auth/unauthorized-domain';
+      throw friendly;
+    }
+    throw error;
   }
 }
 

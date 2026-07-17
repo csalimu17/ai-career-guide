@@ -21,11 +21,11 @@ export class IndeedAdapter implements JobApiAdapter {
     url.searchParams.set("query", keywords || "")
     url.searchParams.set("location", safeLocation)
     url.searchParams.set("page", String(page))
+    url.searchParams.set("limit", "50")
 
     try {
       if (!this.apiKey) {
-        console.warn("Indeed adapter missing RapidAPI key")
-        return []
+        throw new Error("Missing RAPIDAPI_KEY")
       }
 
       const res = await fetch(url.toString(), {

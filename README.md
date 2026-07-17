@@ -49,9 +49,9 @@ Recommended environment variables:
 
 ## Deployment Notes
 
-- The project uses **Firebase App Hosting** with an automated CI/CD pipeline.
-- Continuous deployment is linked to the GitHub repository. Any pushes or merges to the `main` branch will automatically trigger a build and rollout in Firebase.
-- `scripts/deploy.ps1` remains available for local verification, type checking, and manual Firebase Rules deployment.
+- The current deployment workflow is manual.
+- `scripts/deploy.ps1` is a helper script for local verification and Firebase rules deployment.
+- If the project is running inside a real git checkout, the script can also trigger a git-based rollout. Otherwise it will skip the git step safely.
 
 ## Useful Test Helpers
 

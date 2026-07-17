@@ -44,6 +44,7 @@ import { useIsAdmin } from "@/hooks/use-is-admin"
 import { initiateSignOut } from "@/firebase/non-blocking-login"
 import { BrandWordmark } from "@/components/brand/brand-wordmark"
 import { Button } from "@/components/ui/button"
+import { Badge as UiBadge } from "@/components/ui/badge"
 import { cn } from "@/lib/utils"
 import { useIsMobile } from "@/hooks/use-mobile"
 
@@ -87,6 +88,11 @@ const items = [
     title: "AI Assistant",
     url: "/chat",
     icon: MessageSquare,
+  },
+  {
+    title: "Interview Prep",
+    url: "/interview-prep",
+    icon: ClipboardList,
   },
 ]
 
@@ -292,6 +298,10 @@ export function AppSidebar({ profile, impersonatedUid, ...props }: AppSidebarPro
                         {item.title}
                       </span>
                       
+                      {item.title === "Interview Prep" && (
+                        <UiBadge variant="outline" className="ml-auto bg-amber-500/10 text-amber-600 border-none px-1.5 py-0 text-[8px] font-black group-data-[collapsible=icon]:hidden">MASTER</UiBadge>
+                      )}
+
                       {isActive && (
                         <motion.div 
                           layoutId="active-indicator"

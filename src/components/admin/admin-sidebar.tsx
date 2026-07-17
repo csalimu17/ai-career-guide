@@ -13,6 +13,7 @@ import {
   ArrowLeft,
   ChevronRight,
   Home,
+  Activity,
 } from "lucide-react"
 
 import {
@@ -40,6 +41,7 @@ const adminItems = [
   { title: "Content CMS", url: "/admin/content", icon: FileCode },
   { title: "Ingestion Health", url: "/admin/ingestion", icon: ShieldAlert },
   { title: "Templates", url: "/admin/templates", icon: Layers },
+  { title: "Diagnostics", url: "/admin/diagnostics", icon: Activity },
   { title: "Audit Logs", url: "/admin/audit-logs", icon: History },
   { title: "System Settings", url: "/admin/settings", icon: Settings },
 ]

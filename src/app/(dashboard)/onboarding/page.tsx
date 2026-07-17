@@ -3,7 +3,7 @@
 import Image from "next/image"
 import { useState } from "react"
 import { useRouter } from "next/navigation"
-import { motion, AnimatePresence, Variants } from "framer-motion"
+import { motion, AnimatePresence } from "framer-motion"
 import { doc, serverTimestamp, setDoc } from "firebase/firestore"
 import { useUser, useFirestore } from "@/firebase"
 import { toast } from "@/hooks/use-toast"
@@ -45,7 +45,7 @@ const GUIDE_MESSAGES: Record<Step, string> = {
   6: "We're all set! How would you like to build your first CV? I'll be here to help either way.",
 }
 
-const variants: Variants = {
+const variants = {
   initial: (direction: number) => ({
     x: direction > 0 ? 50 : -50,
     opacity: 0,

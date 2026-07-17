@@ -16,6 +16,7 @@ import {
 import { Textarea } from "@/components/ui/textarea"
 import { Loader2, Sparkles, Check, AlertCircle, Linkedin, Trash2, ListChecks } from "lucide-react"
 import { toast } from "@/hooks/use-toast"
+import { fetchAuthedJson } from "@/lib/client/fetch-json"
 import {
   buildTrackedApplicationPayload,
   JOB_SOURCE_DEFAULT_URLS,
@@ -51,17 +52,19 @@ export function LinkedInImporter() {
       toast({ title: "Paste something first", description: "We need some text to work with!" })
       return
     }
+    if (!user) {
+      toast({ variant: "destructive", title: "Please sign in", description: "You need to be signed in to import jobs." })
+      return
+    }
     setIsParsing(true)
     try {
-      const res = await fetch("/api/jobs/import/linkedin", {
+      // /api/jobs/import/linkedin now requires an authenticated Firebase
+      // session. fetchAuthedJson attaches the Bearer ID token automatically.
+      const data = await fetchAuthedJson<{ jobs?: any[] }>(user, "/api/jobs/import/linkedin", {
         method: "POST",
         body: JSON.stringify({ text }),
-        headers: { "Content-Type": "application/json" },
       })
-      
-      if (!res.ok) throw new Error("API failure")
-      
-      const data = await res.json()
+
       if (data.jobs && data.jobs.length > 0) {
         setParsedJobs(data.jobs)
         setSelectedIndices(new Set(data.jobs.map((_: any, i: number) => i)))

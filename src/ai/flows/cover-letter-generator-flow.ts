@@ -7,10 +7,9 @@
  * - generateCoverLetter - Function to generate the cover letter.
  */
 
-import { getAi } from '@/ai/genkit';
 import { generateWithFallback } from '@/ai/generate-helper';
 import { buildJobResearchContext, formatJobResearchContext } from '@/ai/job-research';
-import { getFallbackGeminiModel, getGeminiModel } from '@/ai/model-router';
+import { getGeminiModel } from '@/ai/model-router';
 import { z } from 'zod';
 
 const CoverLetterInputSchema = z.object({
@@ -36,14 +35,11 @@ const CoverLetterOutputSchema = z.object({
 export type CoverLetterOutput = z.infer<typeof CoverLetterOutputSchema>;
 
 export async function generateCoverLetter(input: CoverLetterInput): Promise<CoverLetterOutput> {
-  const ai = getAi();
-  
   const jobResearchContext = await buildJobResearchContext({
     jobTitle: input.role,
     jobDescription: input.jobDescription,
   });
       const model = await getGeminiModel('cvWriting');
-      const fallbackModel = getFallbackGeminiModel('cvWriting');
 
       const response = await generateWithFallback({
         model,
@@ -72,7 +68,7 @@ ${input.resumeContent}
 Job Description:
 ${input.jobDescription}`,
         output: { schema: CoverLetterOutputSchema },
-      }, fallbackModel || undefined);
+      });
 
   return response.output!;
 }

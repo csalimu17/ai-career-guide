@@ -36,6 +36,7 @@ import {
   LineChart,
   BarChart3,
   X,
+  Activity,
 } from "lucide-react"
 
 import {
@@ -95,8 +96,19 @@ export default function JobsPage() {
   const [viewingJob, setViewingJob] = useState<JobListingRecord | null>(null)
   const [isApiLoading, setIsApiLoading] = useState(false)
   const [apiListings, setApiListings] = useState<JobListingRecord[]>([])
+  const [providerStatuses, setProviderStatuses] = useState<Record<string, string>>({})
+  const [totalsByProvider, setTotalsByProvider] = useState<Record<string, number>>({})
   const [hasSearched, setHasSearched] = useState(false)
   const [currentPage, setCurrentPage] = useState(1)
+  const [activeQueryKey, setActiveQueryKey] = useState("")
+  const missingGeneralJobSources = useMemo(() => {
+    const adzuna = providerStatuses["Adzuna"] || ""
+    const reed = providerStatuses["Reed.co.uk"] || ""
+    return {
+      adzunaMissing: adzuna.toLowerCase().includes("missing adzuna"),
+      reedMissing: reed.toLowerCase().includes("missing reed_api_key"),
+    }
+  }, [providerStatuses])
   
   // Job Detail states
   const [fullDescription, setFullDescription] = useState<string | null>(null)
@@ -120,24 +132,57 @@ export default function JobsPage() {
   )
 
   const handlePerformSearch = async (pageNum: number = 1, overrideWorkplace?: string) => {
-    if (!searchTerm.trim()) return
+    // Allow searching if either searchTerm or locationSearch is provided, or if it's an initial broad search
+    const isInitialLoad = !searchTerm.trim() && !locationSearch.trim() && !hasSearched;
+    
+    if (!searchTerm.trim() && !locationSearch.trim() && !isInitialLoad) return
+    
     setIsApiLoading(true)
     setHasSearched(true)
-    setCurrentPage(pageNum)
     
     const activeWorkplace = overrideWorkplace || workplaceType
 
     try {
+      // Use a broad discovery query when no keyword specified
+      const queryValue = searchTerm.trim() || (isInitialLoad ? "latest" : "")
+      
       const params = new URLSearchParams({ 
-        q: searchTerm.trim(),
-        location: locationSearch.trim(),
+        q: queryValue,
+        location: locationSearch.trim() || (isInitialLoad ? "United Kingdom" : ""),
         workplace: activeWorkplace,
         page: pageNum.toString()
       })
+
+      const nextQueryKey = JSON.stringify({
+        q: queryValue,
+        location: params.get("location") || "",
+        workplace: activeWorkplace,
+      })
+
+      const isSameQuery = nextQueryKey === activeQueryKey
+      const shouldAppend = pageNum > 1 && isSameQuery
+
+      if (!shouldAppend) {
+        setApiListings([])
+        setCurrentPage(1)
+      }
+
+      setActiveQueryKey(nextQueryKey)
+      setCurrentPage(pageNum)
+
       const resp = await fetch(`/api/jobs/search?${params.toString()}`)
       const data = await resp.json()
       
-      const uniqueListings = (data.listings || [])
+      if (data.diagnostics) {
+        setProviderStatuses(data.diagnostics)
+      }
+      if (data.totals && typeof data.totals === "object") {
+        setTotalsByProvider(data.totals)
+      } else {
+        setTotalsByProvider({})
+      }
+      
+      const incomingListings = (data.listings || [])
         .filter((job: any) => job && job.id && String(job.id).trim() !== "") // Ensure valid IDs
         .reduce((acc: JobListingRecord[], current: JobListingRecord) => {
           const x = acc.find(item => item.id === current.id);
@@ -145,8 +190,15 @@ export default function JobsPage() {
           return acc;
         }, []);
       
-      setApiListings(uniqueListings)
-      if (pageNum > 1) {
+      setApiListings((prev) => {
+        if (!shouldAppend) return incomingListings
+        const merged = new Map<string, JobListingRecord>()
+        for (const job of prev) merged.set(job.id, job)
+        for (const job of incomingListings) merged.set(job.id, job)
+        return Array.from(merged.values())
+      })
+
+      if (!shouldAppend && (pageNum > 1 || !isInitialLoad)) {
         window.scrollTo({ top: 300, behavior: "smooth" })
       }
     } catch (err) {
@@ -155,6 +207,17 @@ export default function JobsPage() {
       setIsApiLoading(false)
     }
   }
+
+  // Initial load effect
+  useEffect(() => {
+    if (!hasSearched && !isApiLoading) {
+      handlePerformSearch(1);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  const adzunaTotal = totalsByProvider["Adzuna"]
+  const reedTotal = totalsByProvider["Reed.co.uk"]
 
   const handleWorkplaceFilterClick = (typeId: string) => {
     setWorkplaceType(typeId as any)
@@ -309,7 +372,7 @@ export default function JobsPage() {
                       key={type}
                       onClick={() => handleWorkplaceFilterClick(type)}
                       className={cn(
-                        "shrink-0 rounded-full px-4 py-1.5 text-[10px] font-black uppercase tracking-wider transition-all",
+                        "shrink-0 rounded-full px-4 py-2.5 text-[10px] font-black uppercase tracking-wider transition-all",
                         workplaceType === type ? "bg-white text-slate-900 shadow-sm" : "text-slate-400 hover:text-slate-600"
                       )}
                     >
@@ -343,62 +406,83 @@ export default function JobsPage() {
                   </div>
                 ) : (
                   <div className="space-y-12 pb-20">
-                    <div className="grid gap-6 md:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4">
-                      {apiListings.map((job) => (
-                        <JobCard key={job.id} job={job} isActive={false} onSelect={() => handleViewJob(job)} isSaved={trackedByFingerprint.get(buildListingFingerprint(job))?.status === "saved"} />
-                      ))}
+                    {/* Live Diagnostic Panel */}
+                    <div className="p-4 bg-slate-50 border border-slate-100 rounded-[1.5rem] flex flex-wrap gap-4 items-center mb-8">
+                      <div className="text-[9px] font-black uppercase text-slate-400 tracking-widest mr-2 flex items-center gap-2">
+                        <Activity className="h-3 w-3 text-indigo-500" /> Live Feeds
+                      </div>
+                      {Object.keys(providerStatuses).length > 0 ? Object.entries(providerStatuses).map(([name, status]) => (
+                        <div key={name} className="flex items-center gap-1.5 border-r border-slate-200 pr-4 last:border-0">
+                          <div className={`h-1.5 w-1.5 rounded-full ${status.includes('Success') ? 'bg-green-500 shadow-[0_0_8px_rgba(34,197,94,0.4)]' : 'bg-amber-400 animate-pulse'}`} />
+                          <span className="text-[10px] font-black text-slate-700 capitalize">{name}:</span>
+                          <span className="text-[10px] font-medium text-slate-400">{status}</span>
+                        </div>
+                      )) : (
+                        <span className="text-[10px] font-bold text-slate-400 italic">No search diagnostics yet. Perform a search to verify connectivity.</span>
+                      )}
+                      {isApiLoading && (
+                        <div className="flex items-center gap-2 text-blue-600 ml-auto bg-blue-50 px-3 py-1 rounded-full border border-blue-100">
+                          <Loader2 className="h-3 w-3 animate-spin" />
+                          <span className="text-[9px] font-black uppercase tracking-widest">Scanning...</span>
+                        </div>
+                      )}
                     </div>
 
-                    {/* Pagination Controls - Up to 10 Pages */}
+                    {apiListings.length > 0 ? (
+                      <div className="grid gap-6 md:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4">
+                        {apiListings.map((job) => (
+                          <JobCard key={job.id} job={job} isActive={false} onSelect={() => handleViewJob(job)} isSaved={trackedByFingerprint.get(buildListingFingerprint(job))?.status === "saved"} />
+                        ))}
+                      </div>
+                    ) : (
+                      <div className="py-20 text-center bg-white rounded-[2.5rem] border border-dashed border-slate-200">
+                        <div className="flex justify-center mb-6">
+                            <div className="h-20 w-20 rounded-full bg-slate-50 flex items-center justify-center">
+                                <Search className="h-8 w-8 text-slate-300" />
+                            </div>
+                        </div>
+                        <h3 className="text-xl font-black text-slate-900 mb-2">No matching jobs found</h3>
+                        <p className="text-slate-500 max-w-sm mx-auto font-medium">
+                          We couldn't find any live results for your search. Try broadening your keywords or checking another location.
+                        </p>
+                        {(missingGeneralJobSources.adzunaMissing || missingGeneralJobSources.reedMissing) && (
+                          <p className="mt-4 text-slate-500 max-w-xl mx-auto text-sm font-medium">
+                            Your app is currently missing the general UK job sources (Adzuna/Reed), so results may look IT-heavy. Add
+                            `ADZUNA_APP_ID` + `ADZUNA_APP_KEY` and/or `REED_API_KEY` to `.env.local`, then restart `npm run dev`.
+                          </p>
+                        )}
+                        <Button 
+                          variant="ghost" 
+                          className="mt-6 font-black text-blue-600 hover:text-blue-700 hover:bg-blue-50"
+                          onClick={() => {
+                            setSearchTerm("latest");
+                            setLocationSearch("United Kingdom");
+                            handlePerformSearch(1);
+                          }}
+                        >
+                          Try a broad search
+                        </Button>
+                      </div>
+                    )}
+
+                    {/* Load More */}
                     <div className="flex flex-col items-center justify-center gap-6 pt-12 border-t border-slate-100">
                       <div className="flex items-center gap-2">
                         <Button
                           variant="outline"
-                          onClick={() => handlePerformSearch(currentPage - 1)}
-                          disabled={currentPage === 1 || isApiLoading}
-                          className="h-11 w-11 rounded-2xl border-slate-200 bg-white p-0 text-slate-600 hover:border-blue-400 hover:bg-blue-50 hover:text-blue-600 disabled:opacity-30"
-                        >
-                          <ChevronLeft className="h-5 w-5" />
-                        </Button>
-
-                        <div className="hidden items-center gap-1.5 sm:flex">
-                          {[...Array(10)].map((_, i) => {
-                            const page = i + 1
-                            return (
-                              <Button
-                                key={page}
-                                variant={currentPage === page ? "default" : "outline"}
-                                onClick={() => handlePerformSearch(page)}
-                                disabled={isApiLoading}
-                                className={cn(
-                                  "h-11 w-11 rounded-2xl border-slate-200 font-black transition-all duration-300",
-                                  currentPage === page 
-                                    ? "bg-blue-600 text-white shadow-lg shadow-blue-500/30 scale-110" 
-                                    : "bg-white text-slate-500 hover:border-blue-200 hover:bg-blue-50 hover:text-blue-600"
-                                )}
-                              >
-                                {page}
-                              </Button>
-                            )
-                          })}
-                        </div>
-                        
-                        <div className="text-sm font-black text-slate-400 sm:hidden">
-                          Page {currentPage} of 10
-                        </div>
-
-                        <Button
-                          variant="outline"
                           onClick={() => handlePerformSearch(currentPage + 1)}
-                          disabled={currentPage === 10 || isApiLoading}
-                          className="h-11 w-11 rounded-2xl border-slate-200 bg-white p-0 text-slate-600 hover:border-blue-400 hover:bg-blue-50 hover:text-blue-600 disabled:opacity-30"
+                          disabled={isApiLoading}
+                          className="h-12 rounded-2xl border-slate-200 bg-white px-6 font-black text-slate-700 hover:border-blue-400 hover:bg-blue-50 hover:text-blue-700 disabled:opacity-30"
                         >
-                          <ChevronRight className="h-5 w-5" />
+                          Load more
+                          <ChevronRight className="ml-2 h-5 w-5" />
                         </Button>
                       </div>
-                      
+                       
                       <p className="text-xs font-bold uppercase tracking-[0.2em] text-slate-400">
-                        Showing {apiListings.length} jobs per page max (UK Sources Only)
+                        Loaded {apiListings.length} jobs so far • Page {currentPage}
+                        {typeof adzunaTotal === "number" ? ` • Adzuna ~${adzunaTotal.toLocaleString()}` : ""}
+                        {typeof reedTotal === "number" ? ` • Reed ~${reedTotal.toLocaleString()}` : ""}
                       </p>
                     </div>
                   </div>

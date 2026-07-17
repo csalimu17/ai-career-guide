@@ -1,6 +1,14 @@
+import type { Metadata } from "next";
+import { createMetadata } from "@/lib/metadata";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Home, ArrowLeft, Search, FileQuestion } from "lucide-react";
+
+export const metadata: Metadata = createMetadata({
+  title: "Page Not Found",
+  description: "The page you are looking for does not exist.",
+  noIndex: true,
+});
 
 export default function NotFound() {
   return (
@@ -46,12 +54,15 @@ export default function NotFound() {
 
         <div className="pt-12 border-t">
           <p className="text-xs font-black uppercase tracking-widest text-muted-foreground mb-4">Popular Destinations</p>
+          {/* Link to PUBLIC marketing routes here — the previous list pointed
+              at dashboard-gated pages, which bounced logged-out visitors back
+              to /login (a worse dead end than the 404 itself). */}
           <div className="flex flex-wrap justify-center gap-4">
-            <Link href="/dashboard" className="text-xs font-bold hover:text-primary transition-colors">Dashboard</Link>
-            <Link href="/cv-editor" className="text-xs font-bold hover:text-primary transition-colors">CV Editor</Link>
-            <Link href="/jobs" className="text-xs font-bold hover:text-primary transition-colors">Jobs</Link>
-            <Link href="/chat" className="text-xs font-bold hover:text-primary transition-colors">AI Assistant</Link>
-            <Link href="/ats" className="text-xs font-bold hover:text-primary transition-colors">ATS Fit</Link>
+            <Link href="/cv-builder" className="text-xs font-bold hover:text-primary transition-colors">CV Builder</Link>
+            <Link href="/ats-cv-checker" className="text-xs font-bold hover:text-primary transition-colors">ATS Checker</Link>
+            <Link href="/pricing" className="text-xs font-bold hover:text-primary transition-colors">Pricing</Link>
+            <Link href="/blog" className="text-xs font-bold hover:text-primary transition-colors">Blog</Link>
+            <Link href="/support" className="text-xs font-bold hover:text-primary transition-colors">Support</Link>
           </div>
         </div>
       </div>

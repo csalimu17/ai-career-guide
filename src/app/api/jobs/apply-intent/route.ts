@@ -24,6 +24,7 @@ const SOURCE_HOST_RULES: Record<JobSource, string[]> = {
   company_site: [],
   arbeitnow: ["arbeitnow.com"],
   loopcv: ["loopcv.pro"],
+  devitjobs: ["devitjobs.uk"],
   adzuna: ["adzuna.co.uk", "adzuna.com"],
   reed: ["reed.co.uk"],
 }
