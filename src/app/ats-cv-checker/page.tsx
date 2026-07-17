@@ -183,7 +183,7 @@ export default function AtsCvCheckerPage() {
 
               <div className="grid gap-3 sm:flex sm:flex-row">
                 <Button size="lg" asChild>
-                  <Link href="/signup">
+                  <Link href="/signup?intent=ats-check">
                     Check My CV
                     <ArrowRight className="h-4 w-4" />
                   </Link>

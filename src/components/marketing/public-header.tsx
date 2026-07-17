@@ -29,7 +29,7 @@ export function PublicHeader({
   return (
     <>
       <a href="#main-content" className="skip-link">Skip to main content</a>
-      <header className="sticky top-0 z-50 border-b border-slate-200 bg-white">
+      <header className="public-marketing-header sticky top-0 z-50 border-b border-white/60 bg-white/75 backdrop-blur-xl">
         <div className="marketing-shell flex h-16 items-center justify-between gap-3 sm:h-[72px]">
           <div className="flex min-w-0 items-center gap-3">
             <Link href="/" className="inline-flex min-w-0 items-center gap-2">

@@ -293,8 +293,10 @@
     return hidePaths.some((p) => path === p || path.startsWith(p + "/") || path.startsWith(p));
   }
 
+  let mobileGalleryInView = false;
+
   function updateVisibility() {
-    const shouldHide = isMobileViewport() && (isHiddenPathname(window.location.pathname) || hasVisibleBottomDock());
+    const shouldHide = isMobileViewport() && (isHiddenPathname(window.location.pathname) || hasVisibleBottomDock() || mobileGalleryInView);
 
     if (shouldHide) {
       closePanel();
@@ -306,6 +308,16 @@
 
   // Initial check
   updateVisibility();
+
+  // Keep the compact assistant from obscuring the mobile template runway.
+  const templateRunway = document.querySelector(".template-runway");
+  if (templateRunway && "IntersectionObserver" in window) {
+    const galleryObserver = new IntersectionObserver(([entry]) => {
+      mobileGalleryInView = entry.isIntersecting;
+      updateVisibility();
+    }, { threshold: 0.08 });
+    galleryObserver.observe(templateRunway);
+  }
 
   // Re-check on navigation (MutationObserver on body to detect Next.js client-side route changes)
   let lastPathname = window.location.pathname;
