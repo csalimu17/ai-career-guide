@@ -36,7 +36,7 @@ type TemplateThumbnailProps = {
 export function TemplateThumbnail({ template, className, highFidelity = false }: TemplateThumbnailProps) {
   const containerRef = useRef<HTMLDivElement>(null)
   const [fitScale, setFitScale] = useState(template.thumbnail.scale)
-  const [isIntersecting, setIsIntersecting] = useState(false)
+  const [isIntersecting, setIsIntersecting] = useState(true)
   const accent = template.defaults.primaryColor
   const scaledWidth = Math.max(THUMBNAIL_PAGE_WIDTH * fitScale, 160)
   const scaledHeight = Math.max(THUMBNAIL_PAGE_HEIGHT * fitScale, 220)
@@ -178,7 +178,7 @@ export function TemplateThumbnail({ template, className, highFidelity = false }:
                 <div className="h-1.5 w-1/4 rounded" style={{ backgroundColor: hexToRgba(accent, 0.6) }} />
                 <div className="space-y-2">
                   <div className="flex justify-between">
-                    <div className="h-1.5 w-1/3 bg-slate-200 rounded" />
+                     <div className="h-1.5 w-1/3 bg-slate-200 rounded" />
                     <div className="h-1 w-16 bg-slate-100 rounded" />
                   </div>
                   <div className="space-y-1">
@@ -202,6 +202,7 @@ export function TemplateThumbnail({ template, className, highFidelity = false }:
       ref={containerRef}
       aria-hidden="true"
       role="presentation"
+      data-template-cover={highFidelity ? "full-document" : "lightweight"}
       className={cn(
         "relative h-full w-full overflow-hidden bg-slate-50",
         className
@@ -215,7 +216,7 @@ export function TemplateThumbnail({ template, className, highFidelity = false }:
       />
 
       <div
-        className="absolute inset-[12px] flex items-center justify-center overflow-hidden rounded-[1.15rem] border bg-white shadow-[0_15px_35px_-20px_rgba(15,23,42,0.2)]"
+        className="absolute inset-[10px] flex items-center justify-center overflow-hidden rounded-[0.4rem] border bg-white shadow-[0_18px_38px_-18px_rgba(15,23,42,0.25)]"
         style={{ borderColor: hexToRgba(accent, 0.08) }}
       >
         <div

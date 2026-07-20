@@ -28,12 +28,15 @@ test.describe("public conversion regressions", () => {
     expect(getIntentDestination(readAuthIntent(new URLSearchParams("plan=pro")), false)).toBe("/settings?plan=pro&checkout=1");
   });
 
-  test("template gallery uses lightweight cards and preserves selection", async ({ page }) => {
+  test("template gallery renders full CV document covers and preserves selection", async ({ page }) => {
     await page.goto("/cv-templates");
     const cards = page.locator("a[href^='/signup?template=']");
     await expect(cards.first()).toBeVisible();
     expect(await cards.count()).toBeGreaterThan(1);
-    await expect(page.locator("body")).not.toContainText("jordan.morgan@example.com");
+    const documentCovers = page.locator("[data-template-cover='full-document']");
+    await expect(documentCovers.first()).toBeVisible();
+    expect(await documentCovers.count()).toBeGreaterThan(1);
+    await expect(documentCovers.first().locator("[data-resume-mode='thumbnail']")).toBeVisible();
     await expect(cards.first()).toHaveAttribute("href", /\/signup\?template=[a-z0-9-]+/);
   });
 

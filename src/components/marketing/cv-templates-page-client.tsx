@@ -89,6 +89,7 @@ export default function CvTemplatesPageClient() {
               <button
                 key={category}
                 onClick={() => setActiveCategory(category)}
+                aria-pressed={activeCategory === category}
                 className={cn(
                   "rounded-full px-6 py-2.5 text-xs font-black uppercase tracking-widest transition-all duration-300",
                   activeCategory === category
@@ -101,7 +102,10 @@ export default function CvTemplatesPageClient() {
             ))}
           </section>
 
-          <section className="grid gap-8 sm:grid-cols-2 lg:grid-cols-3">
+          <section
+            aria-label="CV template gallery"
+            className="grid gap-x-8 gap-y-12 sm:grid-cols-2 lg:grid-cols-3"
+          >
             {filteredTemplates.map((template) => (
               <Card3D key={template.id} intensity={5} className="h-full">
                 <Card
@@ -111,8 +115,11 @@ export default function CvTemplatesPageClient() {
                   }}
                 >
                   <div>
-                    <div className="relative aspect-[3/4] overflow-hidden select-none">
-                      <TemplateThumbnail template={template} />
+                    <div className="relative aspect-[19/28] overflow-hidden select-none bg-slate-100">
+                      <TemplateThumbnail
+                        template={template}
+                        highFidelity
+                      />
 
                       <div className="absolute top-3 right-3 z-20 flex gap-1.5">
                         <Badge className="border-none bg-slate-900/80 text-[9px] font-black uppercase tracking-wider backdrop-blur-md">
