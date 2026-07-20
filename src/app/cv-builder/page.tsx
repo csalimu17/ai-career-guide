@@ -1,58 +1,12 @@
 import Link from "next/link";
-import { ArrowRight, CheckCircle2, FileText, LayoutTemplate, ScanSearch, Sparkles, Target } from "lucide-react";
+import { ArrowRight, Check, CheckCircle2, ChevronRight, FileText, LayoutTemplate, ScanSearch, Sparkles, Target } from "lucide-react";
 import { PublicHeader } from "@/components/marketing/public-header";
 import { SiteFooter } from "@/components/marketing/site-footer";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
 import { marketingHeaderItems } from "@/lib/marketing-nav";
 import { absoluteUrl, createMetadata } from "@/lib/metadata";
 import { siteConfig } from "@/lib/site";
-
-const benefitCards = [
-  {
-    icon: FileText,
-    title: "Build from scratch or upload an existing CV",
-    description:
-      "Start with your current document or create a new one inside a guided editor built for modern CV structure and clarity.",
-  },
-  {
-    icon: Sparkles,
-    title: "Use AI to improve summaries and bullet points",
-    description:
-      "Generate stronger role-focused content suggestions without losing control over tone, achievements, or section order.",
-  },
-  {
-    icon: ScanSearch,
-    title: "Check ATS fit before you apply",
-    description:
-      "Compare your CV against a job description to catch missing keywords, weak alignment, and opportunities to improve fast.",
-  },
-  {
-    icon: LayoutTemplate,
-    title: "Switch templates without reformatting",
-    description:
-      "Move between polished CV templates while keeping the same core experience, education, skills, and summary content.",
-  },
-];
-
-const workflowSteps = [
-  {
-    title: "Choose your target role",
-    description:
-      "Tell the platform what kind of role you want so your CV builder workflow can stay focused on the right direction.",
-  },
-  {
-    title: "Draft and improve your CV",
-    description:
-      "Write manually, upload an existing CV, or use AI bullet suggestions to strengthen each block of experience and impact.",
-  },
-  {
-    title: "Tailor it for applications",
-    description:
-      "Run ATS checks, adjust wording for a live vacancy, then export a cleaner, more targeted version of your CV.",
-  },
-];
+import { PLANS } from "@/lib/plans";
 
 const faqItems = [
   {
@@ -83,7 +37,7 @@ const faqItems = [
 ];
 
 export const metadata = createMetadata({
-  title: "Free CV Builder & CV Editor",
+  title: "Free AI CV Builder & Online CV Editor",
   description:
     "Use a free AI CV builder and CV editor to create a professional CV, improve bullet points, check ATS fit, and tailor your CV for real job applications.",
   path: "/cv-builder",
@@ -175,191 +129,195 @@ export default function CvBuilderPage() {
   ];
 
   return (
-    <div className="min-h-screen">
+    <div className="career-home min-h-screen">
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(structuredData) }} />
       <PublicHeader items={marketingHeaderItems} ctaHref="/signup?intent=create-cv" ctaLabel="Build My CV Free" />
 
-      <main className="pb-24">
-        <section className="relative overflow-hidden pb-16 pt-12 sm:pb-24 sm:pt-20">
-          <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_left,rgba(51,184,255,0.15),transparent_30%),radial-gradient(circle_at_78%_18%,rgba(124,99,255,0.14),transparent_25%),radial-gradient(circle_at_82%_82%,rgba(255,159,110,0.13),transparent_24%)]" />
-          <div className="app-shell relative grid gap-8 lg:grid-cols-[1.02fr_0.98fr] lg:items-center">
-            <div className="space-y-6">
-              <div className="eyebrow-chip w-fit">Free AI CV Builder</div>
-              <div className="sr-only">
-                Free CV builder, free CV editor, AI CV builder, online CV builder, professional CV builder, and ATS-friendly CV builder.
+      <main id="main-content">
+        {/* Hero Section */}
+        <section className="career-hero">
+          <div className="career-orb career-orb-a" />
+          <div className="career-orb career-orb-b" />
+          <div className="career-grid" />
+          
+          <div className="marketing-shell relative z-10 grid gap-10 pb-16 pt-14 lg:grid-cols-[0.88fr_1.12fr] lg:items-center lg:pb-24 lg:pt-20">
+            <div className="hero-copy">
+              <p className="career-kicker">
+                <span />
+                Free AI CV Builder
+              </p>
+              <h1 className="text-slate-900 dark:text-white">
+                Create a professional CV. <em>With AI guidance.</em> Built for UK job seekers.
+              </h1>
+              <p className="hero-lede">
+                AI Career Guide is a free CV builder and CV editor that helps you write stronger summaries, improve bullet points, switch templates, and tailor your CV to real jobs without losing structure.
+              </p>
+              
+              <div className="hero-actions">
+                <Link className="career-primary" href="/signup?intent=create-cv">
+                  Build My CV Free <ArrowRight className="h-4 w-4" />
+                </Link>
+                <Link className="career-secondary" href="/signup?intent=upload-cv">
+                  Upload My CV
+                </Link>
               </div>
-              <div className="space-y-4">
-                <h1 className="headline-gradient-vivid font-display max-w-4xl pb-[0.08em] text-[2.35rem] font-semibold leading-[1.15] tracking-[-0.07em] sm:text-5xl lg:text-[4.35rem]">
-                  <span className="block">Create a professional CV</span>
-                  <span className="block">with AI guidance</span>
-                  <span className="block">and better ATS signals.</span>
-                </h1>
-                <p className="max-w-2xl text-[1rem] leading-7 text-muted-foreground sm:text-[1.15rem]">
-                  AI Career Guide is a free CV builder and CV editor that helps you write stronger summaries, improve bullet points, switch templates, and tailor your CV to real jobs without losing structure.
-                </p>
+              
+              <p className="hero-trust">
+                <Check className="h-4 w-4 text-[#059c94] shrink-0" /> Free plan available <span /> No card required
+              </p>
+            </div>
+            
+            <CareerCanvas />
+          </div>
+        </section>
+
+        {/* Workflow Section */}
+        <Workflow />
+
+        {/* Studio Section (Chapter 01) */}
+        <section id="studio" className="studio-chapter">
+          <div className="marketing-shell">
+            <div className="chapter-intro">
+              <p className="career-kicker">
+                <span />
+                01 · CV Studio
+              </p>
+              <h2>Your experience, transformed into evidence.</h2>
+              <p>
+                Write inside a focused document studio. Dan spots vague language, offers a stronger version, and keeps every edit yours to approve.
+              </p>
+            </div>
+
+            <div className="studio-scene">
+              <div className="studio-toolbar">
+                <span className="studio-dots">● ● ●</span>
+                <span>CV Studio / Operations Manager</span>
+                <span>Saved just now</span>
+              </div>
+              
+              <div className="studio-layout">
+                <div className="studio-rail">
+                  <b>Structure</b>
+                  {["Profile", "Experience", "Education", "Skills"].map((x, i) => (
+                    <span className={i === 1 ? "active" : ""} key={x}>
+                      {i === 1 ? "◈" : "○"} {x}
+                    </span>
+                  ))}
+                </div>
+                
+                <CVPaper />
+                
+                <div className="rewrite-panel">
+                  <p className="panel-label">DAN · AI REWRITE</p>
+                  <strong>Make this achievement specific</strong>
+                  
+                  <div className="rewrite-before">
+                    <small>ORIGINAL</small>
+                    <s>Responsible for improving team processes.</s>
+                  </div>
+                  
+                  <div className="rewrite-after">
+                    <small>SUGGESTED</small>
+                    <p>Redesigned weekly planning across a 12-person team, cutting overdue work by 28%.</p>
+                  </div>
+                  
+                  <div className="rewrite-actions">
+                    <button className="px-3 py-1.5 text-xs rounded-md border border-slate-200">Dismiss</button>
+                    <button className="px-3 py-1.5 text-xs text-white rounded-md bg-[#5141db]">Apply rewrite</button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        {/* ATS Diagnostic Section (Chapter 02) */}
+        <section id="ats" className="ats-chapter">
+          <div className="ats-stars" />
+          <div className="marketing-shell relative z-10 grid gap-12 lg:grid-cols-[0.65fr_1.35fr] lg:items-center">
+            <div>
+              <p className="career-kicker dark">
+                <span />
+                02 · ATS Diagnostic
+              </p>
+              <h2>See the signal recruiters’ systems see.</h2>
+              <p className="chapter-copy-dark">
+                Compare your CV against the role, understand keyword coverage, and leave with a precise action queue—not a mystery score.
+              </p>
+              <Link className="text-link-dark" href="/signup?intent=ats-check">
+                Run an ATS check <ArrowRight className="h-4 w-4" />
+              </Link>
+            </div>
+
+            <div className="diagnostic-console">
+              <div className="score-module">
+                <div className="score-ring">
+                  <div>
+                    <strong>82</strong>
+                    <span>Strong match</span>
+                  </div>
+                </div>
+                <p>Role alignment</p>
+                <small>7 actions remain</small>
               </div>
 
-              <div className="grid gap-3 sm:flex sm:flex-row">
-                <Button size="lg" asChild>
-                  <Link href="/signup?intent=create-cv">
-                    Build My CV Free
-                    <ArrowRight className="h-4 w-4" />
-                  </Link>
-                </Button>
-                <Button size="lg" variant="outline" asChild>
-                  <Link href="/pricing">See pricing</Link>
-                </Button>
-              </div>
-
-              <div className="grid gap-3 sm:grid-cols-3">
+              <div className="keyword-module">
+                <div className="console-heading">
+                  <span>KEYWORD COVERAGE</span>
+                  <b>14 / 18</b>
+                </div>
                 {[
-                  { label: "Free CV editor", value: "Bullet and summary suggestions" },
-                  { label: "ATS checks", value: "Job-based keyword alignment" },
-                  { label: "Flexible templates", value: "Swap designs without rewriting" },
-                ].map((item) => (
-                  <div key={item.label} className="canva-block px-4 py-4">
-                    <p className="text-[0.62rem] font-bold uppercase tracking-[0.16em] text-muted-foreground sm:tracking-[0.22em]">
-                      {item.label}
-                    </p>
-                    <p className="mt-2 text-[0.92rem] font-bold leading-6 text-primary">{item.value}</p>
+                  ["Stakeholder management", 92],
+                  ["Forecasting", 86],
+                  ["Process improvement", 78],
+                  ["Budget ownership", 38],
+                ].map(([x, n]) => (
+                  <div className="keyword-row" key={x as string}>
+                    <div>
+                      <span>{x}</span>
+                      <small>{n}%</small>
+                    </div>
+                    <i>
+                      <b style={{ width: `${n}%` }} />
+                    </i>
                   </div>
                 ))}
               </div>
-            </div>
 
-            <div className="surface-card space-y-4 p-4 sm:p-6">
-              <div className="rounded-[1.6rem] border border-border/70 bg-white/88 p-4 sm:p-5">
-                <div className="flex items-center justify-between gap-3">
-                  <div>
-                    <p className="text-[0.65rem] font-bold uppercase tracking-[0.22em] text-muted-foreground">CV Builder Snapshot</p>
-                    <h2 className="mt-2 font-display text-[1.4rem] font-semibold text-primary sm:text-[1.7rem]">One workspace, cleaner applications.</h2>
-                  </div>
-                  <div className="icon-orb h-12 w-12 shrink-0 text-primary">
-                    <Target className="h-5 w-5" />
-                  </div>
-                </div>
-
-                <div className="mt-5 grid gap-3">
-                  {[
-                    "Create a new CV or import your current one",
-                    "Use AI bullet suggestions inside each experience block",
-                    "Check ATS fit against a real vacancy before applying",
-                    "Export a sharper CV and track applications in the same place",
-                  ].map((item) => (
-                    <div key={item} className="flex items-start gap-3 rounded-[1.1rem] border border-border/70 bg-background/90 px-3.5 py-3">
-                      <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-secondary" />
-                      <p className="text-sm leading-6 text-primary">{item}</p>
-                    </div>
-                  ))}
-                </div>
+              <div className="action-module">
+                <span>PRIORITY ACTION</span>
+                <strong>Add budget ownership evidence</strong>
+                <p>The job description mentions this twice. Add a truthful example if you have one.</p>
+                <button className="flex items-center gap-1 text-[#89e7df] font-bold">
+                  Open in editor <ChevronRight className="h-3 w-3" />
+                </button>
               </div>
             </div>
           </div>
         </section>
 
-        <section className="pb-14 sm:pb-20">
-          <div className="app-shell space-y-7">
-            <div className="max-w-3xl space-y-3">
-              <p className="eyebrow-chip w-fit">Why this CV builder works</p>
-              <h2 className="font-display text-[1.9rem] font-semibold tracking-tight text-primary sm:text-4xl">
-                Built for job seekers who want better outcomes, not just prettier templates.
-              </h2>
-              <p className="text-[0.95rem] leading-relaxed text-muted-foreground sm:text-base">
-                Write a clear, role-specific CV, check it against each vacancy, and keep every application moving from one focused workspace.
+        {/* Templates Section (Chapter 03) */}
+        <Templates />
+
+        {/* Pricing Section */}
+        <Pricing />
+
+        {/* FAQ Section */}
+        <section className="faq-chapter">
+          <div className="marketing-shell grid gap-10 lg:grid-cols-[0.7fr_1.3fr]">
+            <div>
+              <p className="career-kicker">
+                <span />
+                Before you begin
               </p>
+              <h2>A few useful answers.</h2>
             </div>
-
-            <div className="grid gap-4 md:grid-cols-2">
-              {benefitCards.map((card) => (
-                <Card key={card.title} className="border border-border/70 bg-white/88">
-                  <CardContent className="space-y-4 p-5 sm:p-7">
-                    <div className="icon-orb h-14 w-14 text-primary">
-                      <card.icon className="h-5 w-5" />
-                    </div>
-                    <div className="space-y-2">
-                      <h3 className="font-display text-[1.08rem] font-semibold text-primary sm:text-[1.22rem]">{card.title}</h3>
-                      <p className="text-sm leading-relaxed text-muted-foreground sm:text-base">{card.description}</p>
-                    </div>
-                  </CardContent>
-                </Card>
-              ))}
-            </div>
-          </div>
-        </section>
-
-        <section className="pb-14 sm:pb-20">
-          <div className="app-shell grid gap-6 lg:grid-cols-[0.9fr_1.1fr]">
-            <div className="space-y-3">
-              <p className="eyebrow-chip w-fit">How to build a stronger CV</p>
-              <h2 className="font-display text-[1.85rem] font-semibold tracking-tight text-primary sm:text-4xl">
-                A simple workflow for creating and refining your CV online.
-              </h2>
-              <p className="text-[0.95rem] leading-relaxed text-muted-foreground sm:text-base">
-                Start with your experience, strengthen the evidence in each section, then tailor and check the finished CV before you apply.
-              </p>
-            </div>
-
-            <div className="grid gap-3">
-              {workflowSteps.map((step, index) => (
-                <div key={step.title} className="surface-card px-4 py-4 sm:px-7">
-                  <div className="flex flex-col gap-3 sm:flex-row sm:items-start">
-                    <div className="font-display text-[2.15rem] font-semibold tracking-[-0.08em] text-secondary/35">
-                      {String(index + 1).padStart(2, "0")}
-                    </div>
-                    <div className="space-y-1.5">
-                      <h3 className="text-[1.02rem] font-bold text-primary">{step.title}</h3>
-                      <p className="text-[0.9rem] leading-6 text-muted-foreground sm:text-base">{step.description}</p>
-                    </div>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-        </section>
-
-        <section className="pb-16 sm:pb-24">
-          <div className="app-shell">
-            <div className="surface-card grid gap-6 px-5 py-6 sm:px-8 sm:py-8 lg:grid-cols-[1fr_auto] lg:items-center">
-              <div className="space-y-3 sm:space-y-4">
-                <p className="eyebrow-chip w-fit">UK CV resources</p>
-                <h2 className="font-display text-[1.9rem] font-semibold tracking-tight text-primary sm:text-4xl">
-                  Build faster with examples, format guidance, and graduate templates.
-                </h2>
-                <p className="max-w-3xl text-[0.95rem] leading-relaxed text-muted-foreground sm:text-base">
-                  If you are not sure what to write first, start with the UK CV format guide, compare CV examples, or use the graduate template structure before tailoring your document.
-                </p>
-              </div>
-              <div className="grid gap-3 sm:grid-cols-3 lg:min-w-[27rem]">
-                <Button variant="outline" asChild>
-                  <Link href="/cv-examples">CV examples</Link>
-                </Button>
-                <Button variant="outline" asChild>
-                  <Link href="/uk-cv-format">UK CV format</Link>
-                </Button>
-                <Button variant="outline" asChild>
-                  <Link href="/graduate-cv-template">Graduate CV</Link>
-                </Button>
-              </div>
-            </div>
-          </div>
-        </section>
-
-        <section className="pb-16 sm:pb-24">
-          <div className="app-shell grid gap-6 lg:grid-cols-[0.95fr_1.05fr] lg:gap-8">
-            <div className="space-y-3 sm:space-y-4">
-              <p className="eyebrow-chip w-fit">CV builder FAQ</p>
-              <h2 className="font-display text-[1.9rem] font-semibold tracking-tight text-primary sm:text-4xl">
-                Questions people ask before using an online CV builder.
-              </h2>
-            </div>
-
-            <Accordion type="single" collapsible className="space-y-4">
-              {faqItems.map((item, index) => (
-                <AccordionItem key={item.question} value={`cv-builder-faq-${index}`} className="surface-card px-4 sm:px-6">
-                  <AccordionTrigger className="py-4 text-left text-[0.95rem] font-bold text-primary hover:no-underline sm:py-6 sm:text-base">
-                    {item.question}
-                  </AccordionTrigger>
-                  <AccordionContent className="pb-4 text-sm leading-relaxed text-muted-foreground sm:pb-6">
+            
+            <Accordion type="single" collapsible className="w-full">
+              {faqItems.map((item, i) => (
+                <AccordionItem key={item.question} value={`${i}`}>
+                  <AccordionTrigger className="text-left text-base">{item.question}</AccordionTrigger>
+                  <AccordionContent className="text-base leading-7 text-slate-600">
                     {item.answer}
                   </AccordionContent>
                 </AccordionItem>
@@ -367,9 +325,304 @@ export default function CvBuilderPage() {
             </Accordion>
           </div>
         </section>
+
+        {/* Call to Action Section */}
+        <section className="final-command">
+          <div className="marketing-shell">
+            <div className="final-inner">
+              <div className="command-grid" />
+              <p>YOUR NEXT MOVE</p>
+              <h2>Turn your next application into your strongest one.</h2>
+              <span>Build for free. Keep control of every word.</span>
+              <Link href="/signup?intent=create-cv">
+                Enter your CV Studio <ArrowRight className="h-4 w-4" />
+              </Link>
+            </div>
+          </div>
+        </section>
       </main>
 
       <SiteFooter />
     </div>
+  );
+}
+
+/* Local UI Helpers */
+
+function CareerCanvas() {
+  return (
+    <div className="career-canvas" aria-label="Career workspace preview">
+      <div className="canvas-top">
+        <div>
+          <span className="status-dot" />
+          CAREER CANVAS
+        </div>
+        <span>Operations Manager · Draft 3</span>
+      </div>
+      
+      <div className="canvas-body">
+        <div className="dan-float">
+          <div className="dan-avatar">D</div>
+          <div>
+            <small>DAN · CAREER AGENT</small>
+            <strong>3 ways to sharpen this CV</strong>
+            <p>I found one vague achievement and two missing role keywords.</p>
+          </div>
+        </div>
+        
+        <CVPaper />
+        
+        <div className="ats-float">
+          <div className="mini-ring">
+            <b>82</b>
+          </div>
+          <div>
+            <small>ATS MATCH</small>
+            <strong>Strong foundation</strong>
+            <span>14 of 18 keywords covered</span>
+          </div>
+        </div>
+        
+        <div className="diff-float">
+          <small>AI REWRITE · READY</small>
+          <s>Managed a busy team...</s>
+          <p>Led a 12-person team across three delivery streams...</p>
+          <button>
+            Review change <ChevronRight className="h-3 w-3" />
+          </button>
+        </div>
+      </div>
+      
+      <div className="pipeline-strip">
+        <span>
+          <i />
+          CV strengthened
+        </span>
+        <b>→</b>
+        <span>
+          <i />
+          ATS checked
+        </span>
+        <b>→</b>
+        <span className="next">
+          <i />
+          Next: tailor to role
+        </span>
+      </div>
+    </div>
+  );
+}
+
+function CVPaper() {
+  return (
+    <div className="cv-paper">
+      <div className="cv-name">ALEX MORGAN</div>
+      <div className="cv-role">OPERATIONS MANAGER</div>
+      <div className="cv-contact">London · alex@email.com · 07•• ••• •••</div>
+      
+      <div className="cv-section">
+        <b>PROFILE</b>
+        <p>Operations leader with experience improving delivery systems, team performance and cross-functional planning.</p>
+      </div>
+      
+      <div className="cv-section">
+        <b>EXPERIENCE</b>
+        <strong>Senior Operations Manager</strong>
+        <small>Northstar Group · 2021—Present</small>
+        <p>• Redesigned weekly planning across a 12-person team, cutting overdue work by 28%.</p>
+        <p>• Built forecasting dashboards used by three department leads.</p>
+      </div>
+      
+      <div className="cv-section muted-lines">
+        <b>EARLIER EXPERIENCE</b>
+        <i />
+        <i />
+        <i />
+      </div>
+    </div>
+  );
+}
+
+function Workflow() {
+  return (
+    <section className="workflow">
+      <div className="marketing-shell">
+        <p className="workflow-label">ONE CONNECTED WORKFLOW</p>
+        <div className="workflow-rail" style={{ gridTemplateColumns: "repeat(3, 1fr)" }}>
+          {[
+            ["01", "Build", "Shape your experience"],
+            ["02", "Diagnose", "Find the gaps"],
+            ["03", "Tailor", "Match the target role"],
+          ].map(([n, t, c]) => (
+            <div className={n === "01" ? "active" : ""} key={t}>
+              <span>{n}</span>
+              <p>
+                <strong>{t}</strong>
+                <small>{c}</small>
+              </p>
+            </div>
+          ))}
+        </div>
+      </div>
+    </section>
+  );
+}
+
+const templateCovers = [
+  { name: "Executive", fit: "Leadership & finance", style: "executive", badge: "Recruiter ready" },
+  { name: "Modern", fit: "Product & technology", style: "modern", badge: "ATS safe" },
+  { name: "Editorial", fit: "Creative & communications", style: "editorial", badge: "Recruiter ready" },
+  { name: "Precision", fit: "Operations & consulting", style: "precision", badge: "ATS safe" },
+];
+
+function TemplateDocument({ style }: { style: string }) {
+  return (
+    <div className={`cv-cover cv-cover-${style}`} aria-hidden="true" style={{ fontFamily: "var(--font-plus-jakarta-sans)" }}>
+      <div className="cv-cover-sidebar">
+        <div className="cv-cover-monogram">AM</div>
+        <div className="cv-cover-side-block">
+          <b>CONTACT</b>
+          <span>London, UK</span>
+          <span>alex.morgan@email.com</span>
+          <span>+44 7700 900 123</span>
+        </div>
+        <div className="cv-cover-side-block">
+          <b>EXPERTISE</b>
+          <span>Strategy & planning</span>
+          <span>Team leadership</span>
+          <span>Process design</span>
+          <span>Commercial growth</span>
+        </div>
+      </div>
+      
+      <div className="cv-cover-main">
+        <header>
+          <p className="cv-cover-eyebrow">OPERATIONS LEADER</p>
+          <h3>Alex Morgan</h3>
+          <p className="cv-cover-contact">London, UK&nbsp;&nbsp;•&nbsp;&nbsp;alex.morgan@email.com&nbsp;&nbsp;•&nbsp;&nbsp;+44 7700 900 123</p>
+        </header>
+        
+        <section>
+          <h4>Profile</h4>
+          <p>Operations leader with 8+ years building high-performing teams and scalable systems across fast-growth organisations.</p>
+        </section>
+        
+        <section>
+          <h4>Experience</h4>
+          <div className="cv-cover-role">
+            <div>
+              <strong>Senior Operations Manager</strong>
+              <small>Northstar Group · London</small>
+            </div>
+            <time>2021—Present</time>
+          </div>
+          <ul>
+            <li>Led a 12-person team across three delivery streams, improving on-time delivery by 28%.</li>
+            <li>Built forecasting systems adopted by three departments and the executive team.</li>
+          </ul>
+        </section>
+      </div>
+    </div>
+  );
+}
+
+function Templates() {
+  return (
+    <section className="templates-chapter">
+      <div className="marketing-shell">
+        <div className="template-heading">
+          <div>
+            <p className="career-kicker">
+              <span />
+              Designed to get noticed
+            </p>
+            <h2>Choose the CV recruiters remember.</h2>
+          </div>
+          <p>
+            Your content stays intact while you explore a new look. Switch designs in one click—without rewriting a single section.
+          </p>
+        </div>
+        
+        <div className="template-runway" aria-label="CV template previews">
+          {templateCovers.map((template) => (
+            <article className="template-card" key={template.name}>
+              <Link className="template-cover-link" href="/signup?intent=create-cv" aria-label={`Use the ${template.name} CV template`}>
+                <span className="template-badge">
+                  <Check className="h-2 w-2 text-emerald-600" />
+                  {template.badge}
+                </span>
+                <TemplateDocument style={template.style} />
+                <span className="template-use">
+                  Use this template <ArrowRight className="h-3 w-3" />
+                </span>
+              </Link>
+              
+              <div className="template-meta">
+                <div>
+                  <h3>{template.name}</h3>
+                  <p>{template.fit}</p>
+                </div>
+                <span>A4 · 2 pages</span>
+              </div>
+            </article>
+          ))}
+        </div>
+        
+        <Link className="template-link" href="/cv-templates">
+          Explore all CV templates <ArrowRight className="h-4 w-4" />
+        </Link>
+      </div>
+    </section>
+  );
+}
+
+function Pricing() {
+  return (
+    <section className="pricing-chapter">
+      <div className="marketing-shell">
+        <div className="pricing-head">
+          <div>
+            <p className="career-kicker">
+              <span />
+              Choose your pace
+            </p>
+            <h2>Start free. Scale when your search does.</h2>
+          </div>
+          <Link href="/pricing" className="flex items-center gap-1 text-[#5143cf] font-bold">
+            Compare every feature <ArrowRight className="h-4 w-4" />
+          </Link>
+        </div>
+        
+        <div className="pricing-rail">
+          {[PLANS.free, PLANS.pro, PLANS.master].map((p, i) => (
+            <article className={i === 1 ? "featured" : ""} key={p.id}>
+              {i === 1 && <span className="popular">MOST POPULAR</span>}
+              <p>{p.name}</p>
+              <h3>
+                {p.price}
+                <small>{p.price !== "£0" ? " / month" : " forever"}</small>
+              </h3>
+              
+              <ul>
+                {p.features.slice(0, 4).map((x) => (
+                  <li key={x}>
+                    <Check className="h-3 w-3 text-emerald-500 shrink-0 inline-block mr-1" />
+                    {x}
+                  </li>
+                ))}
+              </ul>
+              
+              <Link href={`/signup?intent=select-plan&plan=${p.id}`} className="mt-4 flex items-center justify-center gap-1 font-bold">
+                {i === 0 ? "Start free" : `Choose ${p.name}`} <ArrowRight className="h-3 w-3" />
+              </Link>
+            </article>
+          ))}
+        </div>
+        
+        <p className="agency-line">
+          <b>Career organisation or hiring team?</b> Agency support is scoped separately. <Link href="/pricing">View Agency</Link>
+        </p>
+      </div>
+    </section>
   );
 }
