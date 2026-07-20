@@ -380,7 +380,7 @@ ${rolePlaybook || '(none available)'}`,
       try {
         const response = await generateWithFallback({
           model: researchModel,
-          config: { temperature: 0.25 },
+          config: { temperature: 0.45 },
           system: `You are an elite Resume Strategist and Career Intelligence Expert who writes hyper-specific, role-tailored resume bullet points.
 Your goal is to generate high-impact bullet points that sound authentic, human, and expert — as if they were written by a top 1% professional reflecting on real accomplishments.
 
@@ -392,7 +392,8 @@ STRICT GUIDELINES:
 5. NARRATIVE WEIGHT: Focus on the "HOW" and "WHY". Describe the complexity of a problem or the specific strategic approach taken.
 6. CAR/STAR METHOD: Context → Action → Result. Start every bullet with a strong but SIMPLE action verb.
 7. DIVERSE ANGLES: Ensure the set of bullets covers Technical expertise, Stakeholder Management, and Business Impact.
-8. NO DUPLICATES: Every bullet must tell a unique story.`,
+8. NO DUPLICATES: Every bullet must tell a unique story.
+9. VARIETY IN STRUCTURE: Do not use the same structural template (such as 'Led X by doing Y to achieve Z') for all bullets. Mix up sentence lengths and grammatical flows so it sounds like a human wrote it naturally.`,
           prompt: `Target role title: ${input.targetContent}
 
 ${input.additionalContext ? `Role context from the CV (use this to ensure bullets are grounded in this person's real experience):\n${input.additionalContext}\n` : ''}
