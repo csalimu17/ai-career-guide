@@ -18,7 +18,7 @@ export function BrandLoadingLogo({ className, size = "md" }: BrandLoadingLogoPro
       <div className="brand-loading-logo__halo" aria-hidden="true" />
       <div className="brand-loading-logo__mark relative h-full w-full shrink-0 overflow-visible">
         <Image 
-          src="/final-compass-logo.png" 
+          src="/logo-compass-v3.png" 
           alt="AI Career Guide logo"
           fill
           className="brand-loading-logo__image object-contain"

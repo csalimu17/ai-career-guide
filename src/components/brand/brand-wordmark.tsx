@@ -11,7 +11,7 @@ export function BrandWordmark({ className, hideText }: BrandWordmarkProps) {
     <div className={cn("flex items-center gap-3 transition-all duration-300", className)}>
       <div className="relative h-14 w-14 shrink-0 overflow-hidden rounded-none bg-transparent">
         <Image 
-          src="/final-compass-logo.png" 
+          src="/logo-compass-v3.png" 
           alt="AI Career Guide logo"
           fill
           className="object-contain scale-[1.02] transform-gpu"
