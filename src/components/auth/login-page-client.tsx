@@ -178,7 +178,7 @@ export default function LoginPageClient() {
     >
       <form onSubmit={handleEmailLogin} className="space-y-5">
         <div className="space-y-2">
-          <Label htmlFor="email" className="text-[0.68rem] font-semibold uppercase tracking-[0.22em] text-muted-foreground">
+          <Label htmlFor="email" className="text-[0.68rem] font-semibold uppercase tracking-[0.22em] text-slate-500">
             Email address
           </Label>
           <div className="relative">
@@ -198,10 +198,10 @@ export default function LoginPageClient() {
 
         <div className="space-y-2">
           <div className="flex items-center justify-between gap-3">
-            <Label htmlFor="password" className="text-[0.68rem] font-semibold uppercase tracking-[0.22em] text-muted-foreground">
+            <Label htmlFor="password" className="text-[0.68rem] font-semibold uppercase tracking-[0.22em] text-slate-500">
               Password
             </Label>
-            <Link href="/forgot-password" className="text-xs font-semibold text-primary transition-opacity hover:opacity-80">
+            <Link href="/forgot-password" className="text-xs font-semibold text-primary transition-opacity hover:underline hover:opacity-80">
               Forgot password?
             </Link>
           </div>

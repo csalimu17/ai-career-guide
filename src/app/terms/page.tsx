@@ -20,25 +20,27 @@ export const revalidate = 86400;
 
 export default function TermsPage() {
   return (
-    <div className="min-h-screen bg-slate-50/50">
+    <div className="min-h-screen bg-transparent relative overflow-hidden">
+      {/* Dotted mesh grid overlay matching landing page hero */}
+      <div className="career-grid pointer-events-none" />
       <PublicHeader items={navigationItems} ctaHref="/signup" ctaLabel="Start free" />
 
-      <main className="pb-20 pt-16 sm:pb-24 sm:pt-20">
+      <main className="relative z-10 pb-20 pt-16 sm:pb-24 sm:pt-20">
         <section className="app-shell max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 space-y-10">
           <div className="space-y-4 text-center sm:text-left">
-            <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-indigo-50 border border-indigo-100 text-indigo-700 text-[11px] font-bold uppercase tracking-wider">
-              <Scale className="h-3.5 w-3.5 text-indigo-600" />
+            <div className="eyebrow-chip">
+              <Scale className="h-3.5 w-3.5 text-primary" />
               <span>Legal & Compliance</span>
             </div>
-            <h1 className="headline-gradient-vivid pb-2 text-4xl font-black leading-[1.15] tracking-[-0.05em] sm:text-5xl">
+            <h1 className="font-display headline-gradient-vivid pb-2 text-4xl font-semibold leading-[1.15] tracking-[-0.04em] sm:text-5xl">
               Terms of Service
             </h1>
-            <p className="text-base sm:text-lg leading-relaxed text-muted-foreground">
+            <p className="text-base sm:text-lg leading-relaxed text-slate-600">
               Last updated: June 6, 2026. Please read these terms carefully. They establish a binding contract between you and AI Career Guide governing the use of our platform.
             </p>
           </div>
 
-          <article className="surface-card rounded-[2rem] border border-slate-100 bg-white p-6 sm:p-10 shadow-sm space-y-10">
+          <article className="surface-card relative overflow-hidden p-6 sm:p-10 space-y-10">
             <div className="p-5 rounded-2xl bg-amber-50/70 border border-amber-100 text-amber-900 text-xs sm:text-sm leading-relaxed flex gap-3">
               <AlertTriangle className="h-5 w-5 text-amber-600 shrink-0 mt-0.5" />
               <div>
@@ -47,8 +49,8 @@ export default function TermsPage() {
             </div>
 
             <section className="space-y-4">
-              <h2 className="text-xl font-bold text-slate-900 flex items-center gap-3">
-                <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-indigo-50 text-indigo-600 text-sm font-black">1</span>
+              <h2 className="font-display text-xl font-semibold text-slate-950 flex items-center gap-3">
+                <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary border border-primary/20 shadow-sm transition-all duration-300 hover:scale-110 hover:rotate-3 text-sm font-bold">1</span>
                 Contractual Agreement
               </h2>
               <div className="text-sm leading-relaxed text-slate-600 space-y-3">
@@ -62,8 +64,8 @@ export default function TermsPage() {
             </section>
 
             <section className="space-y-4">
-              <h2 className="text-xl font-bold text-slate-900 flex items-center gap-3">
-                <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-indigo-50 text-indigo-600 text-sm font-black">2</span>
+              <h2 className="font-display text-xl font-semibold text-slate-950 flex items-center gap-3">
+                <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary border border-primary/20 shadow-sm transition-all duration-300 hover:scale-110 hover:rotate-3 text-sm font-bold">2</span>
                 Eligibility and Registration
               </h2>
               <div className="text-sm leading-relaxed text-slate-600 space-y-3">
@@ -71,14 +73,14 @@ export default function TermsPage() {
                   <strong>Age Requirements:</strong> You must be at least 18 years of age, or the legal age of majority in your jurisdiction, to create an account or purchase paid plans. If you are under 18, you are strictly prohibited from using the platform.
                 </p>
                 <p>
-                  <strong>Account Security:</strong> When registering, you must provide accurate, current, and complete details. You are solely responsible for all actions occurring under your account and for maintaining the absolute confidentiality of your credentials. You must immediately report any suspected breach or unauthorized credentials use to <a href="mailto:support@aicareerguide.uk" className="text-indigo-600 hover:underline">support@aicareerguide.uk</a>.
+                  <strong>Account Security:</strong> When registering, you must provide accurate, current, and complete details. You are solely responsible for all actions occurring under your account and for maintaining the absolute confidentiality of your credentials. You must immediately report any suspected breach or unauthorized credentials use to <a href="mailto:support@aicareerguide.uk" className="text-primary hover:underline">support@aicareerguide.uk</a>.
                 </p>
               </div>
             </section>
 
             <section className="space-y-4">
-              <h2 className="text-xl font-bold text-slate-900 flex items-center gap-3">
-                <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-indigo-50 text-indigo-600 text-sm font-black">3</span>
+              <h2 className="font-display text-xl font-semibold text-slate-950 flex items-center gap-3">
+                <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary border border-primary/20 shadow-sm transition-all duration-300 hover:scale-110 hover:rotate-3 text-sm font-bold">3</span>
                 Subscriptions, Billing, and Cancellations
               </h2>
               <div className="text-sm leading-relaxed text-slate-600 space-y-3">
@@ -98,8 +100,8 @@ export default function TermsPage() {
             </section>
 
             <section className="space-y-4">
-              <h2 className="text-xl font-bold text-slate-900 flex items-center gap-3">
-                <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-indigo-50 text-indigo-600 text-sm font-black">4</span>
+              <h2 className="font-display text-xl font-semibold text-slate-950 flex items-center gap-3">
+                <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary border border-primary/20 shadow-sm transition-all duration-300 hover:scale-110 hover:rotate-3 text-sm font-bold">4</span>
                 Intellectual Property & Content Ownership
               </h2>
               <div className="text-sm leading-relaxed text-slate-600 space-y-3">
@@ -116,8 +118,8 @@ export default function TermsPage() {
             </section>
 
             <section className="space-y-4">
-              <h2 className="text-xl font-bold text-slate-900 flex items-center gap-3">
-                <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-indigo-50 text-indigo-600 text-sm font-black">5</span>
+              <h2 className="font-display text-xl font-semibold text-slate-950 flex items-center gap-3">
+                <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary border border-primary/20 shadow-sm transition-all duration-300 hover:scale-110 hover:rotate-3 text-sm font-bold">5</span>
                 Prohibited Use and AI Abuse Guardrails
               </h2>
               <div className="text-sm leading-relaxed text-slate-600 space-y-3">
@@ -135,8 +137,8 @@ export default function TermsPage() {
             </section>
 
             <section className="space-y-4">
-              <h2 className="text-xl font-bold text-slate-900 flex items-center gap-3">
-                <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-indigo-50 text-indigo-600 text-sm font-black">6</span>
+              <h2 className="font-display text-xl font-semibold text-slate-950 flex items-center gap-3">
+                <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary border border-primary/20 shadow-sm transition-all duration-300 hover:scale-110 hover:rotate-3 text-sm font-bold">6</span>
                 Disclaimers of Warranties
               </h2>
               <div className="text-sm leading-relaxed text-slate-600 space-y-3 text-justify">
@@ -150,8 +152,8 @@ export default function TermsPage() {
             </section>
 
             <section className="space-y-4">
-              <h2 className="text-xl font-bold text-slate-900 flex items-center gap-3">
-                <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-indigo-50 text-indigo-600 text-sm font-black">7</span>
+              <h2 className="font-display text-xl font-semibold text-slate-950 flex items-center gap-3">
+                <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary border border-primary/20 shadow-sm transition-all duration-300 hover:scale-110 hover:rotate-3 text-sm font-bold">7</span>
                 Limitation of Liability
               </h2>
               <div className="text-sm leading-relaxed text-slate-600 space-y-3">
@@ -171,8 +173,8 @@ export default function TermsPage() {
             </section>
 
             <section className="space-y-4">
-              <h2 className="text-xl font-bold text-slate-900 flex items-center gap-3">
-                <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-indigo-50 text-indigo-600 text-sm font-black">8</span>
+              <h2 className="font-display text-xl font-semibold text-slate-950 flex items-center gap-3">
+                <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary border border-primary/20 shadow-sm transition-all duration-300 hover:scale-110 hover:rotate-3 text-sm font-bold">8</span>
                 Indemnification
               </h2>
               <p className="text-sm leading-relaxed text-slate-600">
@@ -181,18 +183,18 @@ export default function TermsPage() {
             </section>
 
             <section className="space-y-4">
-              <h2 className="text-xl font-bold text-slate-900 flex items-center gap-3">
-                <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-indigo-50 text-indigo-600 text-sm font-black">9</span>
+              <h2 className="font-display text-xl font-semibold text-slate-950 flex items-center gap-3">
+                <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary border border-primary/20 shadow-sm transition-all duration-300 hover:scale-110 hover:rotate-3 text-sm font-bold">9</span>
                 DMCA & Copyright Infringement
               </h2>
               <p className="text-sm leading-relaxed text-slate-600">
-                We respect intellectual property rights. If you believe that any content hosted on our platform infringes your copyright, you may submit a formal notification under the Digital Millennium Copyright Act (DMCA) to our designated copyright agent at <a href="mailto:support@aicareerguide.uk" className="text-indigo-600 hover:underline">support@aicareerguide.uk</a>, providing the location of the infringing content, your contact information, and proof of ownership.
+                We respect intellectual property rights. If you believe that any content hosted on our platform infringes your copyright, you may submit a formal notification under the Digital Millennium Copyright Act (DMCA) to our designated copyright agent at <a href="mailto:support@aicareerguide.uk" className="text-primary hover:underline">support@aicareerguide.uk</a>, providing the location of the infringing content, your contact information, and proof of ownership.
               </p>
             </section>
 
             <section className="space-y-4">
-              <h2 className="text-xl font-bold text-slate-900 flex items-center gap-3">
-                <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-indigo-50 text-indigo-600 text-sm font-black">10</span>
+              <h2 className="font-display text-xl font-semibold text-slate-950 flex items-center gap-3">
+                <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary border border-primary/20 shadow-sm transition-all duration-300 hover:scale-110 hover:rotate-3 text-sm font-bold">10</span>
                 Governing Law & Class-Action Waiver
               </h2>
               <div className="text-sm leading-relaxed text-slate-600 space-y-3">
@@ -209,8 +211,8 @@ export default function TermsPage() {
             </section>
 
             <section className="space-y-4">
-              <h2 className="text-xl font-bold text-slate-900 flex items-center gap-3">
-                <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-indigo-50 text-indigo-600 text-sm font-black">11</span>
+              <h2 className="font-display text-xl font-semibold text-slate-950 flex items-center gap-3">
+                <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary border border-primary/20 shadow-sm transition-all duration-300 hover:scale-110 hover:rotate-3 text-sm font-bold">11</span>
                 Modifications to Terms & Services
               </h2>
               <p className="text-sm leading-relaxed text-slate-600">
@@ -219,8 +221,8 @@ export default function TermsPage() {
             </section>
 
             <section className="space-y-4">
-              <h2 className="text-xl font-bold text-slate-900 flex items-center gap-3">
-                <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-indigo-50 text-indigo-600 text-sm font-black">12</span>
+              <h2 className="font-display text-xl font-semibold text-slate-950 flex items-center gap-3">
+                <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary border border-primary/20 shadow-sm transition-all duration-300 hover:scale-110 hover:rotate-3 text-sm font-bold">12</span>
                 Contact
               </h2>
               <p className="text-sm leading-relaxed text-slate-600">

@@ -811,17 +811,29 @@ export function useEditorState() {
     }
   }
 
-  const applyRoleBulletSuggestions = async () => {
+  const applyRoleBulletSuggestions = async (bulletsToApply?: string[]) => {
     if (!resume || !roleBulletSuggestions) return
     const { index, bullets } = roleBulletSuggestions
-    const next = [...resume.content.experience]
+    const selected = bulletsToApply && bulletsToApply.length > 0 ? bulletsToApply : bullets
+    if (!selected || selected.length === 0) {
+      toast({ variant: "destructive", title: "No bullets selected", description: "Please select at least one bullet to apply." })
+      return
+    }
+
+    const next = [...(resume.content.experience || [])]
+    const currentExp = next[index] || {}
+    const formattedHtml = plainTextToRichTextHtml(selected.map((b) => `- ${b}`).join("\n"))
+    
+    const existingDesc = currentExp.description || ""
+    const nextDesc = existingDesc ? `${existingDesc}\n${formattedHtml}` : formattedHtml
+
     next[index] = {
-      ...next[index],
-      description: plainTextToRichTextHtml(bullets.map((bullet) => `- ${bullet}`).join("\n")),
+      ...currentExp,
+      description: nextDesc,
     }
     handleUpdate("content.experience", next)
     setRoleBulletSuggestions(null)
-    toast({ title: "Bullets Applied", description: "The experience block now uses AI bullet points." })
+    toast({ title: "Bullets Applied", description: `Added ${selected.length} bullet point(s) to experience.` })
   }
 
   const dismissRoleBulletSuggestions = () => {

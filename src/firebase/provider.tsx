@@ -231,20 +231,33 @@ export function useMemoFirebase<T>(factory: () => T, deps: DependencyList): T | 
   return memoized;
 }
 
+export const useOptionalUser = (): UserHookResult => {
+  const context = useContext(FirebaseContext);
+  if (!context) {
+    return {
+      user: null,
+      isUserLoading: false,
+      userError: null,
+      impersonatedUid: null,
+      uid: null,
+      clearImpersonation: () => {},
+    };
+  }
+  return {
+    user: context.user,
+    isUserLoading: context.isUserLoading,
+    userError: context.userError,
+    impersonatedUid: context.impersonatedUid,
+    uid: context.impersonatedUid || context.user?.uid || null,
+    clearImpersonation: context.clearImpersonation,
+  };
+};
+
 /**
  * Hook specifically for accessing the authenticated user's state.
  * This provides the User object, loading status, and any auth errors.
  * @returns {UserHookResult} Object with user, isUserLoading, userError.
  */
 export const useUser = (): UserHookResult => { 
-  const { user, isUserLoading, userError, impersonatedUid, clearImpersonation } = useFirebase(); // Leverages the main hook
-
-  return useMemo(() => ({ 
-    user, 
-    isUserLoading, 
-    userError, 
-    impersonatedUid,
-    uid: impersonatedUid || user?.uid || null,
-    clearImpersonation
-  }), [user, isUserLoading, userError, impersonatedUid, clearImpersonation]);
+  return useOptionalUser();
 };

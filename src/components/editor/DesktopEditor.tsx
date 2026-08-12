@@ -62,6 +62,10 @@ import { cn } from "@/lib/utils"
 import { plainTextToRichTextHtml } from "@/lib/rich-text"
 import { ProofreaderPanel } from "./ProofreaderPanel"
 import { PhotoUpload } from "./PhotoUpload"
+import { AtsScorePopover } from "./AtsScorePopover"
+import { EditorCommandPalette } from "./EditorCommandPalette"
+import { Command, CheckCircle2, Check } from "lucide-react"
+import { useEffect } from "react"
 
 interface DesktopEditorProps {
   editor: any 
@@ -71,6 +75,49 @@ export function DesktopEditor({ editor }: DesktopEditorProps) {
   const [activeSection, setActiveSection] = useState<string>("personal")
   const [activeStudioTab, setActiveStudioTab] = useState<"preview" | "templates" | "theme" | "proofreader">("preview")
   const [showAssistant, setShowAssistant] = useState(false)
+  const [isCommandPaletteOpen, setIsCommandPaletteOpen] = useState(false)
+
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "k") {
+        e.preventDefault()
+        setIsCommandPaletteOpen((prev) => !prev)
+      }
+    }
+    window.addEventListener("keydown", handleKeyDown)
+    return () => window.removeEventListener("keydown", handleKeyDown)
+  }, [])
+
+  const isSectionComplete = (sectionId: string) => {
+    const c = editor?.resume?.content || {}
+    switch (sectionId) {
+      case "personal":
+        return Boolean(c.personal?.name && (c.personal?.email || c.personal?.phone))
+      case "summary":
+        return Boolean(c.summary && typeof c.summary === "string" && c.summary.trim().length > 20)
+      case "experience":
+        return Boolean(Array.isArray(c.experience) && c.experience.length > 0)
+      case "volunteer":
+        return Boolean(Array.isArray(c.volunteer) && c.volunteer.length > 0)
+      case "education":
+        return Boolean(Array.isArray(c.education) && c.education.length > 0)
+      case "skills":
+        return Boolean(Array.isArray(c.skills) && c.skills.length > 0)
+      case "projects":
+        return Boolean(Array.isArray(c.projects) && c.projects.length > 0)
+      case "certifications":
+        return Boolean(Array.isArray(c.certifications) && c.certifications.length > 0)
+      case "languages":
+        return Boolean(Array.isArray(c.languages) && c.languages.length > 0)
+      case "interests":
+        return Boolean(
+          (Array.isArray(c.interests) && c.interests.length > 0) ||
+            (c.interestsContent && c.interestsContent.length > 10)
+        )
+      default:
+        return false
+    }
+  }
 
   const { 
     resume, 
@@ -202,77 +249,115 @@ export function DesktopEditor({ editor }: DesktopEditorProps) {
                 <div className="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse" />
                 Live Sync Active
               </div>
+              <AtsScorePopover
+                resume={resume}
+                onNavigateToSection={(sectionId) => {
+                  setActiveSection(sectionId)
+                  setActiveStudioTab("preview")
+                }}
+              />
             </div>
           </div>
 
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2">
              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setIsCommandPaletteOpen(true)}
+                className="h-8 rounded-lg px-2.5 text-[11px] font-medium text-slate-700 bg-slate-50 border-slate-200 hover:bg-slate-100 hover:text-slate-900 gap-1.5 shadow-none hidden sm:flex items-center"
+                title="Quick Commands (Ctrl+K)"
+             >
+                <Command className="h-3.5 w-3.5 text-slate-400 shrink-0" />
+                <span className="font-mono text-[9px] bg-white text-slate-500 px-1 py-0.5 rounded border border-slate-200">Ctrl+K</span>
+             </Button>
+
+             <Button
+                variant="outline"
+                size="sm"
                 onClick={() => {
                    setActiveStudioTab("proofreader")
                    setShowAssistant(false)
                 }}
                 className={cn(
-                   "h-10 rounded-full py-0 px-4 text-xs font-black transition-all duration-300 shadow-md border gap-2",
+                   "h-8 rounded-lg px-3 text-[11px] font-semibold border gap-1.5 shadow-none transition-all",
                    activeStudioTab === "proofreader"
-                      ? "bg-slate-900 text-white hover:bg-slate-800 border-slate-900 shadow-slate-900/10"
-                      : "bg-white text-slate-700 hover:bg-slate-50 border-slate-200"
+                      ? "bg-slate-900 text-white border-slate-900"
+                      : "bg-white text-slate-700 border-slate-200 hover:bg-slate-50 hover:text-slate-900"
                 )}
              >
-                <SpellCheck2 className="h-4 w-4 text-orange-500" />
+                <SpellCheck2 className="h-3.5 w-3.5 text-amber-500 shrink-0" />
                 <span>Check Spelling</span>
              </Button>
 
              <Button 
+                variant="ghost"
+                size="sm"
                 onClick={() => setShowAssistant(!showAssistant)}
                 className={cn(
-                  "h-10 rounded-full py-0 px-5 text-sm font-black transition-all duration-500 shadow-lg",
+                  "h-8 rounded-lg px-3 text-[11px] font-semibold gap-1.5 transition-all shadow-none",
                   showAssistant 
-                    ? "bg-slate-950 text-white hover:bg-slate-900 shadow-slate-900/10" 
-                    : "bg-orange-500 text-white hover:bg-orange-600 shadow-orange-500/20"
+                    ? "bg-slate-900 text-white" 
+                    : "bg-indigo-50 text-indigo-700 hover:bg-indigo-100 border border-indigo-200/60"
                 )}
               >
-                <div className="flex items-center gap-2.5">
-                  <Wand2 className={cn("h-4 w-4", showAssistant && "animate-pulse")} />
-                  <span className="tracking-tight">{showAssistant ? "Return to Preview" : "AI Assistant"}</span>
-                  {!showAssistant && (
-                    <Badge className="ml-0.5 rounded-md bg-white/20 px-1.5 py-0 text-[8px] font-black uppercase text-white">
-                      NEW
-                    </Badge>
-                  )}
-                </div>
+                <Wand2 className={cn("h-3.5 w-3.5 text-indigo-600 shrink-0", showAssistant && "animate-pulse")} />
+                <span>{showAssistant ? "Return to Preview" : "AI Assistant"}</span>
+                {!showAssistant && (
+                  <span className="ml-0.5 rounded bg-indigo-200/60 text-indigo-800 px-1 py-0 text-[8px] font-bold uppercase">
+                    NEW
+                  </span>
+                )}
               </Button>
 
-            <div className="h-6 w-px bg-slate-200 mx-1 lg:block hidden" />
+            <div className="h-4 w-px bg-slate-200 mx-0.5 hidden lg:block" />
 
             <Button
+              variant="ghost"
+              size="sm"
               onClick={handleDownloadPdf}
               disabled={isExporting}
-              className="h-10 rounded-full px-5 bg-slate-900 text-white hover:bg-slate-800 shadow-md font-black text-sm tracking-tight gap-2"
+              className="h-8 rounded-lg px-3 bg-slate-900 text-white hover:bg-slate-800 font-semibold text-[11px] gap-1.5 transition-all shadow-sm"
             >
               {isExporting ? (
-                <Loader2 className="h-4 w-4 animate-spin" />
+                <Loader2 className="h-3.5 w-3.5 animate-spin shrink-0" />
               ) : (
-                <FileDown className="h-4 w-4" />
+                <FileDown className="h-3.5 w-3.5 text-indigo-200 shrink-0" />
               )}
               <span className="hidden sm:inline">Export PDF</span>
             </Button>
 
             <Button
+              variant="outline"
+              size="sm"
               onClick={() => toast({ title: "Pushed to ATS", description: "Candidate data has been sent to Bullhorn via Merge.dev." })}
-              className="h-10 rounded-full px-5 bg-emerald-600 text-white hover:bg-emerald-700 shadow-md font-black text-sm tracking-tight gap-2"
+              className="h-8 rounded-lg px-3 bg-emerald-50 text-emerald-700 hover:bg-emerald-100 border border-emerald-200/80 font-semibold text-[11px] gap-1.5 transition-all shadow-none"
             >
-              <SendHorizontal className="h-4 w-4" />
+              <SendHorizontal className="h-3.5 w-3.5 text-emerald-600 shrink-0" />
               <span className="hidden sm:inline">Push to ATS</span>
             </Button>
 
-            <div className="h-6 w-px bg-slate-200 mx-1 lg:block hidden" />
+            <div className="h-4 w-px bg-slate-200 mx-0.5 hidden lg:block" />
 
-            <div className="hidden items-center gap-2 lg:flex">
-              <Button variant="outline" size="icon" onClick={handleUndo} disabled={historyIndex <= 0} className="h-9 w-9 rounded-xl border-slate-200 bg-white text-slate-400 hover:text-slate-600">
-                <Undo className="h-4 w-4" />
+            <div className="hidden items-center gap-1 lg:flex">
+              <Button 
+                variant="outline" 
+                size="sm"
+                onClick={handleUndo} 
+                disabled={historyIndex <= 0} 
+                className="h-8 w-8 p-0 rounded-lg border border-slate-200 bg-white text-slate-600 hover:text-slate-900 hover:bg-slate-50 flex items-center justify-center disabled:opacity-40 shadow-none"
+                title="Undo (Ctrl+Z)"
+              >
+                <Undo className="h-3.5 w-3.5" />
               </Button>
-              <Button variant="outline" size="icon" onClick={handleRedo} disabled={historyIndex >= historyLength - 1} className="h-9 w-9 rounded-xl border-slate-200 bg-white text-slate-400 hover:text-slate-600">
-                <Redo className="h-4 w-4" />
+              <Button 
+                variant="outline" 
+                size="sm"
+                onClick={handleRedo} 
+                disabled={historyIndex >= historyLength - 1} 
+                className="h-8 w-8 p-0 rounded-lg border border-slate-200 bg-white text-slate-600 hover:text-slate-900 hover:bg-slate-50 flex items-center justify-center disabled:opacity-40 shadow-none"
+                title="Redo (Ctrl+Y)"
+              >
+                <Redo className="h-3.5 w-3.5" />
               </Button>
             </div>
           </div>
@@ -341,6 +426,9 @@ export function DesktopEditor({ editor }: DesktopEditorProps) {
                   <User className="h-3.5 w-3.5" />
                 </div>
                 <span className="text-[0.8rem] font-bold tracking-tight flex-1">Personal</span>
+                {isSectionComplete("personal") && (
+                  <CheckCircle2 className="h-3.5 w-3.5 text-emerald-500 shrink-0" />
+                )}
               </button>
               <p className="text-[9px] font-black uppercase tracking-[0.2em] text-slate-400 mb-3 ml-2 mt-3">Resume Sections</p>
               <Reorder.Group 
@@ -352,6 +440,7 @@ export function DesktopEditor({ editor }: DesktopEditorProps) {
                 {(resume.sectionOrder || []).map((sectionId: string) => {
                   const section = sections.find(s => s.id === sectionId)
                   if (!section) return null
+                  const complete = isSectionComplete(sectionId)
                   
                   return (
                     <Reorder.Item 
@@ -375,6 +464,9 @@ export function DesktopEditor({ editor }: DesktopEditorProps) {
                           <section.icon className="h-3.5 w-3.5" />
                         </div>
                         <span className="text-[0.8rem] font-bold tracking-tight flex-1">{section.label}</span>
+                        {complete && (
+                          <CheckCircle2 className="h-3.5 w-3.5 text-emerald-500 shrink-0 mr-1" />
+                        )}
                         <div className="opacity-0 group-hover:opacity-40 transition-opacity cursor-grab active:cursor-grabbing">
                            <Layout className="h-3 w-3 rotate-90" />
                         </div>
@@ -791,36 +883,16 @@ export function DesktopEditor({ editor }: DesktopEditorProps) {
                                   {isSuggestingRoleBullets === idx ? 'Researching...' : 'AI Bullet Suggestions'}
                                 </button>
                               </PopoverTrigger>
-                              <PopoverContent className="w-[480px] p-0 rounded-2xl border border-orange-100 shadow-2xl shadow-orange-500/10 overflow-hidden" align="end">
-                                <div className="bg-gradient-to-br from-orange-50 to-amber-50 px-6 py-4 border-b border-orange-100">
-                                  <div className="flex items-center gap-3">
-                                    <div className="h-9 w-9 rounded-xl bg-orange-500 flex items-center justify-center">
-                                      <Wand2 className="h-4 w-4 text-white" />
-                                    </div>
-                                    <div>
-                                      <h3 className="text-xs font-black uppercase tracking-widest text-slate-900">AI Role Recommendations</h3>
-                                      <p className="text-[9px] font-bold text-slate-500 mt-0.5">{roleBulletSuggestions?.title || exp.title} · Researched for {exp.company || 'this company'}</p>
-                                    </div>
-                                  </div>
-                                </div>
-                                <div className="p-4 bg-white">
-                                  <div className="max-h-[380px] overflow-y-auto pr-2 custom-scrollbar">
-                                    <div className="space-y-3">
-                                      {roleBulletSuggestions?.bullets.map((bullet: string, i: number) => (
-                                        <div key={i} className="flex gap-3 p-4 rounded-2xl bg-slate-50 hover:bg-orange-50/50 border border-slate-100 hover:border-orange-200 transition-all duration-300 group/item">
-                                          <div className="mt-1 h-5 w-5 rounded-full bg-white border border-slate-200 flex items-center justify-center shrink-0 group-hover/item:border-orange-300 transition-colors shadow-sm">
-                                            <span className="h-1.5 w-1.5 rounded-full bg-orange-500" />
-                                          </div>
-                                          <p className="text-[11.5px] font-medium leading-relaxed text-slate-700 group-hover/item:text-slate-900 transition-colors">{bullet}</p>
-                                        </div>
-                                      ))}
-                                    </div>
-                                  </div>
-                                  <div className="flex gap-2 mt-4">
-                                    <Button onClick={applyRoleBulletSuggestions} className="flex-1 h-10 rounded-xl bg-orange-500 hover:bg-orange-600 text-white text-[10px] font-black uppercase tracking-wider">Apply All Bullets</Button>
-                                    <Button variant="ghost" onClick={dismissRoleBulletSuggestions} className="h-10 rounded-xl text-[10px] font-black uppercase tracking-wider text-slate-400">Dismiss</Button>
-                                  </div>
-                                </div>
+                              <PopoverContent className="w-[500px] p-0 rounded-2xl border border-orange-100 shadow-2xl shadow-orange-500/10 overflow-hidden" align="end">
+                                {roleBulletSuggestions && (
+                                  <RoleBulletSelector
+                                    title={roleBulletSuggestions.title || exp.title}
+                                    company={exp.company}
+                                    bullets={roleBulletSuggestions.bullets}
+                                    onApply={(selectedBullets) => applyRoleBulletSuggestions(selectedBullets)}
+                                    onDismiss={dismissRoleBulletSuggestions}
+                                  />
+                                )}
                               </PopoverContent>
                             </Popover>
 
@@ -1511,6 +1583,123 @@ export function DesktopEditor({ editor }: DesktopEditorProps) {
       </aside>
     </div>
   </div>
+
+  <EditorCommandPalette
+    isOpen={isCommandPaletteOpen}
+    onClose={() => setIsCommandPaletteOpen(false)}
+    onSelectSection={(sectionId) => setActiveSection(sectionId)}
+    onSelectStudioTab={(tab) => setActiveStudioTab(tab)}
+    onExportPdf={handleDownloadPdf}
+  />
 </div>
+  )
+}
+
+function RoleBulletSelector({ 
+  title, 
+  company, 
+  bullets, 
+  onApply, 
+  onDismiss 
+}: { 
+  title: string
+  company?: string
+  bullets: string[]
+  onApply: (selectedBullets: string[]) => void
+  onDismiss: () => void
+}) {
+  const [selected, setSelected] = useState<number[]>(() => bullets.map((_, i) => i))
+
+  const toggleBullet = (index: number) => {
+    setSelected((prev) =>
+      prev.includes(index) ? prev.filter((i) => i !== index) : [...prev, index]
+    )
+  }
+
+  const toggleAll = () => {
+    if (selected.length === bullets.length) {
+      setSelected([])
+    } else {
+      setSelected(bullets.map((_, i) => i))
+    }
+  }
+
+  const handleApply = () => {
+    const chosen = bullets.filter((_, i) => selected.includes(i))
+    onApply(chosen)
+  }
+
+  return (
+    <div>
+      <div className="bg-gradient-to-br from-orange-50 to-amber-50 px-5 py-3.5 border-b border-orange-100 flex items-center justify-between">
+        <div className="flex items-center gap-3">
+          <div className="h-8 w-8 rounded-xl bg-orange-500 flex items-center justify-center shadow-md">
+            <Wand2 className="h-4 w-4 text-white" />
+          </div>
+          <div>
+            <h3 className="text-xs font-black uppercase tracking-wider text-slate-900">AI Role Achievements</h3>
+            <p className="text-[10px] font-medium text-slate-500 mt-0.5">Select bullet point(s) to add to {title}{company ? ` at ${company}` : ''}</p>
+          </div>
+        </div>
+        <button
+          type="button"
+          onClick={toggleAll}
+          className="text-[10px] font-bold text-orange-600 hover:text-orange-700 bg-orange-100/70 hover:bg-orange-100 px-2.5 py-1 rounded-lg transition-all"
+        >
+          {selected.length === bullets.length ? "Deselect All" : "Select All"}
+        </button>
+      </div>
+
+      <div className="p-4 bg-white space-y-3">
+        <div className="max-h-[340px] overflow-y-auto pr-1 space-y-2">
+          {bullets.map((bullet: string, i: number) => {
+            const isChecked = selected.includes(i)
+            return (
+              <div
+                key={i}
+                onClick={() => toggleBullet(i)}
+                className={cn(
+                  "flex items-start gap-3 p-3 rounded-xl border transition-all duration-200 cursor-pointer select-none group/item",
+                  isChecked
+                    ? "bg-orange-50/40 border-orange-200 shadow-2xs"
+                    : "bg-slate-50/50 border-slate-100 hover:border-slate-200 opacity-60"
+                )}
+              >
+                <div
+                  className={cn(
+                    "mt-0.5 h-4 w-4 rounded border flex items-center justify-center shrink-0 transition-colors",
+                    isChecked
+                      ? "bg-orange-500 border-orange-500 text-white"
+                      : "bg-white border-slate-300 group-hover/item:border-slate-400"
+                  )}
+                >
+                  {isChecked && <Check className="h-3 w-3 stroke-[3]" />}
+                </div>
+                <p className={cn("text-[11px] font-medium leading-relaxed transition-colors", isChecked ? "text-slate-800 font-semibold" : "text-slate-500")}>
+                  {bullet}
+                </p>
+              </div>
+            )
+          })}
+        </div>
+
+        <div className="flex items-center gap-2 pt-2 border-t border-slate-100">
+          <Button
+            onClick={handleApply}
+            disabled={selected.length === 0}
+            className="flex-1 h-9 rounded-xl bg-orange-500 hover:bg-orange-600 text-white text-[10px] font-black uppercase tracking-wider shadow-md disabled:opacity-50"
+          >
+            Add Selected ({selected.length})
+          </Button>
+          <Button
+            variant="ghost"
+            onClick={onDismiss}
+            className="h-9 rounded-xl text-[10px] font-bold uppercase tracking-wider text-slate-400 hover:text-slate-600"
+          >
+            Dismiss
+          </Button>
+        </div>
+      </div>
+    </div>
   )
 }

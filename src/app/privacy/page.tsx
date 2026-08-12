@@ -20,33 +20,35 @@ export const revalidate = 86400;
 
 export default function PrivacyPage() {
   return (
-    <div className="min-h-screen bg-slate-50/50">
+    <div className="min-h-screen bg-transparent relative overflow-hidden">
+      {/* Dotted mesh grid overlay matching landing page hero */}
+      <div className="career-grid pointer-events-none" />
       <PublicHeader items={navigationItems} ctaHref="/signup" ctaLabel="Start free" />
 
-      <main className="pb-20 pt-16 sm:pb-24 sm:pt-20">
+      <main className="relative z-10 pb-20 pt-16 sm:pb-24 sm:pt-20">
         <section className="app-shell max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 space-y-10">
           <div className="space-y-4 text-center sm:text-left">
-            <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-indigo-50 border border-indigo-100 text-indigo-700 text-[11px] font-bold uppercase tracking-wider">
-              <Lock className="h-3.5 w-3.5 text-indigo-600" />
+            <div className="eyebrow-chip">
+              <Lock className="h-3.5 w-3.5 text-primary" />
               <span>Security & Privacy</span>
             </div>
-            <h1 className="headline-gradient-vivid pb-2 text-4xl font-black leading-[1.15] tracking-[-0.05em] sm:text-5xl">
+            <h1 className="font-display headline-gradient-vivid pb-2 text-4xl font-semibold leading-[1.15] tracking-[-0.04em] sm:text-5xl">
               Privacy Policy
             </h1>
-            <p className="text-base sm:text-lg leading-relaxed text-muted-foreground">
+            <p className="text-base sm:text-lg leading-relaxed text-slate-600">
               Last updated: June 6, 2026. This policy describes how we collect, process, protect, and share your personal data in compliance with GDPR, UK GDPR, and CCPA/CPRA.
             </p>
           </div>
 
-          <article className="surface-card rounded-[2rem] border border-slate-100 bg-white p-6 sm:p-10 shadow-sm space-y-10">
+          <article className="surface-card relative overflow-hidden p-6 sm:p-10 space-y-10">
             <p className="text-sm leading-relaxed text-slate-600">
               AI Career Guide ("we", "us", "our") takes the security and privacy of your career information seriously. This policy applies to personal data collected when you register an account, upload a CV, search for jobs, or use our AI services. We act as the <strong>Data Controller</strong> for your personal data.
             </p>
 
             <section className="space-y-4">
-              <h2 className="text-xl font-bold text-slate-900 flex items-center gap-3">
-                <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-indigo-50 text-indigo-600 text-sm font-black">
-                  <Database className="h-4 w-4 text-indigo-600" />
+              <h2 className="font-display text-xl font-semibold text-slate-950 flex items-center gap-3">
+                <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary border border-primary/20 shadow-sm transition-all duration-300 hover:scale-110 hover:rotate-3 text-sm font-bold">
+                  <Database className="h-4 w-4 text-primary" />
                 </span>
                 1. Data Categories We Process
               </h2>
@@ -94,9 +96,9 @@ export default function PrivacyPage() {
             </section>
 
             <section className="space-y-4">
-              <h2 className="text-xl font-bold text-slate-900 flex items-center gap-3">
-                <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-indigo-50 text-indigo-600 text-sm font-black">
-                  <Eye className="h-4 w-4 text-indigo-600" />
+              <h2 className="font-display text-xl font-semibold text-slate-950 flex items-center gap-3">
+                <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary border border-primary/20 shadow-sm transition-all duration-300 hover:scale-110 hover:rotate-3 text-sm font-bold">
+                  <Eye className="h-4 w-4 text-primary" />
                 </span>
                 2. Legal Basis for Processing (EEA/UK Users)
               </h2>
@@ -112,9 +114,9 @@ export default function PrivacyPage() {
             </section>
 
             <section className="space-y-4">
-              <h2 className="text-xl font-bold text-slate-900 flex items-center gap-3">
-                <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-indigo-50 text-indigo-600 text-sm font-black">
-                  <Cpu className="h-4 w-4 text-indigo-600" />
+              <h2 className="font-display text-xl font-semibold text-slate-950 flex items-center gap-3">
+                <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary border border-primary/20 shadow-sm transition-all duration-300 hover:scale-110 hover:rotate-3 text-sm font-bold">
+                  <Cpu className="h-4 w-4 text-primary" />
                 </span>
                 3. Subprocessors & Third-Party AI Integrations
               </h2>
@@ -165,16 +167,16 @@ export default function PrivacyPage() {
                     </tbody>
                   </table>
                 </div>
-                <p className="p-3 rounded-xl bg-indigo-50/50 border border-indigo-100/50 text-xs mt-2 text-indigo-950">
+                <p className="p-3 rounded-xl bg-teal-500/10 border border-teal-100/50 text-xs mt-2 text-slate-800">
                   <strong>Model Training Policy:</strong> We explicitly verify that Google AI, Groq, and OpenRouter do not use the data transmitted during our API calls to train their baseline models.
                 </p>
               </div>
             </section>
 
             <section className="space-y-4">
-              <h2 className="text-xl font-bold text-slate-900 flex items-center gap-3">
-                <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-indigo-50 text-indigo-600 text-sm font-black">
-                  <Globe className="h-4 w-4 text-indigo-600" />
+              <h2 className="font-display text-xl font-semibold text-slate-950 flex items-center gap-3">
+                <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary border border-primary/20 shadow-sm transition-all duration-300 hover:scale-110 hover:rotate-3 text-sm font-bold">
+                  <Globe className="h-4 w-4 text-primary" />
                 </span>
                 4. International Data Transfers
               </h2>
@@ -184,9 +186,9 @@ export default function PrivacyPage() {
             </section>
 
             <section className="space-y-4">
-              <h2 className="text-xl font-bold text-slate-900 flex items-center gap-3">
-                <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-indigo-50 text-indigo-600 text-sm font-black">
-                  <UserCheck className="h-4 w-4 text-indigo-600" />
+              <h2 className="font-display text-xl font-semibold text-slate-950 flex items-center gap-3">
+                <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary border border-primary/20 shadow-sm transition-all duration-300 hover:scale-110 hover:rotate-3 text-sm font-bold">
+                  <UserCheck className="h-4 w-4 text-primary" />
                 </span>
                 5. Your Data Rights (GDPR & UK GDPR)
               </h2>
@@ -198,15 +200,15 @@ export default function PrivacyPage() {
                   <li><strong>Right to Erasure (Deletion):</strong> You can request the permanent deletion of your account. Once requested, all database entries, resume templates, files, and tracker data will be deleted within 30 days.</li>
                   <li><strong>Right to Restrict or Object:</strong> You may object to the processing of your data based on legitimate interests.</li>
                   <li><strong>Right to Portability:</strong> You may request to receive your personal data in a structured, machine-readable JSON format.</li>
-                  <li><strong>Right to Lodge a Complaint:</strong> You have the right to file a complaint with a data protection authority. In the UK, this is the Information Commissioner's Office (ICO) at <a href="https://ico.org.uk" target="_blank" rel="noopener noreferrer" className="text-indigo-600 hover:underline">ico.org.uk</a>.</li>
+                  <li><strong>Right to Lodge a Complaint:</strong> You have the right to file a complaint with a data protection authority. In the UK, this is the Information Commissioner's Office (ICO) at <a href="https://ico.org.uk" target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">ico.org.uk</a>.</li>
                 </ul>
               </div>
             </section>
 
             <section className="space-y-4">
-              <h2 className="text-xl font-bold text-slate-900 flex items-center gap-3">
-                <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-indigo-50 text-indigo-600 text-sm font-black">
-                  <Scale className="h-4 w-4 text-indigo-600" />
+              <h2 className="font-display text-xl font-semibold text-slate-950 flex items-center gap-3">
+                <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary border border-primary/20 shadow-sm transition-all duration-300 hover:scale-110 hover:rotate-3 text-sm font-bold">
+                  <Scale className="h-4 w-4 text-primary" />
                 </span>
                 6. California Consumer Privacy Act (CCPA/CPRA)
               </h2>
@@ -223,9 +225,9 @@ export default function PrivacyPage() {
             </section>
 
             <section className="space-y-4">
-              <h2 className="text-xl font-bold text-slate-900 flex items-center gap-3">
-                <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-indigo-50 text-indigo-600 text-sm font-black">
-                  <ShieldAlert className="h-4 w-4 text-indigo-600" />
+              <h2 className="font-display text-xl font-semibold text-slate-950 flex items-center gap-3">
+                <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary border border-primary/20 shadow-sm transition-all duration-300 hover:scale-110 hover:rotate-3 text-sm font-bold">
+                  <ShieldAlert className="h-4 w-4 text-primary" />
                 </span>
                 7. Data Retention & Security Safeguards
               </h2>
@@ -240,8 +242,8 @@ export default function PrivacyPage() {
             </section>
 
             <section className="space-y-4">
-              <h2 className="text-xl font-bold text-slate-900 flex items-center gap-3">
-                <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-indigo-50 text-indigo-600 text-sm font-black">8</span>
+              <h2 className="font-display text-xl font-semibold text-slate-950 flex items-center gap-3">
+                <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary border border-primary/20 shadow-sm transition-all duration-300 hover:scale-110 hover:rotate-3 text-sm font-bold">8</span>
                 Cookies and Local Storage
               </h2>
               <p className="text-sm leading-relaxed text-slate-600">
@@ -250,8 +252,8 @@ export default function PrivacyPage() {
             </section>
 
             <section className="space-y-4">
-              <h2 className="text-xl font-bold text-slate-900 flex items-center gap-3">
-                <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-indigo-50 text-indigo-600 text-sm font-black">9</span>
+              <h2 className="font-display text-xl font-semibold text-slate-950 flex items-center gap-3">
+                <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary border border-primary/20 shadow-sm transition-all duration-300 hover:scale-110 hover:rotate-3 text-sm font-bold">9</span>
                 Contact and DPO Information
               </h2>
               <p className="text-sm leading-relaxed text-slate-600">

@@ -5,11 +5,6 @@ import Link from "next/link";
 import { AlertTriangle, RotateCcw, Home } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
-/**
- * Dashboard segment error boundary. Keeps the user inside the dashboard
- * shell when a route under /(dashboard)/* throws, instead of falling back
- * to the global root error boundary.
- */
 export default function DashboardError({
   error,
   reset,
@@ -17,9 +12,36 @@ export default function DashboardError({
   error: Error & { digest?: string };
   reset: () => void;
 }) {
+  const isChunkError =
+    error.name === "ChunkLoadError" ||
+    error.message?.includes("Loading chunk") ||
+    error.message?.includes("Failed to fetch dynamically imported module") ||
+    error.message?.includes("Loading CSS chunk");
+
   useEffect(() => {
     console.error("[dashboard error boundary]", error);
-  }, [error]);
+
+    if (isChunkError) {
+      try {
+        const reloadCount = parseInt(sessionStorage.getItem("chunk_reload_count") || "0", 10);
+        if (reloadCount < 2) {
+          sessionStorage.setItem("chunk_reload_count", String(reloadCount + 1));
+          console.warn("[dashboard error boundary] Chunk error detected. Reloading page...");
+          window.location.reload();
+        }
+      } catch {
+        window.location.reload();
+      }
+    }
+  }, [error, isChunkError]);
+
+  const handleRetry = () => {
+    if (isChunkError || typeof window !== "undefined") {
+      window.location.reload();
+    } else {
+      reset();
+    }
+  };
 
   return (
     <div className="flex min-h-[60vh] flex-col items-center justify-center px-6 text-center">
@@ -30,7 +52,9 @@ export default function DashboardError({
         Something went wrong loading this page.
       </h1>
       <p className="mt-3 max-w-md text-sm leading-relaxed text-slate-600">
-        {error.message || "We hit an unexpected error. You can try again, or jump back to your dashboard."}
+        {isChunkError
+          ? "A new update was deployed. Refreshing will load the latest version."
+          : error.message || "We hit an unexpected error. You can try again, or jump back to your dashboard."}
         {error.digest ? (
           <span className="block mt-2 font-mono text-[0.7rem] text-slate-400">
             ref: {error.digest}
@@ -38,7 +62,7 @@ export default function DashboardError({
         ) : null}
       </p>
       <div className="mt-6 flex flex-wrap items-center justify-center gap-3">
-        <Button onClick={reset} className="h-11 rounded-2xl px-5 font-bold">
+        <Button onClick={handleRetry} className="h-11 rounded-2xl px-5 font-bold">
           <RotateCcw className="mr-2 h-4 w-4" />
           Try again
         </Button>

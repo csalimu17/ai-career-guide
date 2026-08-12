@@ -155,6 +155,20 @@ export function RichTextField({
     [emitChange]
   )
 
+  const insertText = useCallback(
+    (text: string) => {
+      if (!editorRef.current) return
+      editorRef.current.focus()
+      try {
+        document.execCommand("insertText", false, text)
+      } catch {
+        editorRef.current.innerHTML += text
+      }
+      emitChange()
+    },
+    [emitChange]
+  )
+
   const toolbarButtonClassName =
     "h-7 shrink-0 rounded-lg border border-border/70 bg-white px-2 text-[8px] font-semibold uppercase tracking-[0.12em] text-muted-foreground shadow-sm hover:bg-muted/40 hover:text-primary sm:h-9 sm:px-3 sm:text-[11px]"
   const toolbarIconButtonClassName = "w-7 px-0 sm:w-9 sm:px-0"
@@ -230,6 +244,21 @@ export function RichTextField({
           <ListOrdered className="h-3.5 w-3.5" />
           <span className="sr-only">Numbering</span>
         </Button>
+
+        <div className="flex items-center gap-1 border-l border-slate-200 pl-2 ml-1 hidden sm:flex">
+          <span className="text-[9px] font-black uppercase tracking-wider text-slate-400 mr-1">Action Verbs:</span>
+          {["Spearheaded", "Optimized", "Architected", "Scaled"].map((verb) => (
+            <button
+              key={verb}
+              type="button"
+              onMouseDown={(e) => e.preventDefault()}
+              onClick={() => insertText(` ${verb} `)}
+              className="text-[10px] font-bold text-slate-600 bg-slate-100 hover:bg-slate-200 hover:text-slate-900 rounded-md px-1.5 py-0.5 transition-colors cursor-pointer"
+            >
+              {verb}
+            </button>
+          ))}
+        </div>
         <Button
           type="button"
           variant="ghost"

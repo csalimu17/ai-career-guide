@@ -55,7 +55,14 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "Authentication required" }, { status: 401 });
     }
 
-    const decodedToken = await adminAuth.verifyIdToken(idToken);
+    let decodedToken;
+    try {
+      decodedToken = await adminAuth.verifyIdToken(idToken);
+    } catch (authErr: any) {
+      console.error("[AdminUserSync] Token verification error:", authErr);
+      return NextResponse.json({ error: "Authentication token expired or invalid." }, { status: 401 });
+    }
+
     const adminRef = db.collection("adminUsers").doc(decodedToken.uid);
     const adminSnapshot = await adminRef.get();
     const adminRecord = adminSnapshot.data() as AdminRecord | undefined;
@@ -76,9 +83,9 @@ export async function POST(req: Request) {
       const page = await adminAuth.listUsers(1000, nextPageToken);
       nextPageToken = page.pageToken;
 
-      const existingSnapshots = await db.getAll(
-        ...page.users.map((userRecord) => db.collection("users").doc(userRecord.uid))
-      );
+      const existingSnapshots = page.users.length > 0
+        ? await db.getAll(...page.users.map((userRecord) => db.collection("users").doc(userRecord.uid)))
+        : [];
       const existingById = new Map(existingSnapshots.map((snapshot) => [snapshot.id, snapshot]));
 
       for (const userRecord of page.users) {

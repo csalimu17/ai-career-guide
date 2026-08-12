@@ -2,7 +2,7 @@
 
 import { useEffect } from 'react';
 import { Button } from '@/components/ui/button';
-import { RefreshCcw, Home, HomeIcon, AlertCircle } from 'lucide-react';
+import { RefreshCcw, Home, AlertCircle } from 'lucide-react';
 import Link from 'next/link';
 
 export default function Error({
@@ -12,10 +12,36 @@ export default function Error({
   error: Error & { digest?: string };
   reset: () => void;
 }) {
+  const isChunkError =
+    error.name === 'ChunkLoadError' ||
+    error.message?.includes('Loading chunk') ||
+    error.message?.includes('Failed to fetch dynamically imported module') ||
+    error.message?.includes('Loading CSS chunk');
+
   useEffect(() => {
-    // Log the error to an error reporting service
-    console.error(error);
-  }, [error]);
+    console.error('[Root Error Boundary]', error);
+
+    if (isChunkError) {
+      try {
+        const reloadCount = parseInt(sessionStorage.getItem('chunk_reload_count') || '0', 10);
+        if (reloadCount < 2) {
+          sessionStorage.setItem('chunk_reload_count', String(reloadCount + 1));
+          console.warn('[Root Error Boundary] ChunkLoadError detected. Reloading page...');
+          window.location.reload();
+        }
+      } catch {
+        window.location.reload();
+      }
+    }
+  }, [error, isChunkError]);
+
+  const handleRetry = () => {
+    if (isChunkError || typeof window !== 'undefined') {
+      window.location.reload();
+    } else {
+      reset();
+    }
+  };
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-white p-6">
@@ -27,7 +53,9 @@ export default function Error({
         <div className="space-y-4">
           <h1 className="text-4xl font-black tracking-tight text-primary">Something went wrong.</h1>
           <p className="text-muted-foreground font-medium">
-            We encountered an unexpected error. Don't worry, your data is safe.
+            {isChunkError
+              ? 'An update was recently deployed. Refreshing your page will load the latest version.'
+              : "We encountered an unexpected error. Don't worry, your data is safe."}
           </p>
           <div className="p-4 bg-muted/50 rounded-2xl border border-muted-foreground/10 overflow-hidden">
             <p className="text-[10px] sm:text-xs font-mono font-bold text-muted-foreground break-words truncate">
@@ -38,7 +66,7 @@ export default function Error({
 
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-6">
           <Button 
-            onClick={() => reset()} 
+            onClick={handleRetry} 
             size="lg" 
             className="rounded-2xl font-bold h-14 bg-primary shadow-lg shadow-primary/20"
           >

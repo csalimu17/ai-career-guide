@@ -1,5 +1,6 @@
 import type { ReactNode } from "react";
 import { createMetadata } from "@/lib/metadata";
+import { FirebaseClientProvider } from "@/firebase/client-provider";
 
 export const metadata = createMetadata({
   title: "Print Preview",
@@ -8,5 +9,5 @@ export const metadata = createMetadata({
 });
 
 export default function PrintLayout({ children }: { children: ReactNode }) {
-  return children;
+  return <FirebaseClientProvider>{children}</FirebaseClientProvider>;
 }

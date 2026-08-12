@@ -70,7 +70,7 @@ export default function ForgotPasswordPageClient() {
       {!isSent ? (
         <form onSubmit={handleReset} className="space-y-5">
           <div className="space-y-2">
-            <Label htmlFor="email" className="text-[0.68rem] font-semibold uppercase tracking-[0.22em] text-muted-foreground">
+            <Label htmlFor="email" className="text-[0.68rem] font-semibold uppercase tracking-[0.22em] text-slate-500">
               Account email
             </Label>
             <div className="relative">
@@ -91,14 +91,14 @@ export default function ForgotPasswordPageClient() {
           </Button>
         </form>
       ) : (
-        <div className="section-shell flex flex-col items-center gap-5 px-6 py-8 text-center">
-          <div className="flex h-16 w-16 items-center justify-center rounded-[1.5rem] bg-secondary/10 text-secondary">
-            <CheckCircle2 className="h-8 w-8" />
+        <div className="group surface-card flex flex-col items-center gap-5 px-6 py-8 text-center relative overflow-hidden transition-all duration-300">
+          <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-teal-500/10 text-teal-600 border border-teal-500/20 shadow-sm transition-all duration-300 group-hover:scale-110 group-hover:rotate-3">
+            <CheckCircle2 className="h-6 w-6" />
           </div>
           <div className="space-y-2">
-            <h2 className="text-2xl font-bold text-primary">Check your inbox</h2>
-            <p className="text-sm leading-relaxed text-muted-foreground">
-              A recovery link has been sent to <span className="font-semibold text-primary">{email}</span>. Once you reset your password, sign back in to continue.
+            <h2 className="font-display text-2xl font-semibold tracking-[-0.03em] text-slate-950">Check your inbox</h2>
+            <p className="text-sm leading-relaxed text-slate-600">
+              A recovery link has been sent to <span className="font-semibold text-slate-900">{email}</span>. Once you reset your password, sign back in to continue.
             </p>
           </div>
           <Button variant="outline" className="w-full" asChild>

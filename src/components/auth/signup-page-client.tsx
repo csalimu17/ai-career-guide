@@ -57,7 +57,8 @@ export default function SignupPageClient() {
     if (!user || isUserLoading || isProfileLoading || isResumesLoading) return;
 
     const hasWorkspaceData = Array.isArray(resumes) && resumes.length > 0;
-    const destination = getIntentDestination(loadAuthIntent(), hasWorkspaceData);
+    const currentIntent = searchParams ? { ...loadAuthIntent(), ...readAuthIntent(searchParams) } : loadAuthIntent();
+    const destination = getIntentDestination(currentIntent, hasWorkspaceData);
     if (destination) {
       clearAuthIntent();
       router.replace(destination);
@@ -65,7 +66,7 @@ export default function SignupPageClient() {
     }
 
     router.replace(getPostAuthDestination(profile as any, hasWorkspaceData));
-  }, [user, isUserLoading, isProfileLoading, isResumesLoading, profile, resumes, router]);
+  }, [user, isUserLoading, isProfileLoading, isResumesLoading, profile, resumes, router, searchParams]);
 
   // Consume any pending Google redirect (mobile / popup-blocked fallback)
   // so the Firestore user profile is created before the dashboard loads.
@@ -201,7 +202,7 @@ export default function SignupPageClient() {
       <form onSubmit={handleSignup} className="space-y-5">
         <div className="grid gap-4 sm:grid-cols-2">
           <div className="space-y-2">
-            <Label htmlFor="firstName" className="text-[0.68rem] font-semibold uppercase tracking-[0.22em] text-muted-foreground">
+            <Label htmlFor="firstName" className="text-[0.68rem] font-semibold uppercase tracking-[0.22em] text-slate-500">
               First name
             </Label>
             <div className="relative">
@@ -218,7 +219,7 @@ export default function SignupPageClient() {
             </div>
           </div>
           <div className="space-y-2">
-            <Label htmlFor="lastName" className="text-[0.68rem] font-semibold uppercase tracking-[0.22em] text-muted-foreground">
+            <Label htmlFor="lastName" className="text-[0.68rem] font-semibold uppercase tracking-[0.22em] text-slate-500">
               Last name
             </Label>
             <div className="relative">
@@ -237,7 +238,7 @@ export default function SignupPageClient() {
         </div>
 
         <div className="space-y-2">
-          <Label htmlFor="email" className="text-[0.68rem] font-semibold uppercase tracking-[0.22em] text-muted-foreground">
+          <Label htmlFor="email" className="text-[0.68rem] font-semibold uppercase tracking-[0.22em] text-slate-500">
             Email address
           </Label>
           <div className="relative">
@@ -256,7 +257,7 @@ export default function SignupPageClient() {
         </div>
 
         <div className="space-y-2">
-          <Label htmlFor="password" className="text-[0.68rem] font-semibold uppercase tracking-[0.22em] text-muted-foreground">
+          <Label htmlFor="password" className="text-[0.68rem] font-semibold uppercase tracking-[0.22em] text-slate-500">
             Password
           </Label>
           <div className="relative">
@@ -274,7 +275,7 @@ export default function SignupPageClient() {
               aria-describedby="password-help"
             />
           </div>
-          <p id="password-help" className="text-xs leading-5 text-muted-foreground">Use at least 8 characters.</p>
+          <p id="password-help" className="text-xs leading-5 text-slate-500">Use at least 8 characters.</p>
         </div>
 
         <Button type="submit" className="h-12 w-full" disabled={isSigningUp}>

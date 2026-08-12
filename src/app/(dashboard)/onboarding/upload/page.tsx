@@ -1,12 +1,10 @@
 "use client"
 
-import Image from "next/image"
 import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
 import { useUser } from "@/firebase"
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
+import { Card, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
-import { Progress } from "@/components/ui/progress"
 import { Badge } from "@/components/ui/badge"
 import { 
   Upload, 
@@ -15,9 +13,7 @@ import {
   CheckCircle2, 
   Loader2, 
   AlertCircle,
-  ShieldCheck,
-  Zap,
-  CloudLightning
+  ArrowLeft
 } from "lucide-react"
 import { motion, AnimatePresence } from "framer-motion"
 import { extractCvAction } from "@/app/actions/cv-actions"
@@ -27,12 +23,6 @@ import { buildRecoveredExtractionFromText, getExtractionQuality, hasMeaningfulEx
 import { cn } from "@/lib/utils"
 import Link from "next/link"
 
-/**
- * Fire-and-forget quality signal. /api/quality/report now requires auth,
- * so we attach the caller's Firebase ID token. Silently skipped if the
- * user isn't signed in (this page is dashboard-gated so that shouldn't
- * happen in practice).
- */
 async function reportQualitySignal(
   user: { getIdToken: (forceRefresh?: boolean) => Promise<string> } | null | undefined,
   payload: Record<string, unknown>
@@ -79,20 +69,18 @@ export default function UploadCvPage() {
   const [parsingProgress, setParsingProgress] = useState(0)
   const [loadingStep, setLoadingStep] = useState(0)
 
-  // Cycle loading messages during parsing
   useEffect(() => {
     let interval: NodeJS.Timeout
     if (status === 'parsing') {
       interval = setInterval(() => {
         setLoadingStep(prev => (prev + 1) % 4)
-      }, 3000)
+      }, 2500)
     } else {
       setLoadingStep(0)
     }
     return () => clearInterval(interval)
   }, [status])
 
-  // Simulate parsing progress
   useEffect(() => {
     let interval: NodeJS.Timeout
     if (status === 'parsing') {
@@ -100,7 +88,6 @@ export default function UploadCvPage() {
       interval = setInterval(() => {
         setParsingProgress(prev => {
           if (prev >= 92) return prev
-          // Slow down as it gets higher
           const increment = Math.max(0.5, (95 - prev) / 15)
           return prev + increment
         })
@@ -170,56 +157,59 @@ export default function UploadCvPage() {
   }
 
   const handleUpload = async () => {
-    if (!file || !user) return
+    if (!file) return
 
     let extractionStarted = false
+    const userId = user?.uid || "anonymous_user"
 
     try {
       sessionStorage.removeItem("parsedCvData")
       setStatus('uploading')
-      setUploadProgress(12)
+      setUploadProgress(15)
       setError(null)
       const preflightTextPromise = extractClientDocumentText(file)
       const fileDataUriPromise = fileToDataUri(file)
 
-      void reportQualitySignal(user, {
-        category: "upload",
-        eventType: "cv_upload_started",
-        status: "healthy",
-        summary: "A validated CV upload started preparing for server-side extraction.",
-        userId: user.uid,
-        metadata: {
-          fileSizeBytes: file.size,
-          mimeType: file.type || "application/pdf",
-        },
-      })
+      if (user) {
+        void reportQualitySignal(user, {
+          category: "upload",
+          eventType: "cv_upload_started",
+          status: "healthy",
+          summary: "A validated CV upload started preparing for server-side extraction.",
+          userId: userId,
+          metadata: {
+            fileSizeBytes: file.size,
+            mimeType: file.type || "application/pdf",
+          },
+        })
+      }
 
       const fileDataUri = await fileDataUriPromise
       setUploadProgress(100)
 
-      void reportQualitySignal(user, {
-        category: "upload",
-        eventType: "cv_upload_prepared",
-        status: "healthy",
-        summary: "The CV file was prepared locally and handed off to the server extraction pipeline.",
-        userId: user.uid,
-        metadata: {
-          fileSizeBytes: file.size,
-          mimeType: file.type || "application/pdf",
-        },
-      })
+      if (user) {
+        void reportQualitySignal(user, {
+          category: "upload",
+          eventType: "cv_upload_prepared",
+          status: "healthy",
+          summary: "The CV file was prepared locally and handed off to the server extraction pipeline.",
+          userId: userId,
+          metadata: {
+            fileSizeBytes: file.size,
+            mimeType: file.type || "application/pdf",
+          },
+        })
+      }
 
-      // 1. Multimodal AI Extraction
       setStatus("parsing")
       extractionStarted = true
-      console.log("[Client] Initializing CV extraction pipeline...")
       const preflightText = await preflightTextPromise
 
       let parsedData = await extractCvAction({
         cvDataUri: fileDataUri,
         cvMimeType: file.type || 'application/pdf',
         cvRawText: preflightText,
-        userId: user.uid,
+        userId: userId,
       })
 
       if (preflightText.trim().length >= 80) {
@@ -247,7 +237,6 @@ export default function UploadCvPage() {
         throw new Error("We couldn't extract usable information from this CV yet. Please try a different file.")
       }
 
-      // 3. Store in session and redirect
       sessionStorage.setItem('parsedCvData', JSON.stringify(parsedData))
       setStatus('complete')
       const guardianStatus = parsedData.metadata?.guardian?.status
@@ -255,10 +244,10 @@ export default function UploadCvPage() {
         title: guardianStatus === "recovered" ? "Analysis Recovered" : "Analysis Success",
         description:
           guardianStatus === "recovered"
-            ? "The extraction guardian recovered a draft. Review it carefully and fill in anything missing."
+            ? "The extraction guardian recovered a draft. Review it carefully."
             : hasMeaningfulExtraction(parsedData)
             ? "CV successfully analyzed and ready for review."
-            : "A partial draft was created from your CV. Review it carefully before continuing.",
+            : "A partial draft was created. Review it carefully before continuing.",
       })
       
       router.push('/onboarding/review')
@@ -280,249 +269,142 @@ export default function UploadCvPage() {
           },
         })
       }
-      toast({ variant: "destructive", title: "Parsing Error", description: "Check the file format or try another document." })
+      toast({ variant: "destructive", title: "Parsing Error", description: "Check file format or try another document." })
     }
   }
 
   return (
-    <div className="relative min-h-[calc(100vh-4rem)] overflow-hidden lg:px-8">
-      {/* Dynamic Background Accents */}
-      
-      <div className="relative mx-auto max-w-4xl py-12">
-        <div className="mb-8 flex flex-col items-center text-center">
-          <div className="mx-auto -mb-24 flex h-64 w-64 items-center justify-center shrink-0 relative">
-            <Image
-              src="/logo-mascot.png"
-              alt="AI Mascot"
-              width={256}
-              height={256}
-              className="relative h-64 w-64 object-contain transition-transform duration-700 mix-blend-multiply"
-            />
+    <div className="relative min-h-[calc(100vh-5rem)] px-4 py-6 md:px-8 md:py-10 flex flex-col items-center justify-center">
+      <div className="w-full max-w-xl space-y-5">
+        {/* Top Header */}
+        <div className="space-y-2 text-center">
+          <div className="inline-flex items-center gap-1.5 rounded-full border border-primary/10 bg-primary/5 px-3 py-0.5 text-xs font-semibold text-primary">
+            <Sparkles className="h-3.5 w-3.5" />
+            <span>AI Extraction Engine</span>
           </div>
-          <h1 className="text-3xl font-black tracking-tight bg-gradient-to-r from-blue-600 to-orange-500 bg-clip-text text-transparent sm:text-4xl">
-            Upload Your Experience
+
+          <h1 className="text-xl font-black tracking-tight text-slate-900 sm:text-2xl">
+            Upload Your Resume / CV
           </h1>
-          <p className="mx-auto max-w-xl text-base font-medium text-slate-500/80 sm:text-lg">
-            Powered by our <span className="text-brand-gradient font-black">AI extraction pipeline</span> for lightning-fast, high-fidelity recovery.
+          <p className="text-xs text-muted-foreground max-w-sm mx-auto">
+            Upload your document for instant AI parsing. Supports PDF, DOCX, and Text files up to 10MB.
           </p>
         </div>
 
-        <div className="animate-tilt">
-          <Card className="surface-card group relative overflow-hidden p-1 sm:p-1.5">
-            <div className="absolute inset-0 bg-gradient-to-br from-white/40 to-transparent pointer-events-none" />
-            
-            <div className="relative space-y-6 rounded-[1.2rem] p-4 sm:p-10">
-              
-              {status === 'idle' && (
+        <Card className="relative overflow-hidden rounded-2xl border border-slate-200/80 bg-white/90 shadow-lg backdrop-blur-sm dark:border-slate-800 dark:bg-slate-900/90">
+          <CardContent className="p-5 sm:p-6">
+            {status === 'idle' && (
+              <div className="space-y-4">
                 <div 
-                  className="group/drop relative cursor-pointer space-y-6 rounded-[1.5rem] border-2 border-dashed border-slate-200/60 bg-slate-50/30 p-6 text-center transition-all duration-500 hover:border-accent hover:bg-accent/[0.03] hover:shadow-[0_0_80px_-20px_rgba(255,152,0,0.15)] sm:p-12"
+                  className="group relative cursor-pointer flex flex-col items-center justify-center rounded-xl border-2 border-dashed border-slate-200 bg-slate-50/50 p-6 text-center transition-all hover:border-primary hover:bg-primary/5 dark:border-slate-800 dark:bg-slate-950/40"
                   onClick={() => document.getElementById('cv-upload')?.click()}
                 >
                   <input 
                     id="cv-upload" 
                     type="file" 
                     className="hidden" 
-                    accept=".pdf,.docx,.txt,image/*" 
+                    accept=".pdf,.docx,.doc,.txt,image/*" 
                     onChange={handleFileChange}
                   />
-                  
-                  {/* Cyber-Ring Container */}
-                  <div className="relative mx-auto flex h-20 w-20 items-center justify-center sm:h-24 sm:w-24">
-                    <div className="absolute inset-0 animate-spin-slow rounded-[1.5rem] border-2 border-accent/20" />
-                    <div className="absolute inset-1.5 rounded-[1.2rem] border border-primary/10 shadow-[inner_0_0_20px_rgba(124,58,237,0.05)]" />
-                    <div className="relative flex h-12 w-12 items-center justify-center rounded-xl bg-white shadow-2xl transition-all duration-700 group-hover/drop:scale-110 group-hover/drop:rotate-6 sm:h-16 sm:w-16">
-                      <Upload className="h-6 w-6 text-accent sm:h-8 w-8" />
-                    </div>
-                  </div>
-                  
-                  <div className="space-y-2">
-                    <h3 className="text-xl font-black text-primary sm:text-2xl">
-                      {file ? file.name : "Drop your CV here"}
-                    </h3>
-                    <p className="mx-auto max-w-xs text-sm font-semibold text-slate-400 sm:text-base">
-                      Supporting PDF, DOCX, or Photos up to 10MB
-                    </p>
+
+                  <div className="mb-2 flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10 text-primary transition-transform group-hover:scale-105">
+                    <Upload className="h-5 w-5" />
                   </div>
 
-                  {file && (
-                    <div className="flex flex-col items-center gap-4 pt-4 animate-in fade-in slide-in-from-bottom-4">
-                      <Button 
-                        size="lg" 
-                        className="btn-premium h-14 w-full px-12 text-lg sm:w-auto"
-                        onClick={(e) => { e.stopPropagation(); handleUpload(); }}
-                      >
-                        Analyze with AI <Sparkles className="ml-2 h-5 w-5" />
-                      </Button>
-                      <button 
-                        className="text-xs font-black uppercase tracking-widest text-slate-400 hover:text-primary transition-colors"
-                        onClick={(e) => { e.stopPropagation(); router.push('/cv-editor'); }}
-                      >
-                        Start from scratch instead
-                      </button>
-                    </div>
-                  )}
+                  <p className="text-xs font-bold text-slate-900 dark:text-slate-100">
+                    {file ? file.name : "Click to select or drag & drop file"}
+                  </p>
+                  <p className="mt-1 text-[11px] text-muted-foreground">
+                    {file ? `${(file.size / (1024 * 1024)).toFixed(2)} MB` : "PDF, DOCX, DOC, or TXT up to 10MB"}
+                  </p>
                 </div>
-              )}
 
-              {(status === 'uploading' || status === 'parsing') && (
-                  <div className="relative overflow-hidden rounded-[1.5rem] bg-white px-4 py-12 shadow-2xl sm:px-10 sm:py-20 text-center">
-                    <div className="absolute inset-x-0 top-0 h-1 bg-slate-100">
-                       <motion.div 
-                          className="h-full bg-gradient-to-r from-blue-600 via-indigo-500 to-orange-500"
-                          initial={{ width: "0%" }}
-                          animate={{ width: `${status === 'uploading' ? uploadProgress : parsingProgress}%` }}
-                          transition={{ duration: 0.5 }}
-                       />
-                    </div>
-
-                    <div className="relative mx-auto flex max-w-xl flex-col items-center justify-center space-y-10">
-                      <div className="relative flex items-center justify-center">
-                         <motion.div 
-                           animate={{ rotate: 360 }}
-                           transition={{ duration: 8, repeat: Infinity, ease: "linear" }}
-                           className="h-32 w-32 rounded-full border-[3px] border-slate-100 border-t-indigo-500 border-r-indigo-500/30" 
-                         />
-                         <motion.div 
-                           animate={{ rotate: -360 }}
-                           transition={{ duration: 6, repeat: Infinity, ease: "linear" }}
-                           className="absolute h-24 w-24 rounded-full border-[3px] border-slate-50 border-t-orange-500/40 border-l-orange-500" 
-                         />
-                         <div className="absolute flex items-center justify-center">
-                            {status === 'uploading' ? (
-                               <div className="flex h-24 w-24 items-center justify-center rounded-full bg-white shadow-xl ring-1 ring-slate-100">
-                                  <Upload className="h-10 w-10 text-blue-600 animate-bounce" />
-                               </div>
-                            ) : (
-                               <motion.div 
-                                 className="absolute flex h-24 w-24 items-center justify-center rounded-full bg-white shadow-2xl ring-1 ring-slate-100"
-                                 initial={{ scale: 0.8 }}
-                                 animate={{ 
-                                   scale: [1, 1.15, 1],
-                                 }}
-                                 transition={{ 
-                                   duration: 3,
-                                   repeat: Infinity,
-                                   ease: "easeInOut"
-                                 }}
-                               >
-                                 <div className="relative h-56 w-56">
-                                   <Image
-                                     src="/logo-mascot.png"
-                                     alt="AI Strategist"
-                                     fill
-                                     className="object-contain" 
-                                     priority
-                                   />
-                                 </div>
-                               </motion.div>
-                            )}
-                         </div>
-                         
-                         {/* Orbital Particles */}
-                         {[0, 1, 2].map((i) => (
-                           <motion.div
-                             key={i}
-                             animate={{ 
-                               rotate: 360,
-                               scale: [1, 1.2, 1]
-                             }}
-                             transition={{ 
-                               duration: 3 + i, 
-                               repeat: Infinity, 
-                               ease: "linear" 
-                             }}
-                             className="absolute h-full w-full"
-                           >
-                              <div className={cn(
-                                "h-2 w-2 rounded-full mt-[-4px] ml-[50%] -translate-x-1/2 shadow-lg",
-                                i === 0 ? "bg-blue-500" : i === 1 ? "bg-orange-500" : "bg-indigo-500"
-                              )} />
-                           </motion.div>
-                         ))}
-                      </div>
-
-                      <div className="space-y-4">
-                        <AnimatePresence mode="wait">
-                          <motion.div
-                            key={status === 'uploading' ? 'uploading' : `step-${loadingStep}`}
-                            initial={{ opacity: 0, y: 10 }}
-                            animate={{ opacity: 1, y: 0 }}
-                            exit={{ opacity: 0, y: -10 }}
-                            className="space-y-3"
-                          >
-                             <Badge variant="outline" className="rounded-full border-slate-200 bg-slate-50 px-4 py-1 text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">
-                               {status === 'uploading' ? 'Phase 1: Secure Preparation' : 'Phase 2: Neural Extraction'}
-                             </Badge>
-                             <h2 className="text-3xl font-black tracking-tight text-slate-900 sm:text-4xl">
-                               {status === 'uploading' 
-                                 ? `Calibrating Payload... ${Math.round(uploadProgress)}%` 
-                                 : ["Gemini AI Deep Scan", "Neural OCR Active", "Mapping Career Genes", "Synthesizing Professional DNA"][loadingStep]
-                               }
-                             </h2>
-                             <p className="mx-auto max-w-sm text-[13px] font-semibold leading-relaxed text-slate-500">
-                               {status === 'uploading'
-                                 ? 'Preparing your experience files for high-fidelity extraction.'
-                                 : [
-                                     'Retrieving your contact details and core profile data.',
-                                     'Scanning historical documents for hidden achievements.',
-                                     'Structuring skills into industry-standard benchmarks.',
-                                     'Finalizing your digital career signature for review.'
-                                   ][loadingStep]
-                               }
-                             </p>
-                          </motion.div>
-                        </AnimatePresence>
-                      </div>
-
-                      <div className="w-full max-w-xs space-y-4 pt-4">
-                         <div className="flex justify-between text-[9px] font-black uppercase tracking-[0.2em] text-slate-400">
-                           <span className={cn(status === 'uploading' ? "text-blue-600" : "text-emerald-500")}>
-                              {status === 'uploading' ? "In Flight" : "Verified"}
-                           </span>
-                           <span className="text-slate-900">{Math.round(status === 'uploading' ? uploadProgress : parsingProgress)}%</span>
-                         </div>
-                         <div className="relative h-1.5 overflow-hidden rounded-full bg-slate-100">
-                            <motion.div 
-                               className="absolute inset-y-0 left-0 bg-slate-900"
-                               initial={{ width: "0%" }}
-                               animate={{ width: `${status === 'uploading' ? uploadProgress : parsingProgress}%` }}
-                            />
-                         </div>
-                      </div>
-                    </div>
-                  </div>
-              )}
-
-              {status === 'error' && (
-                <div className="space-y-8 py-12 text-center">
-                  <div className="bg-red-50 h-24 w-24 rounded-full flex items-center justify-center mx-auto shadow-inner border border-red-100">
-                    <AlertCircle className="h-12 w-12 text-red-500" />
-                  </div>
-                  <div className="space-y-3">
-                    <h3 className="text-2xl font-black text-red-900 sm:text-3xl italic">Analysis Halted</h3>
-                    <p className="text-base font-semibold text-red-600/70 sm:text-lg">{error || "Something went wrong during extraction."}</p>
-                  </div>
-                  <div className="flex flex-col items-center gap-4 sm:flex-row sm:justify-center">
-                    <Button variant="outline" className="border-2 rounded-2xl h-14 px-8 font-black" onClick={() => setStatus('idle')}>
-                      Try Another File
-                    </Button>
-                    <button 
-                      className="text-sm font-black uppercase tracking-widest text-slate-400 hover:text-primary"
-                      onClick={() => router.push('/onboarding')}
+                {file && (
+                  <div className="flex flex-col gap-2 pt-1">
+                    <Button 
+                      size="sm" 
+                      className="h-9 w-full rounded-lg text-xs font-bold shadow-sm"
+                      onClick={handleUpload}
                     >
-                      Back to Setup
-                    </button>
+                      Analyze CV with AI <Sparkles className="ml-1.5 h-3.5 w-3.5" />
+                    </Button>
+                  </div>
+                )}
+
+                <div className="flex items-center justify-between pt-1">
+                  <Button variant="ghost" size="sm" asChild className="h-8 text-xs text-muted-foreground">
+                    <Link href="/onboarding">
+                      <ArrowLeft className="mr-1.5 h-3.5 w-3.5" /> Back to Setup
+                    </Link>
+                  </Button>
+
+                  <Button variant="ghost" size="sm" asChild className="h-8 text-xs text-muted-foreground">
+                    <Link href="/cv-editor">
+                      Start from scratch
+                    </Link>
+                  </Button>
+                </div>
+              </div>
+            )}
+
+            {(status === 'uploading' || status === 'parsing') && (
+              <div className="space-y-5 py-4 text-center">
+                <div className="relative mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-primary/10 text-primary">
+                  <Loader2 className="h-6 w-6 animate-spin" />
+                </div>
+
+                <div className="space-y-1">
+                  <Badge variant="outline" className="text-[10px] font-semibold uppercase">
+                    {status === 'uploading' ? 'Preparing File' : 'AI Neural Extraction'}
+                  </Badge>
+                  <h3 className="text-sm font-bold text-slate-900 dark:text-slate-100">
+                    {status === 'uploading'
+                      ? `Uploading... ${Math.round(uploadProgress)}%`
+                      : ["Scanning Structure", "Extracting Work History", "Mapping Skills & Roles", "Finalizing Profile"][loadingStep]}
+                  </h3>
+                  <p className="text-xs text-muted-foreground max-w-xs mx-auto">
+                    Please wait while our AI parses your background details.
+                  </p>
+                </div>
+
+                <div className="mx-auto max-w-xs space-y-1.5">
+                  <div className="h-1.5 w-full overflow-hidden rounded-full bg-slate-100 dark:bg-slate-800">
+                    <motion.div
+                      className="h-full bg-primary"
+                      initial={{ width: "0%" }}
+                      animate={{ width: `${status === 'uploading' ? uploadProgress : parsingProgress}%` }}
+                      transition={{ duration: 0.3 }}
+                    />
+                  </div>
+                  <div className="flex justify-between text-[10px] text-muted-foreground">
+                    <span>In progress</span>
+                    <span>{Math.round(status === 'uploading' ? uploadProgress : parsingProgress)}%</span>
                   </div>
                 </div>
-              )}
+              </div>
+            )}
 
-            </div>
-          </Card>
-        </div>
-      </div>
-      
-      <div className="mt-12 text-center text-[10px] font-black uppercase tracking-[0.4em] text-slate-300">
-        Enterprise Grade Neural Parsing Engine
+            {status === 'error' && (
+              <div className="space-y-4 py-2 text-center">
+                <div className="mx-auto flex h-10 w-10 items-center justify-center rounded-full bg-red-100 text-red-600">
+                  <AlertCircle className="h-5 w-5" />
+                </div>
+                <div className="space-y-1">
+                  <h3 className="text-sm font-bold text-red-900 dark:text-red-300">Extraction Issue</h3>
+                  <p className="text-xs text-red-600 dark:text-red-400">{error || "Could not process this file."}</p>
+                </div>
+                <div className="flex justify-center gap-2 pt-2">
+                  <Button size="sm" variant="outline" className="h-8 text-xs" onClick={() => setStatus('idle')}>
+                    Try Another File
+                  </Button>
+                  <Button size="sm" variant="ghost" className="h-8 text-xs" asChild>
+                    <Link href="/cv-editor">Build Manually</Link>
+                  </Button>
+                </div>
+              </div>
+            )}
+          </CardContent>
+        </Card>
       </div>
     </div>
   )

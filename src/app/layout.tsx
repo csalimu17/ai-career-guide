@@ -59,11 +59,12 @@ export const metadata: Metadata = {
   },
   icons: {
     icon: [
+      { url: "/favicon.png", sizes: "64x64", type: "image/png" },
       { url: "/brand-logo-favicon-192.png", sizes: "192x192", type: "image/png" },
       { url: "/brand-logo-favicon-512.png", sizes: "512x512", type: "image/png" },
     ],
     apple: "/app-install-apple-180.png",
-    shortcut: "/brand-logo-favicon-192.png",
+    shortcut: "/favicon.png",
   },
   verification: {
     google: "aw4acK7xaCS50LLly3j-wA_MhDV4bBog78MyaKlnnbQ",
@@ -93,6 +94,8 @@ const sora = Sora({
   variable: "--font-sora",
 });
 
+import { ChunkErrorListener } from "@/components/chunk-error-listener";
+
 export default function RootLayout({
   children,
 }: Readonly<{
@@ -104,6 +107,7 @@ export default function RootLayout({
         className={`${plusJakartaSans.variable} ${manrope.variable} ${sora.variable} bg-background font-body text-foreground antialiased`}
         suppressHydrationWarning
       >
+        <ChunkErrorListener />
         <SiteStructuredData />
         {children}
         {process.env.NEXT_PUBLIC_GA_ID && (

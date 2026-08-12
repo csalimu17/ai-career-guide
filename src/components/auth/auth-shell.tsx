@@ -25,7 +25,12 @@ export function AuthShell({
   footer,
 }: AuthShellProps) {
   return (
-    <div className="relative min-h-screen overflow-x-hidden px-3 py-3 sm:px-6 sm:py-6 lg:px-8">
+    <div className="relative min-h-screen overflow-hidden bg-[#f5f7ff] px-3 py-3 text-[#101528] sm:px-6 sm:py-6 lg:px-8">
+      {/* Background orbs and grid pattern matching landing page */}
+      <div className="career-orb career-orb-a" />
+      <div className="career-orb career-orb-b" />
+      <div className="career-grid" />
+
       <div className="app-shell relative z-10 flex min-h-[calc(100dvh-1.5rem)] flex-col gap-4 sm:min-h-[calc(100vh-3rem)] sm:gap-6 lg:gap-10">
         <div className="flex items-center justify-between max-md:gap-2">
           <div className="flex items-center gap-3">
@@ -55,10 +60,10 @@ export function AuthShell({
             <div className="relative space-y-8">
                               {/* Eyebrow chip removed */}
               <div className="space-y-5">
-                <p className="max-w-lg text-5xl font-black leading-[0.95] text-primary">
+                <h2 className="max-w-lg font-display text-4xl font-semibold leading-[1.1] tracking-[-0.045em] text-slate-950 sm:text-[2.85rem]">
                   {supportingTitle}
-                </p>
-                <p className="max-w-xl text-lg leading-relaxed text-muted-foreground">
+                </h2>
+                <p className="max-w-xl text-base leading-relaxed text-slate-600 sm:text-lg">
                   {supportingCopy}
                 </p>
               </div>
@@ -68,15 +73,15 @@ export function AuthShell({
               {highlights.map((highlight) => (
                 <div
                   key={highlight.title}
-                  className="rounded-[1.5rem] border border-white/80 bg-white/80 p-5 shadow-[0_18px_40px_-34px_rgba(15,23,42,0.55)] backdrop-blur"
+                  className="group rounded-[1.5rem] border border-white/80 bg-white/80 p-5 shadow-[0_18px_40px_-34px_rgba(15,23,42,0.55)] backdrop-blur transition-all duration-300 hover:shadow-[0_20px_50px_-30px_rgba(15,23,42,0.6)] hover:-translate-y-0.5"
                 >
                   <div className="mb-3 flex items-center gap-3">
-                    <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-secondary/10 text-secondary">
+                    <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-teal-500/10 text-teal-600 border border-teal-500/20 shadow-sm transition-all duration-300 group-hover:scale-110 group-hover:rotate-3">
                       <CheckCircle2 className="h-5 w-5" />
                     </div>
-                    <p className="text-base font-bold text-primary">{highlight.title}</p>
+                    <p className="text-base font-semibold text-slate-950">{highlight.title}</p>
                   </div>
-                  <p className="text-sm leading-relaxed text-muted-foreground">{highlight.description}</p>
+                  <p className="text-sm leading-relaxed text-slate-600">{highlight.description}</p>
                 </div>
               ))}
             </div>
@@ -91,10 +96,10 @@ export function AuthShell({
                     <BrandWordmark className="text-[1.35rem] sm:text-2xl" />
                   </Link>
                   <div className="space-y-2">
-                    <h1 className="text-[1.7rem] font-black tracking-tight text-primary sm:text-4xl">
+                    <h1 className="font-display text-2xl font-semibold tracking-[-0.035em] text-slate-950 sm:text-3xl">
                       {title}
                     </h1>
-                    <p className="max-w-md text-[0.92rem] leading-6 text-muted-foreground sm:text-base">
+                    <p className="max-w-md text-[0.92rem] leading-relaxed text-slate-600 sm:text-base">
                       {description}
                     </p>
                   </div>
@@ -112,19 +117,19 @@ export function AuthShell({
           <div className="space-y-3.5">
               {/* Eyebrow chip removed */}
             <div className="space-y-2.5">
-              <p className="text-[1.65rem] font-black leading-tight text-primary">{supportingTitle}</p>
-              <p className="text-[0.92rem] leading-6 text-muted-foreground">{supportingCopy}</p>
+              <p className="font-display text-[1.65rem] font-semibold leading-tight text-slate-950">{supportingTitle}</p>
+              <p className="text-[0.92rem] leading-relaxed text-slate-600">{supportingCopy}</p>
             </div>
             <div className="space-y-2.5">
               {highlights.slice(0, 2).map((highlight) => (
-                <div key={highlight.title} className="rounded-[1.15rem] border border-border/70 bg-white/80 p-3.5 shadow-sm">
+                <div key={highlight.title} className="group rounded-[1.15rem] border border-border/70 bg-white/80 p-3.5 shadow-sm transition-all duration-300 hover:-translate-y-0.5">
                   <div className="mb-2 flex items-center gap-3">
-                    <div className="flex h-8 w-8 items-center justify-center rounded-2xl bg-secondary/10 text-secondary">
+                    <div className="flex h-8 w-8 items-center justify-center rounded-2xl bg-teal-500/10 text-teal-600 border border-teal-500/20 shadow-sm transition-all duration-300 group-hover:scale-110 group-hover:rotate-3">
                       <CheckCircle2 className="h-4.5 w-4.5" />
                     </div>
-                    <p className="text-[0.92rem] font-bold text-primary">{highlight.title}</p>
+                    <p className="text-[0.92rem] font-semibold text-slate-900">{highlight.title}</p>
                   </div>
-                  <p className="text-[0.88rem] leading-6 text-muted-foreground">{highlight.description}</p>
+                  <p className="text-[0.88rem] leading-relaxed text-slate-600">{highlight.description}</p>
                 </div>
               ))}
             </div>

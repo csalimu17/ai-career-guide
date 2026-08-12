@@ -22,7 +22,14 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "Authentication required" }, { status: 401 });
     }
 
-    const decodedToken = await adminAuth.verifyIdToken(idToken);
+    let decodedToken;
+    try {
+      decodedToken = await adminAuth.verifyIdToken(idToken);
+    } catch (authErr: any) {
+      console.error("[BillingPortal] Firebase token verification error:", authErr);
+      return NextResponse.json({ error: "Authentication token expired or invalid. Please re-login and try again." }, { status: 401 });
+    }
+
     const userSnapshot = await adminDb.collection("users").doc(decodedToken.uid).get();
 
     if (!userSnapshot.exists) {

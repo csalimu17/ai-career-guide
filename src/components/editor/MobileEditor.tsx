@@ -760,52 +760,12 @@ export function MobileEditor({ editor }: MobileEditorProps) {
                                                minHeightClassName="min-h-[140px]"
                                             />
                                             {roleBulletSuggestions?.index === idx && (
-                                              <div className="rounded-3xl border border-indigo-100 bg-gradient-to-br from-indigo-50 to-white p-4 shadow-sm space-y-4 animate-in fade-in slide-in-from-top-2 duration-500">
-                                                <div className="flex items-start justify-between gap-3">
-                                                  <div className="space-y-1 min-w-0">
-                                                    <div className="flex items-center gap-2">
-                                                      <div className="h-1.5 w-1.5 rounded-full bg-orange-500 animate-pulse" />
-                                                      <p className="text-[9px] font-black uppercase tracking-[0.2em] text-orange-500">AI Role Draft</p>
-                                                    </div>
-                                                    <h4 className="truncate text-sm font-bold text-slate-900">
-                                                      {roleBulletSuggestions.title}
-                                                    </h4>
-                                                  </div>
-                                                  <Button
-                                                    variant="ghost"
-                                                    size="icon"
-                                                    className="h-8 w-8 rounded-xl text-slate-300 hover:text-red-500"
-                                                    onClick={dismissRoleBulletSuggestions}
-                                                  >
-                                                    <Trash2 className="h-4 w-4" />
-                                                  </Button>
-                                                </div>
-
-                                                <div className="space-y-2 max-h-[220px] overflow-y-auto pr-1">
-                                                  {roleBulletSuggestions.bullets.map((bullet: string, bulletIndex: number) => (
-                                                    <div key={bulletIndex} className="rounded-2xl border border-white bg-white/85 p-3.5 text-[11px] leading-relaxed text-slate-700 shadow-sm">
-                                                      <span className="mr-2 font-black text-orange-500">•</span>
-                                                      {bullet}
-                                                    </div>
-                                                  ))}
-                                                </div>
-
-                                                <div className="flex flex-col gap-2 pt-1">
-                                                  <Button
-                                                    className="h-11 w-full rounded-2xl bg-slate-900 text-[10px] font-black uppercase tracking-widest text-white shadow-lg"
-                                                    onClick={applyRoleBulletSuggestions}
-                                                  >
-                                                    Apply these bullets
-                                                  </Button>
-                                                  <Button
-                                                    variant="outline"
-                                                    className="h-11 w-full rounded-2xl border-slate-100 bg-white text-[10px] font-black uppercase tracking-widest text-slate-600"
-                                                    onClick={() => runSuggestRoleBullets(idx)}
-                                                  >
-                                                    Regenerate Draft
-                                                  </Button>
-                                                </div>
-                                              </div>
+                                              <MobileRoleBulletSelector
+                                                roleBulletSuggestions={roleBulletSuggestions}
+                                                onApply={(selectedBullets) => applyRoleBulletSuggestions(selectedBullets)}
+                                                onDismiss={dismissRoleBulletSuggestions}
+                                                onRegenerate={() => runSuggestRoleBullets(idx)}
+                                              />
                                             )}
                                          </div>
                                       ))}
@@ -1440,6 +1400,118 @@ export function MobileEditor({ editor }: MobileEditorProps) {
 
          {/* Bottom Tabs Shadow Overlay */}
          {mobileView === "edit" && <BottomTabs />}
+      </div>
+    </div>
+  )
+}
+function MobileRoleBulletSelector({
+  roleBulletSuggestions,
+  onApply,
+  onDismiss,
+  onRegenerate,
+}: {
+  roleBulletSuggestions: { index: number; title: string; bullets: string[] }
+  onApply: (selectedBullets: string[]) => void
+  onDismiss: () => void
+  onRegenerate: () => void
+}) {
+  const [selected, setSelected] = useState<number[]>(() => roleBulletSuggestions.bullets.map((_, i) => i))
+
+  const toggleBullet = (index: number) => {
+    setSelected((prev) =>
+      prev.includes(index) ? prev.filter((i) => i !== index) : [...prev, index]
+    )
+  }
+
+  const toggleAll = () => {
+    if (selected.length === roleBulletSuggestions.bullets.length) {
+      setSelected([])
+    } else {
+      setSelected(roleBulletSuggestions.bullets.map((_, i) => i))
+    }
+  }
+
+  const handleApply = () => {
+    const chosen = roleBulletSuggestions.bullets.filter((_, i) => selected.includes(i))
+    onApply(chosen)
+  }
+
+  return (
+    <div className="rounded-3xl border border-indigo-100 bg-gradient-to-br from-indigo-50 to-white p-4 shadow-sm space-y-4 animate-in fade-in slide-in-from-top-2 duration-500">
+      <div className="flex items-start justify-between gap-3">
+        <div className="space-y-1 min-w-0">
+          <div className="flex items-center gap-2">
+            <div className="h-1.5 w-1.5 rounded-full bg-orange-500 animate-pulse" />
+            <p className="text-[9px] font-black uppercase tracking-[0.2em] text-orange-500">AI Role Draft</p>
+          </div>
+          <h4 className="truncate text-sm font-bold text-slate-900">
+            {roleBulletSuggestions.title}
+          </h4>
+        </div>
+        <div className="flex items-center gap-2">
+          <button
+            type="button"
+            onClick={toggleAll}
+            className="text-[10px] font-bold text-orange-600 bg-orange-100 px-2 py-1 rounded-lg"
+          >
+            {selected.length === roleBulletSuggestions.bullets.length ? "Deselect All" : "Select All"}
+          </button>
+          <Button
+            variant="ghost"
+            size="icon"
+            className="h-8 w-8 rounded-xl text-slate-300 hover:text-red-500"
+            onClick={onDismiss}
+          >
+            <Trash2 className="h-4 w-4" />
+          </Button>
+        </div>
+      </div>
+
+      <div className="space-y-2 max-h-[260px] overflow-y-auto pr-1">
+        {roleBulletSuggestions.bullets.map((bullet: string, bulletIndex: number) => {
+          const isChecked = selected.includes(bulletIndex)
+          return (
+            <div
+              key={bulletIndex}
+              onClick={() => toggleBullet(bulletIndex)}
+              className={cn(
+                "flex items-start gap-2.5 rounded-2xl border p-3 text-[11px] leading-relaxed transition-all cursor-pointer select-none",
+                isChecked
+                  ? "bg-white border-orange-200 text-slate-800 shadow-sm"
+                  : "bg-white/50 border-transparent text-slate-400 opacity-60"
+              )}
+            >
+              <div
+                className={cn(
+                  "mt-0.5 h-4 w-4 rounded border flex items-center justify-center shrink-0 transition-colors",
+                  isChecked
+                    ? "bg-orange-500 border-orange-500 text-white"
+                    : "bg-white border-slate-300"
+                )}
+              >
+                {isChecked && <Check className="h-3 w-3 stroke-[3]" />}
+              </div>
+              <span>{bullet}</span>
+            </div>
+          )
+        })}
+      </div>
+
+      <div className="flex flex-col gap-2 pt-1">
+        <Button
+          disabled={selected.length === 0}
+          className="h-11 w-full rounded-2xl bg-slate-900 text-[10px] font-black uppercase tracking-widest text-white shadow-lg disabled:opacity-50"
+          onClick={handleApply}
+        >
+          Add Selected ({selected.length})
+        </Button>
+        <Button
+          variant="outline"
+          className="h-10 w-full rounded-2xl border-slate-200 bg-white text-[10px] font-bold uppercase tracking-wider text-slate-600"
+          onClick={onRegenerate}
+        >
+          Regenerate Draft
+        </Button>
       </div>
     </div>
   )

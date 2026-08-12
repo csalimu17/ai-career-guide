@@ -60,23 +60,35 @@ export async function POST(request: Request) {
     );
   }
 
-  const response = await fetch(INDEXNOW_ENDPOINT, {
-    method: "POST",
-    headers: { "Content-Type": "application/json; charset=utf-8" },
-    body: JSON.stringify({
-      host: new URL(siteConfig.url).hostname,
-      key: INDEXNOW_KEY,
-      keyLocation: `${siteConfig.url}/${INDEXNOW_KEY}.txt`,
-      urlList,
-    }),
-  });
+  try {
+    const response = await fetch(INDEXNOW_ENDPOINT, {
+      method: "POST",
+      headers: { "Content-Type": "application/json; charset=utf-8" },
+      body: JSON.stringify({
+        host: new URL(siteConfig.url).hostname,
+        key: INDEXNOW_KEY,
+        keyLocation: `${siteConfig.url}/${INDEXNOW_KEY}.txt`,
+        urlList,
+      }),
+    });
 
-  return NextResponse.json(
-    {
-      submitted: urlList,
-      indexNowStatus: response.status,
-      ok: response.ok,
-    },
-    { status: response.ok ? 200 : 502 }
-  );
+    return NextResponse.json(
+      {
+        submitted: urlList,
+        indexNowStatus: response.status,
+        ok: response.ok,
+      },
+      { status: response.ok ? 200 : 502 }
+    );
+  } catch (netErr: any) {
+    console.error("[IndexNow] External API error:", netErr);
+    return NextResponse.json(
+      {
+        submitted: urlList,
+        ok: false,
+        error: "IndexNow service unreachable",
+      },
+      { status: 502 }
+    );
+  }
 }

@@ -99,31 +99,38 @@ export default function PricingPage() {
   ];
 
   return (
-    <div className="min-h-screen">
+    <div className="min-h-screen bg-transparent relative overflow-hidden">
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(structuredData) }} />
-      <PublicHeader items={marketingHeaderItems} />
+      <div className="career-grid pointer-events-none" />
+      <PublicHeader items={marketingHeaderItems} ctaHref="/signup" ctaLabel="Start free" />
 
-      <main className="pb-16 pt-12 sm:pb-24 sm:pt-20">
+      <main className="relative z-10 pb-16 pt-12 sm:pb-24 sm:pt-20">
         <section className="app-shell space-y-8">
           <div className="surface-card space-y-4 px-5 py-6 sm:hidden">
-                              {/* Eyebrow chip removed */}
-            <p className="headline-gradient-vivid pb-1 text-3xl font-black leading-[1.15]">
+            <div className="eyebrow-chip">
+              <Sparkles className="h-3.5 w-3.5 text-primary" />
+              <span>Pricing Plans</span>
+            </div>
+            <p className="font-display headline-gradient-vivid pb-1 text-3xl font-semibold leading-[1.15] tracking-[-0.04em]">
               Pricing that supports the way mobile job searches actually happen.
             </p>
-            <p className="text-sm leading-relaxed text-muted-foreground">
+            <p className="text-sm leading-relaxed text-slate-600">
               Start free, then upgrade when you need more ATS scans, more AI assistance, and premium CV workflows.
             </p>
-            <p className="border-t border-slate-200 pt-4 text-sm leading-6 text-slate-700">
+            <p className="border-t border-slate-100 pt-4 text-sm leading-6 text-slate-600">
               <strong>At a glance:</strong> Free helps you build, Pro supports active tailoring, and Master adds capacity for a high-volume search.
             </p>
           </div>
 
           <div className="hidden max-w-none space-y-5 sm:block">
-                              {/* Eyebrow chip removed */}
-            <h1 className="headline-gradient-vivid max-w-6xl pb-3 text-3xl font-black leading-[1.15] tracking-[-0.05em] sm:text-[2.8rem] lg:text-[3.75rem]">
+            <div className="eyebrow-chip inline-flex">
+              <Sparkles className="h-3.5 w-3.5 text-primary" />
+              <span>Pricing Plans</span>
+            </div>
+            <h1 className="font-display headline-gradient-vivid max-w-6xl pb-3 text-3xl font-semibold leading-[1.15] tracking-[-0.04em] sm:text-[2.8rem] lg:text-[3.75rem]">
               Pricing that grows with the intensity of your job search.
             </h1>
-            <p className="text-base leading-relaxed text-muted-foreground sm:text-lg">
+            <p className="text-base leading-relaxed text-slate-600 sm:text-lg">
               Start with the free workflow, then upgrade when you need more ATS scans, more AI assistance, and premium CV templates for active applications.
             </p>
           </div>
@@ -133,7 +140,7 @@ export default function PricingPage() {
               <PricingPlanCard key={plan.id} plan={plan} />
             ))}
           </div>
-          <aside className="mt-6 border-l-4 border-teal-600 bg-white p-6" aria-labelledby="agency-heading">
+          <aside className="mt-6 border-l-4 border-teal-500 surface-card p-6 relative overflow-hidden" aria-labelledby="agency-heading">
             <h2 id="agency-heading" className="font-display text-xl font-semibold text-slate-950">Agency support is for organisations</h2>
             <p className="mt-2 text-sm leading-6 text-slate-600">White-labelled candidate portals, integrations and recruiter reporting are scoped separately from individual plans.</p>
             <Button variant="outline" asChild className="mt-4"><Link href="/support">Discuss Agency support</Link></Button>
@@ -158,41 +165,41 @@ export default function PricingPage() {
               description: "Subscription management routes through Stripe so payment details, invoices, and changes stay clear and recoverable.",
             },
           ].map((item) => (
-            <div key={item.title} className="surface-card px-5 py-5 sm:px-6 sm:py-6">
-              <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-2xl bg-secondary/10 text-secondary">
+            <div key={item.title} className="group surface-card px-5 py-5 sm:px-6 sm:py-6 transition-all duration-300 hover:-translate-y-0.5 hover:shadow-md block">
+              <div className="mb-4 flex h-11 w-11 items-center justify-center rounded-2xl bg-secondary/10 text-secondary border border-secondary/20 shadow-sm transition-all duration-300 group-hover:scale-110 group-hover:rotate-3">
                 <item.icon className="h-5 w-5" />
               </div>
-              <h2 className="text-xl font-bold text-primary">{item.title}</h2>
-              <p className="mt-2 text-sm leading-relaxed text-muted-foreground">{item.description}</p>
+              <h2 className="font-display text-xl font-semibold text-slate-950">{item.title}</h2>
+              <p className="mt-2 text-sm leading-relaxed text-slate-600">{item.description}</p>
             </div>
           ))}
         </section>
 
         <section className="app-shell mt-12 sm:mt-14">
           <div className="surface-card space-y-6 px-5 py-6 sm:px-8 sm:py-8">
-            <h2 className="text-2xl font-black tracking-tight text-primary">Billing, Cancellation & Limits FAQ</h2>
+            <h2 className="font-display text-2xl font-semibold tracking-tight text-slate-950">Billing, Cancellation & Limits FAQ</h2>
             <div className="grid gap-6 md:grid-cols-2">
               <div className="space-y-2">
-                <h3 className="font-bold text-primary text-base">How does billing work?</h3>
-                <p className="text-sm text-muted-foreground leading-relaxed">
+                <h3 className="font-semibold text-slate-900 text-base">How does billing work?</h3>
+                <p className="text-sm text-slate-600 leading-relaxed">
                   All paid subscriptions are billed monthly in GBP (£). Your subscription renews automatically on your billing cycle date unless cancelled. You will receive invoice emails via Stripe.
                 </p>
               </div>
               <div className="space-y-2">
-                <h3 className="font-bold text-primary text-base">Can I cancel or change my plan anytime?</h3>
-                <p className="text-sm text-muted-foreground leading-relaxed">
+                <h3 className="font-semibold text-slate-900 text-base">Can I cancel or change my plan anytime?</h3>
+                <p className="text-sm text-slate-600 leading-relaxed">
                   Yes, absolutely. You can access the secure Customer Billing Portal from your account settings at any time to upgrade, downgrade, or cancel your plan. There are no cancellation fees or lock-ins.
                 </p>
               </div>
               <div className="space-y-2">
-                <h3 className="font-bold text-primary text-base">What happens when I cancel?</h3>
-                <p className="text-sm text-muted-foreground leading-relaxed">
+                <h3 className="font-semibold text-slate-900 text-base">What happens when I cancel?</h3>
+                <p className="text-sm text-slate-600 leading-relaxed">
                   If you cancel your subscription, your premium entitlements (such as advanced templates and AI credits) will remain fully active until the end of your current billing cycle. After that, your account will return to the Free plan tier and your stored CVs will be preserved.
                 </p>
               </div>
               <div className="space-y-2">
-                <h3 className="font-bold text-primary text-base">How do AI usage limits work?</h3>
-                <p className="text-sm text-muted-foreground leading-relaxed">
+                <h3 className="font-semibold text-slate-900 text-base">How do AI usage limits work?</h3>
+                <p className="text-sm text-slate-600 leading-relaxed">
                   Your monthly allowance of ATS scans and AI generations resets at the start of each billing period. Free limits are a lifetime allowance, and upgrading immediately transitions you to the generous monthly quotas.
                 </p>
               </div>
@@ -203,11 +210,11 @@ export default function PricingPage() {
         <section className="app-shell mt-12 sm:mt-14">
           <div className="surface-card space-y-5 px-5 py-6 sm:px-8 sm:py-8">
             <div className="max-w-3xl space-y-2">
-              <p className="text-[0.68rem] font-semibold uppercase tracking-[0.22em] text-secondary">Comparing CV builders?</p>
-              <h2 className="text-xl font-black tracking-tight text-primary sm:text-3xl">
+              <p className="text-[0.68rem] font-bold uppercase tracking-[0.22em] text-primary">Comparing CV builders?</p>
+              <h2 className="font-display text-xl font-semibold tracking-tight text-slate-950 sm:text-3xl">
                 See how AI Career Guide fits against popular alternatives.
               </h2>
-              <p className="text-sm leading-relaxed text-muted-foreground sm:text-base">
+              <p className="text-sm leading-relaxed text-slate-600 sm:text-base">
                 If you are choosing between CV builders, compare the full workflow: CV creation, ATS checks, cover letters, interview prep, and application tracking.
               </p>
             </div>
@@ -228,11 +235,11 @@ export default function PricingPage() {
         <section className="app-shell mt-12 sm:mt-14">
           <div className="surface-card flex flex-col gap-5 px-5 py-6 sm:px-8 sm:py-8 lg:flex-row lg:items-center lg:justify-between">
             <div className="space-y-2">
-              <p className="text-[0.68rem] font-semibold uppercase tracking-[0.22em] text-secondary">Need help choosing?</p>
-              <h2 className="text-xl font-black tracking-tight text-primary sm:text-3xl">
+              <p className="text-[0.68rem] font-bold uppercase tracking-[0.22em] text-primary">Need help choosing?</p>
+              <h2 className="font-display text-xl font-semibold tracking-tight text-slate-950 sm:text-3xl">
                 Start free, then upgrade once your application volume justifies it.
               </h2>
-              <p className="max-w-2xl text-sm leading-relaxed text-muted-foreground sm:text-base">
+              <p className="max-w-2xl text-sm leading-relaxed text-slate-600 sm:text-base">
                 If you&apos;re testing the workflow, the free plan is enough. If you&apos;re actively applying and tailoring for multiple roles, Pro is usually the best fit.
               </p>
             </div>

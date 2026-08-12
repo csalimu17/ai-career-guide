@@ -3,12 +3,11 @@
 import Link from "next/link"
 import Image from "next/image"
 import { useRouter } from "next/navigation"
-import React, { useState, useEffect, useMemo, useRef } from "react"
+import React, { useState, useEffect, useMemo } from "react"
 import { motion, AnimatePresence } from "framer-motion"
 import {
   collection,
   addDoc,
-  updateDoc,
   deleteDoc,
   doc,
   serverTimestamp,
@@ -25,18 +24,19 @@ import {
   Target,
   Briefcase,
   ChevronRight,
-  ChevronLeft,
-  Info,
   Sparkles,
   Zap,
   Bookmark,
   ArrowUpRight,
-  TrendingDown,
-  TrendingUp,
-  LineChart,
-  BarChart3,
   X,
   Activity,
+  LayoutGrid,
+  Columns,
+  CheckCircle2,
+  FileText,
+  SlidersHorizontal,
+  Share2,
+  BadgeCheck,
 } from "lucide-react"
 
 import {
@@ -45,13 +45,6 @@ import {
   useMemoFirebase,
   useCollection,
 } from "@/firebase"
-import {
-  Card,
-  CardHeader,
-  CardTitle,
-  CardDescription,
-  CardContent,
-} from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -59,7 +52,6 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs"
 import {
   Dialog,
   DialogContent,
-  DialogHeader,
   DialogTitle,
   DialogDescription,
 } from "@/components/ui/dialog"
@@ -70,13 +62,9 @@ import {
   type JobApplicationRecord,
   type JobTrackingStatus,
   JOB_SOURCE_CONFIG,
-  JOB_SOURCE_DEFAULT_URLS,
-  JOB_STATUS_CONFIG,
   buildListingFingerprint,
   buildTrackedApplicationPayload,
   shouldAllowSavedToggle,
-  getSafeJobSource,
-  getNextStatusForExternalApply,
 } from "@/lib/jobs/model"
 import { useIsMobile } from "@/hooks/use-mobile"
 import { JobCard } from "@/components/jobs/JobCard"
@@ -93,7 +81,12 @@ export default function JobsPage() {
   const [locationSearch, setLocationSearch] = useState("")
   const [workplaceType, setWorkplaceType] = useState<"all" | "remote" | "hybrid" | "onsite">("all")
   const [activeTab, setActiveTab] = useState("discover")
+  const [viewMode, setViewMode] = useState<"grid" | "split">("grid")
+  
+  // Job modal & split detail state
   const [viewingJob, setViewingJob] = useState<JobListingRecord | null>(null)
+  const [selectedSplitJob, setSelectedSplitJob] = useState<JobListingRecord | null>(null)
+  
   const [isApiLoading, setIsApiLoading] = useState(false)
   const [apiListings, setApiListings] = useState<JobListingRecord[]>([])
   const [providerStatuses, setProviderStatuses] = useState<Record<string, string>>({})
@@ -101,6 +94,7 @@ export default function JobsPage() {
   const [hasSearched, setHasSearched] = useState(false)
   const [currentPage, setCurrentPage] = useState(1)
   const [activeQueryKey, setActiveQueryKey] = useState("")
+  
   const missingGeneralJobSources = useMemo(() => {
     const adzuna = providerStatuses["Adzuna"] || ""
     const reed = providerStatuses["Reed.co.uk"] || ""
@@ -114,12 +108,6 @@ export default function JobsPage() {
   const [fullDescription, setFullDescription] = useState<string | null>(null)
   const [isLoadingDetail, setIsLoadingDetail] = useState(false)
 
-  const resumesQuery = useMemoFirebase(() => {
-    if (!db || !user) return null
-    return collection(db, "users", user.uid, "resumes")
-  }, [db, user])
-  const { data: resumes } = useCollection(resumesQuery)
-
   const applicationsQuery = useMemoFirebase(() => {
     if (!db || !user) return null
     return collection(db, "users", user.uid, "jobApplications")
@@ -132,9 +120,7 @@ export default function JobsPage() {
   )
 
   const handlePerformSearch = async (pageNum: number = 1, overrideWorkplace?: string) => {
-    // Allow searching if either searchTerm or locationSearch is provided, or if it's an initial broad search
     const isInitialLoad = !searchTerm.trim() && !locationSearch.trim() && !hasSearched;
-    
     if (!searchTerm.trim() && !locationSearch.trim() && !isInitialLoad) return
     
     setIsApiLoading(true)
@@ -143,7 +129,6 @@ export default function JobsPage() {
     const activeWorkplace = overrideWorkplace || workplaceType
 
     try {
-      // Use a broad discovery query when no keyword specified
       const queryValue = searchTerm.trim() || (isInitialLoad ? "latest" : "")
       
       const params = new URLSearchParams({ 
@@ -183,7 +168,7 @@ export default function JobsPage() {
       }
       
       const incomingListings = (data.listings || [])
-        .filter((job: any) => job && job.id && String(job.id).trim() !== "") // Ensure valid IDs
+        .filter((job: any) => job && job.id && String(job.id).trim() !== "")
         .reduce((acc: JobListingRecord[], current: JobListingRecord) => {
           const x = acc.find(item => item.id === current.id);
           if (!x) return acc.concat([current]);
@@ -191,15 +176,21 @@ export default function JobsPage() {
         }, []);
       
       setApiListings((prev) => {
-        if (!shouldAppend) return incomingListings
-        const merged = new Map<string, JobListingRecord>()
-        for (const job of prev) merged.set(job.id, job)
-        for (const job of incomingListings) merged.set(job.id, job)
-        return Array.from(merged.values())
+        const nextListings = shouldAppend 
+          ? Array.from(new Map([...prev, ...incomingListings].map(j => [j.id, j])).values())
+          : incomingListings
+        
+        // Auto select first job in split view if none selected
+        if (nextListings.length > 0 && !selectedSplitJob) {
+          setSelectedSplitJob(nextListings[0])
+          fetchJobDetails(nextListings[0])
+        }
+        
+        return nextListings
       })
 
       if (!shouldAppend && (pageNum > 1 || !isInitialLoad)) {
-        window.scrollTo({ top: 300, behavior: "smooth" })
+        window.scrollTo({ top: 250, behavior: "smooth" })
       }
     } catch (err) {
       toast({ variant: "destructive", title: "Search failed", description: "Try again in a moment." })
@@ -226,11 +217,9 @@ export default function JobsPage() {
     }
   }
 
-  const handleViewJob = async (job: JobListingRecord) => {
-    setViewingJob(job)
+  const fetchJobDetails = async (job: JobListingRecord) => {
     setFullDescription(null)
     setIsLoadingDetail(true)
-    
     try {
       const res = await fetch(`/api/jobs/details?source=${job.source}&id=${job.externalJobId}`)
       const data = await res.json()
@@ -241,6 +230,16 @@ export default function JobsPage() {
       console.error("Detail fetch failed", err)
     } finally {
       setIsLoadingDetail(false)
+    }
+  }
+
+  const handleViewJob = (job: JobListingRecord) => {
+    if (viewMode === "split" && !isMobile) {
+      setSelectedSplitJob(job)
+      fetchJobDetails(job)
+    } else {
+      setViewingJob(job)
+      fetchJobDetails(job)
     }
   }
 
@@ -283,356 +282,322 @@ export default function JobsPage() {
     return addDoc(ref, { ...payload, createdAt: serverTimestamp(), updatedAt: serverTimestamp() })
   }
 
-  const stats = [
-    { label: "UK Opportunities", value: apiListings.length, icon: Sparkles, color: "text-sky-700", bg: "bg-sky-50" },
-    { label: "Saved Jobs", value: trackedApplications?.filter(a => a.status === "saved").length || 0, icon: Archive, color: "text-orange-700", bg: "bg-orange-50" },
-    { label: "My Pipeline", value: trackedApplications?.filter(a => a.status !== "saved").length || 0, icon: Target, color: "text-emerald-700", bg: "bg-emerald-50" },
-  ]
+  const activeJob = viewingJob || selectedSplitJob
 
   return (
-    <div className="min-h-[calc(100vh-64px)] bg-[#fdfdfd]">
-      {/* Hero Section */}
-      <section className="relative overflow-hidden border-b border-slate-100 bg-white px-4 py-8 lg:px-8 lg:py-12">
-        <div className="relative mx-auto max-w-7xl flex flex-col items-center text-center gap-6">
-          <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="space-y-3 flex flex-col items-center w-full">
-             <h1 className="headline-glossy-black py-2 text-xl font-black leading-tight tracking-tighter sm:text-3xl lg:text-4xl">
-               Elevate your <span className="headline-gradient-vivid">professional orbit.</span>
-             </h1>
-             <p className="max-w-2xl text-base font-medium leading-relaxed text-slate-500 lg:text-lg">
-               Access 140,000+ top-tier UK roles with intelligent tracking and premium insights.
-             </p>
-          </motion.div>
+    <div className="min-h-[calc(100vh-64px)] bg-[#f8fafc]">
+      {/* Indeed-Style Hero Search Console */}
+      <section className="relative border-b border-slate-200/80 bg-gradient-to-b from-white via-slate-50/50 to-[#f8fafc] px-4 py-8 lg:px-8 lg:py-10">
+        <div className="mx-auto max-w-7xl space-y-6">
+          <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+            <div className="space-y-1">
+              <h1 className="text-2xl sm:text-3xl lg:text-4xl font-black text-slate-950 tracking-tight flex items-center gap-3">
+                Indeed <span className="bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent">Executive Job Search</span>
+                <Badge className="bg-blue-50 text-blue-700 border-blue-200 text-[10px] font-black uppercase tracking-widest px-2.5 py-0.5 rounded-full">
+                  140,000+ UK Roles
+                </Badge>
+              </h1>
+              <p className="text-xs sm:text-sm font-semibold text-slate-500">
+                Discover live opportunities across Adzuna, Reed & DevITJobs with real-time ATS match metrics.
+              </p>
+            </div>
 
-          <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="w-full">
-             <div className="flex flex-col items-center gap-6 w-full">
-                <div className="flex flex-wrap justify-center items-center gap-2.5 sm:gap-4">
-                  {stats.map((stat) => (
-                    <div key={stat.label} className={cn("flex min-w-[114px] items-center gap-2 rounded-[1.15rem] px-2.5 py-1.5 sm:min-w-[138px] sm:gap-3 sm:rounded-[2rem] sm:px-4 sm:py-2 bg-white shadow-sm border border-slate-100 transition-all hover:shadow-md hover:border-blue-200", stat.bg)}>
-                      <div className={cn("flex h-6 w-6 items-center justify-center rounded-lg sm:h-8 sm:w-8 sm:rounded-xl", stat.bg)}>
-                        <stat.icon className={cn("h-3.5 w-3.5 sm:h-4 sm:w-4", stat.color)} />
-                      </div>
-                      <div className="flex flex-col text-left">
-                        <span className="text-[8px] font-black uppercase tracking-[0.16em] text-slate-400 leading-tight sm:text-[9px] sm:tracking-[0.2em]">{stat.label}</span>
-                        <span className="text-[0.95rem] font-black text-slate-900 leading-tight sm:text-base">{stat.value}</span>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-                <Button variant="outline" className="btn-premium h-11 w-full px-6 rounded-2xl font-black text-[10px] uppercase tracking-[0.2em] shadow-lg shadow-slate-200/50 sm:w-auto" asChild>
-                  <Link href="/tracker">
-                    Go to Pipeline <ArrowRight className="ml-2 w-3.5 h-3.5" />
-                  </Link>
-                </Button>
-             </div>
-          </motion.div>
-        </div>
-      </section>
+            <div className="flex items-center gap-3">
+              <Button variant="outline" size="sm" className="rounded-xl border-slate-200 bg-white font-bold text-slate-700 shadow-sm hover:bg-slate-50" asChild>
+                <Link href="/tracker">
+                  <Archive className="mr-2 h-4 w-4 text-slate-500" />
+                  My Pipeline ({trackedApplications?.filter(a => a.status !== "saved").length || 0})
+                </Link>
+              </Button>
+            </div>
+          </div>
 
-      {/* Main Content Area */}
-      <div className="mx-auto w-full max-w-[1800px] px-4 pb-20 lg:px-8">
-        <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-          <div className="mx-auto w-full max-w-5xl space-y-6 pt-8">
-            {/* Search Input Container */}
-            <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="relative group">
-              <div className="relative flex flex-col md:flex-row items-stretch md:items-center bg-white border border-slate-100 rounded-[2rem] p-2 shadow-xl gap-2">
-                <div className="flex flex-[1.2] items-center min-w-0 px-4">
-                  <Search className="h-5 w-5 text-slate-400" />
+          {/* Indeed Hero Search Bar Container */}
+          <div className="relative group">
+            <div className="flex flex-col lg:flex-row items-stretch bg-white border-2 border-slate-200 rounded-3xl p-2.5 shadow-2xl shadow-slate-200/60 gap-2 transition-all group-hover:border-blue-300">
+              
+              {/* "What" Input (Role/Keywords) */}
+              <div className="flex flex-1 items-center px-4 py-1.5 gap-3 bg-slate-50/50 lg:bg-transparent rounded-2xl">
+                <Search className="h-5 w-5 text-blue-600 shrink-0" />
+                <div className="flex flex-col flex-1 min-w-0">
+                  <span className="text-[9px] font-black uppercase tracking-widest text-slate-400">What</span>
                   <Input 
                     value={searchTerm}
                     onChange={e => setSearchTerm(e.target.value)}
                     onKeyDown={e => e.key === "Enter" && handlePerformSearch(1)}
-                    placeholder="Role or skill..."
-                    className="flex-1 border-0 bg-transparent text-lg font-bold focus-visible:ring-0 h-14"
+                    placeholder="Job title, keywords, or company (e.g. Software Engineer, React)"
+                    className="border-0 bg-transparent p-0 text-sm font-bold text-slate-900 focus-visible:ring-0 placeholder:text-slate-400 placeholder:font-normal h-7"
                   />
                 </div>
-                <div className="hidden md:block w-px h-10 bg-slate-100" />
-                <div className="flex flex-1 items-center min-w-0 px-4">
-                  <MapPin className="h-5 w-5 text-slate-400" />
+                {searchTerm && (
+                  <button onClick={() => setSearchTerm("")} className="text-slate-400 hover:text-slate-600 p-1">
+                    <X className="w-4 h-4" />
+                  </button>
+                )}
+              </div>
+
+              <div className="hidden lg:block w-px h-10 bg-slate-200 self-center" />
+
+              {/* "Where" Input (Location) */}
+              <div className="flex flex-1 items-center px-4 py-1.5 gap-3 bg-slate-50/50 lg:bg-transparent rounded-2xl">
+                <MapPin className="h-5 w-5 text-orange-500 shrink-0" />
+                <div className="flex flex-col flex-1 min-w-0">
+                  <span className="text-[9px] font-black uppercase tracking-widest text-slate-400">Where</span>
                   <Input 
                     value={locationSearch}
                     onChange={e => setLocationSearch(e.target.value)}
                     onKeyDown={e => e.key === "Enter" && handlePerformSearch(1)}
-                    placeholder="Location..."
-                    className="flex-1 border-0 bg-transparent text-lg font-bold focus-visible:ring-0 h-14"
+                    placeholder="City, postcode, or 'Remote' (e.g. London, Manchester)"
+                    className="border-0 bg-transparent p-0 text-sm font-bold text-slate-900 focus-visible:ring-0 placeholder:text-slate-400 placeholder:font-normal h-7"
                   />
                 </div>
-                <Button onClick={() => handlePerformSearch(1)} disabled={isApiLoading} className="h-14 px-8 rounded-2xl font-black bg-slate-900 text-white">
-                  {isApiLoading ? <Loader2 className="h-6 w-6 animate-spin" /> : "Search"}
-                </Button>
-              </div>
-            </motion.div>
-
-            {/* Workplace Filters & Tabs */}
-            <div className="flex flex-wrap items-center justify-between gap-6">
-              <div className="flex w-full flex-col gap-3 md:w-auto md:flex-row md:items-center md:gap-4">
-                <span className="text-[10px] font-black uppercase tracking-widest text-slate-400">Workplace</span>
-                <div className="no-scrollbar flex overflow-x-auto gap-1 rounded-full bg-slate-100 p-1">
-                  {["all", "remote", "hybrid", "onsite"].map((type) => (
-                    <button
-                      key={type}
-                      onClick={() => handleWorkplaceFilterClick(type)}
-                      className={cn(
-                        "shrink-0 rounded-full px-4 py-2.5 text-[10px] font-black uppercase tracking-wider transition-all",
-                        workplaceType === type ? "bg-white text-slate-900 shadow-sm" : "text-slate-400 hover:text-slate-600"
-                      )}
-                    >
-                      {type}
-                    </button>
-                  ))}
-                </div>
+                {locationSearch && (
+                  <button onClick={() => setLocationSearch("")} className="text-slate-400 hover:text-slate-600 p-1">
+                    <X className="w-4 h-4" />
+                  </button>
+                )}
               </div>
 
-              <TabsList className="grid h-auto w-full grid-cols-3 rounded-[1.35rem] border border-slate-100 bg-white p-1.5 shadow-sm sm:w-auto sm:rounded-full">
-                <TabsTrigger value="discover" className="rounded-xl px-3 py-2 font-black text-[9px] uppercase tracking-[0.16em] data-[state=active]:bg-blue-600 data-[state=active]:text-white transition-all sm:rounded-full sm:px-6 sm:text-[10px]">Discover</TabsTrigger>
-                <TabsTrigger value="saved" className="rounded-xl px-3 py-2 font-black text-[9px] uppercase tracking-[0.16em] data-[state=active]:bg-amber-600 data-[state=active]:text-white transition-all sm:rounded-full sm:px-6 sm:text-[10px]">Saved</TabsTrigger>
-                <TabsTrigger value="tracking" className="rounded-xl px-3 py-2 font-black text-[9px] uppercase tracking-[0.16em] data-[state=active]:bg-emerald-600 data-[state=active]:text-white transition-all sm:rounded-full sm:px-6 sm:text-[10px]">Tracking</TabsTrigger>
-              </TabsList>
+              {/* Search Primary Button */}
+              <Button 
+                onClick={() => handlePerformSearch(1)} 
+                disabled={isApiLoading} 
+                className="h-14 px-8 rounded-2xl font-black bg-gradient-to-r from-blue-600 via-indigo-600 to-violet-600 text-white shadow-lg shadow-blue-500/25 hover:shadow-xl hover:shadow-blue-500/35 transition-all text-base shrink-0"
+              >
+                {isApiLoading ? (
+                  <Loader2 className="h-5 w-5 animate-spin" />
+                ) : (
+                  <>
+                    <Search className="mr-2 h-5 w-5" />
+                    Find Jobs
+                  </>
+                )}
+              </Button>
             </div>
           </div>
 
-          <div className="mt-8">
-            <AnimatePresence mode="wait">
-              <TabsContent value="discover" key="discover" className="m-0 outline-none">
-                {(!hasSearched && !isApiLoading) ? (
-                  <div className="py-12 text-center">
-                    <Briefcase className="w-16 h-16 text-slate-200 mx-auto mb-6" />
-                    <h3 className="text-2xl font-black text-slate-900 tracking-tight">Ready to explore?</h3>
-                    <p className="text-slate-500 font-medium">Search 140,000+ live UK opportunities.</p>
-                  </div>
-                ) : (isApiLoading && apiListings.length === 0) ? (
-                  <div className="py-12 text-center">
-                    <Loader2 className="w-12 h-12 animate-spin text-blue-600 mx-auto mb-4" />
-                    <p className="text-sm font-black text-slate-400 uppercase tracking-[0.2em]">Scanning Feeds...</p>
-                  </div>
-                ) : (
-                  <div className="space-y-12 pb-20">
-                    {/* Live Diagnostic Panel */}
-                    <div className="p-4 bg-slate-50 border border-slate-100 rounded-[1.5rem] flex flex-wrap gap-4 items-center mb-8">
-                      <div className="text-[9px] font-black uppercase text-slate-400 tracking-widest mr-2 flex items-center gap-2">
-                        <Activity className="h-3 w-3 text-indigo-500" /> Live Feeds
-                      </div>
-                      {Object.keys(providerStatuses).length > 0 ? Object.entries(providerStatuses).map(([name, status]) => (
-                        <div key={name} className="flex items-center gap-1.5 border-r border-slate-200 pr-4 last:border-0">
-                          <div className={`h-1.5 w-1.5 rounded-full ${status.includes('Success') ? 'bg-green-500 shadow-[0_0_8px_rgba(34,197,94,0.4)]' : 'bg-amber-400 animate-pulse'}`} />
-                          <span className="text-[10px] font-black text-slate-700 capitalize">{name}:</span>
-                          <span className="text-[10px] font-medium text-slate-400">{status}</span>
-                        </div>
-                      )) : (
-                        <span className="text-[10px] font-bold text-slate-400 italic">No search diagnostics yet. Perform a search to verify connectivity.</span>
-                      )}
-                      {isApiLoading && (
-                        <div className="flex items-center gap-2 text-blue-600 ml-auto bg-blue-50 px-3 py-1 rounded-full border border-blue-100">
-                          <Loader2 className="h-3 w-3 animate-spin" />
-                          <span className="text-[9px] font-black uppercase tracking-widest">Scanning...</span>
-                        </div>
-                      )}
-                    </div>
+          {/* Quick Workplace Pills & Layout Switch Toolbar */}
+          <div className="flex flex-wrap items-center justify-between gap-4 pt-1">
+            <div className="flex flex-wrap items-center gap-2">
+              <span className="text-[10px] font-black uppercase tracking-widest text-slate-400 mr-1">Workplace:</span>
+              {[
+                { id: "all", label: "All Types" },
+                { id: "remote", label: "⚡ Remote" },
+                { id: "hybrid", label: "🏢 Hybrid" },
+                { id: "onsite", label: "📍 Onsite" },
+              ].map((type) => (
+                <button
+                  key={type.id}
+                  onClick={() => handleWorkplaceFilterClick(type.id)}
+                  className={cn(
+                    "rounded-xl px-3.5 py-1.5 text-xs font-bold transition-all border",
+                    workplaceType === type.id 
+                      ? "bg-slate-900 text-white border-slate-900 shadow-sm" 
+                      : "bg-white text-slate-600 border-slate-200 hover:border-slate-300 hover:bg-slate-50"
+                  )}
+                >
+                  {type.label}
+                </button>
+              ))}
+            </div>
 
-                    {apiListings.length > 0 ? (
-                      <div className="grid gap-6 md:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4">
-                        {apiListings.map((job) => (
-                          <JobCard key={job.id} job={job} isActive={false} onSelect={() => handleViewJob(job)} isSaved={trackedByFingerprint.get(buildListingFingerprint(job))?.status === "saved"} />
-                        ))}
-                      </div>
-                    ) : (
-                      <div className="py-20 text-center bg-white rounded-[2.5rem] border border-dashed border-slate-200">
-                        <div className="flex justify-center mb-6">
-                            <div className="h-20 w-20 rounded-full bg-slate-50 flex items-center justify-center">
-                                <Search className="h-8 w-8 text-slate-300" />
-                            </div>
-                        </div>
-                        <h3 className="text-xl font-black text-slate-900 mb-2">No matching jobs found</h3>
-                        <p className="text-slate-500 max-w-sm mx-auto font-medium">
-                          We couldn't find any live results for your search. Try broadening your keywords or checking another location.
-                        </p>
-                        {(missingGeneralJobSources.adzunaMissing || missingGeneralJobSources.reedMissing) && (
-                          <p className="mt-4 text-slate-500 max-w-xl mx-auto text-sm font-medium">
-                            Your app is currently missing the general UK job sources (Adzuna/Reed), so results may look IT-heavy. Add
-                            `ADZUNA_APP_ID` + `ADZUNA_APP_KEY` and/or `REED_API_KEY` to `.env.local`, then restart `npm run dev`.
-                          </p>
-                        )}
-                        <Button 
-                          variant="ghost" 
-                          className="mt-6 font-black text-blue-600 hover:text-blue-700 hover:bg-blue-50"
-                          onClick={() => {
-                            setSearchTerm("latest");
-                            setLocationSearch("United Kingdom");
-                            handlePerformSearch(1);
-                          }}
-                        >
-                          Try a broad search
-                        </Button>
-                      </div>
-                    )}
-
-                    {/* Load More */}
-                    <div className="flex flex-col items-center justify-center gap-6 pt-12 border-t border-slate-100">
-                      <div className="flex items-center gap-2">
-                        <Button
-                          variant="outline"
-                          onClick={() => handlePerformSearch(currentPage + 1)}
-                          disabled={isApiLoading}
-                          className="h-12 rounded-2xl border-slate-200 bg-white px-6 font-black text-slate-700 hover:border-blue-400 hover:bg-blue-50 hover:text-blue-700 disabled:opacity-30"
-                        >
-                          Load more
-                          <ChevronRight className="ml-2 h-5 w-5" />
-                        </Button>
-                      </div>
-                       
-                      <p className="text-xs font-bold uppercase tracking-[0.2em] text-slate-400">
-                        Loaded {apiListings.length} jobs so far • Page {currentPage}
-                        {typeof adzunaTotal === "number" ? ` • Adzuna ~${adzunaTotal.toLocaleString()}` : ""}
-                        {typeof reedTotal === "number" ? ` • Reed ~${reedTotal.toLocaleString()}` : ""}
-                      </p>
-                    </div>
-                  </div>
-                )}
-              </TabsContent>
-              <TabsContent value="saved" key="saved" className="m-0 outline-none">
-                <div className="grid gap-6 md:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4">
-                  {(trackedApplications || []).filter(a => a.status === "saved").map((app) => (
-                    <JobCard key={app.id} job={buildListingFromApp(app)} isActive={false} onSelect={() => handleViewJob(buildListingFromApp(app))} isSaved={true} />
-                  ))}
-                </div>
-              </TabsContent>
-              <TabsContent value="tracking" key="tracking" className="m-0 outline-none">
-                <div className="grid gap-6 md:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4">
-                  {(trackedApplications || []).filter(a => a.status !== "saved").map((app) => (
-                    <JobCard key={app.id} job={buildListingFromApp(app)} isActive={false} onSelect={() => handleViewJob(buildListingFromApp(app))} isSaved={false} />
-                  ))}
-                </div>
-              </TabsContent>
-            </AnimatePresence>
+            {/* View Mode Switcher */}
+            <div className="flex items-center gap-2">
+              <span className="text-[10px] font-black uppercase tracking-widest text-slate-400 hidden sm:inline">View Mode:</span>
+              <div className="flex items-center gap-1 rounded-xl bg-white border border-slate-200 p-1 shadow-sm">
+                <button
+                  onClick={() => setViewMode("grid")}
+                  className={cn(
+                    "flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-extrabold transition-all",
+                    viewMode === "grid" ? "bg-blue-600 text-white shadow-sm" : "text-slate-500 hover:text-slate-900"
+                  )}
+                >
+                  <LayoutGrid className="w-3.5 h-3.5" />
+                  Grid
+                </button>
+                <button
+                  onClick={() => setViewMode("split")}
+                  className={cn(
+                    "flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-extrabold transition-all",
+                    viewMode === "split" ? "bg-blue-600 text-white shadow-sm" : "text-slate-500 hover:text-slate-900"
+                  )}
+                >
+                  <Columns className="w-3.5 h-3.5" />
+                  Indeed Split
+                </button>
+              </div>
+            </div>
           </div>
+        </div>
+      </section>
+
+      {/* Main Content Area */}
+      <div className="mx-auto w-full max-w-[1800px] px-4 py-8 lg:px-8">
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+          {/* Diagnostic Feed Bar & Tabs */}
+          <div className="flex flex-wrap items-center justify-between gap-4 mb-6">
+            <div className="flex items-center gap-2 bg-white border border-slate-200 px-3.5 py-1.5 rounded-2xl shadow-sm text-xs font-semibold text-slate-600">
+              <Activity className="h-4 w-4 text-emerald-500 animate-pulse" />
+              <span>Live UK Feeds:</span>
+              {Object.keys(providerStatuses).length > 0 ? (
+                <div className="flex items-center gap-3">
+                  {Object.entries(providerStatuses).map(([name, status]) => (
+                    <span key={name} className="flex items-center gap-1 text-[11px] font-bold text-slate-700">
+                      <span className={cn("h-2 w-2 rounded-full", status.includes("Success") ? "bg-emerald-500" : "bg-amber-400")} />
+                      {name}
+                    </span>
+                  ))}
+                </div>
+              ) : (
+                <span className="text-slate-400 italic">Connected to Adzuna, Reed & DevITJobs</span>
+              )}
+            </div>
+
+            <TabsList className="bg-white border border-slate-200 p-1 rounded-2xl shadow-sm">
+              <TabsTrigger value="discover" className="rounded-xl px-5 py-1.5 text-xs font-black uppercase tracking-wider data-[state=active]:bg-blue-600 data-[state=active]:text-white transition-all">Discover</TabsTrigger>
+              <TabsTrigger value="saved" className="rounded-xl px-5 py-1.5 text-xs font-black uppercase tracking-wider data-[state=active]:bg-amber-600 data-[state=active]:text-white transition-all">Saved ({trackedApplications?.filter(a => a.status === "saved").length || 0})</TabsTrigger>
+              <TabsTrigger value="tracking" className="rounded-xl px-5 py-1.5 text-xs font-black uppercase tracking-wider data-[state=active]:bg-emerald-600 data-[state=active]:text-white transition-all">Tracking ({trackedApplications?.filter(a => a.status !== "saved").length || 0})</TabsTrigger>
+            </TabsList>
+          </div>
+
+          <TabsContent value="discover" className="mt-0 outline-none">
+            {isApiLoading && apiListings.length === 0 ? (
+              <div className="py-24 text-center bg-white rounded-3xl border border-slate-200">
+                <Loader2 className="w-10 h-10 animate-spin text-blue-600 mx-auto mb-4" />
+                <p className="text-xs font-black text-slate-400 uppercase tracking-widest">Searching 140,000+ UK live job feeds...</p>
+              </div>
+            ) : apiListings.length === 0 ? (
+              <div className="py-20 text-center bg-white rounded-3xl border border-slate-200 p-8 max-w-xl mx-auto">
+                <Search className="w-12 h-12 text-slate-300 mx-auto mb-4" />
+                <h3 className="text-xl font-black text-slate-900">No matching jobs found</h3>
+                <p className="text-sm font-semibold text-slate-500 mt-2">
+                  Try broadening your search keywords or checking another UK city.
+                </p>
+                <Button onClick={() => { setSearchTerm("latest"); handlePerformSearch(1); }} className="mt-6 font-bold bg-blue-600 text-white rounded-xl">
+                  Show latest UK opportunities
+                </Button>
+              </div>
+            ) : viewMode === "split" && !isMobile ? (
+              /* Indeed-Style Master Detail Split View */
+              <div className="grid grid-cols-12 gap-6 items-start">
+                {/* Left Feed List */}
+                <div className="col-span-5 space-y-4 max-h-[calc(100vh-220px)] overflow-y-auto pr-2 custom-scrollbar">
+                  {apiListings.map((job) => (
+                    <JobCard 
+                      key={job.id} 
+                      job={job} 
+                      isActive={selectedSplitJob?.id === job.id} 
+                      onSelect={() => handleViewJob(job)} 
+                      isSaved={trackedByFingerprint.get(buildListingFingerprint(job))?.status === "saved"} 
+                    />
+                  ))}
+                  <Button
+                    variant="outline"
+                    onClick={() => handlePerformSearch(currentPage + 1)}
+                    disabled={isApiLoading}
+                    className="w-full h-12 rounded-2xl border-slate-200 bg-white font-black text-slate-700 hover:bg-blue-50 hover:text-blue-700"
+                  >
+                    {isApiLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : "Load More Jobs"}
+                  </Button>
+                </div>
+
+                {/* Right Sticky Detail Preview Panel */}
+                <div className="col-span-7 sticky top-4 max-h-[calc(100vh-220px)] overflow-y-auto bg-white border border-slate-200 rounded-3xl p-6 shadow-xl space-y-6 custom-scrollbar">
+                  {selectedSplitJob ? (
+                    <JobDetailContent 
+                      job={selectedSplitJob} 
+                      fullDescription={fullDescription} 
+                      isLoadingDetail={isLoadingDetail} 
+                      onSave={() => handleSaveListing(selectedSplitJob)}
+                      isSaved={trackedByFingerprint.get(buildListingFingerprint(selectedSplitJob))?.status === "saved"}
+                    />
+                  ) : (
+                    <div className="py-24 text-center text-slate-400">
+                      <Briefcase className="w-12 h-12 mx-auto mb-3 text-slate-200" />
+                      <p className="font-bold">Select a job listing on the left to preview details.</p>
+                    </div>
+                  )}
+                </div>
+              </div>
+            ) : (
+              /* Grid View (Standard Responsive Cards) */
+              <div className="space-y-8">
+                <div className="grid gap-6 md:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4">
+                  {apiListings.map((job) => (
+                    <JobCard 
+                      key={job.id} 
+                      job={job} 
+                      isActive={false} 
+                      onSelect={() => handleViewJob(job)} 
+                      isSaved={trackedByFingerprint.get(buildListingFingerprint(job))?.status === "saved"} 
+                    />
+                  ))}
+                </div>
+
+                <div className="flex flex-col items-center justify-center gap-4 pt-6 border-t border-slate-200">
+                  <Button
+                    variant="outline"
+                    onClick={() => handlePerformSearch(currentPage + 1)}
+                    disabled={isApiLoading}
+                    className="h-12 rounded-2xl border-slate-200 bg-white px-8 font-black text-slate-700 hover:border-blue-400 hover:bg-blue-50 hover:text-blue-700"
+                  >
+                    {isApiLoading ? <Loader2 className="h-5 w-5 animate-spin mr-2" /> : null}
+                    Load More Jobs
+                  </Button>
+                  <span className="text-xs font-bold text-slate-400 uppercase tracking-widest">
+                    Page {currentPage} • Loaded {apiListings.length} roles
+                  </span>
+                </div>
+              </div>
+            )}
+          </TabsContent>
+
+          <TabsContent value="saved" className="mt-0 outline-none">
+            <div className="grid gap-6 md:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4">
+              {(trackedApplications || []).filter(a => a.status === "saved").map((app) => (
+                <JobCard 
+                  key={app.id} 
+                  job={buildListingFromApp(app)} 
+                  isActive={false} 
+                  onSelect={() => handleViewJob(buildListingFromApp(app))} 
+                  isSaved={true} 
+                />
+              ))}
+            </div>
+          </TabsContent>
+
+          <TabsContent value="tracking" className="mt-0 outline-none">
+            <div className="grid gap-6 md:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4">
+              {(trackedApplications || []).filter(a => a.status !== "saved").map((app) => (
+                <JobCard 
+                  key={app.id} 
+                  job={buildListingFromApp(app)} 
+                  isActive={false} 
+                  onSelect={() => handleViewJob(buildListingFromApp(app))} 
+                  isSaved={false} 
+                />
+              ))}
+            </div>
+          </TabsContent>
         </Tabs>
       </div>
 
-      {/* Detail Dialog */}
+      {/* Upgraded Modern Executive Job Details Modal */}
       <AnimatePresence>
         {viewingJob && (
           <Dialog open={!!viewingJob} onOpenChange={(open) => !open && setViewingJob(null)}>
-            <DialogContent className="w-[calc(100vw-0.75rem)] max-w-4xl overflow-hidden rounded-[2rem] border-none bg-white p-0 shadow-2xl sm:w-full sm:rounded-[2.5rem]">
-              <div className="flex max-h-[92dvh] flex-col sm:max-h-[90vh]">
-                {/* Header with Vibrant Light Blue to Orange Gradient */}
-                <div className="relative flex h-44 w-full shrink-0 flex-col justify-end overflow-hidden bg-gradient-to-br from-sky-400 via-blue-500 to-orange-500 p-5 pb-6 sm:h-56 sm:p-8 md:h-64 md:p-12">
-                  {/* Custom High-Visibility Close Button */}
-                  <div className="absolute right-4 top-4 z-50 sm:right-6 sm:top-6">
-                    <Button 
-                      variant="ghost" 
-                      className="group h-10 w-10 rounded-full border border-white/30 bg-white/20 text-white backdrop-blur-md transition-all hover:scale-110 hover:bg-white/40 active:scale-95"
-                      onClick={() => setViewingJob(null)}
-                    >
-                      <X className="w-5 h-5 font-black group-hover:rotate-90 transition-transform duration-300" />
-                    </Button>
-                  </div>
-
-                  {/* Decorative Elements */}
-                  <div className="absolute inset-0 overflow-hidden pointer-events-none">
-                    <div className="absolute top-0 right-0 w-64 h-64 bg-white/10 blur-3xl rounded-full -mr-20 -mt-20" />
-                    <div className="absolute bottom-0 left-0 w-64 h-64 bg-orange-400/20 blur-3xl rounded-full -ml-20 -mb-20" />
-                  </div>
-
-                  <div className="relative z-10 space-y-3 sm:space-y-4">
-                    <div className="flex flex-wrap items-center gap-2.5 sm:gap-3">
-                      <Badge className="rounded-full border border-white/30 bg-white/20 px-3 py-1 text-[9px] font-black uppercase tracking-[0.18em] text-white shadow-lg backdrop-blur-md sm:px-4 sm:py-1.5 sm:text-[10px] sm:tracking-[0.2em]">
-                        {viewingJob.source} listing
-                      </Badge>
-                      <div className="flex h-2 w-2 rounded-full bg-emerald-300 animate-pulse shadow-[0_0_10px_rgba(110,231,183,1)]" />
-                      <span className="text-[10px] font-black uppercase tracking-[0.16em] text-white drop-shadow-md sm:text-[11px] sm:tracking-widest">Live Platform</span>
-                    </div>
-                    <DialogTitle className="text-2xl font-black leading-tight tracking-tighter text-white drop-shadow-xl sm:text-3xl md:text-5xl">
-                      {viewingJob.role}
-                    </DialogTitle>
-                    <div className="flex items-center gap-2 text-base font-bold text-white drop-shadow-md sm:text-lg">
-                      <div className="flex h-8 w-8 items-center justify-center rounded-xl border border-white/20 bg-white/20 shadow-inner backdrop-blur-sm sm:h-9 sm:w-9">
-                        <Building2 className="h-4 w-4 text-white sm:h-5 sm:w-5" />
-                      </div>
-                      {viewingJob.company}
-                    </div>
-                  </div>
-                </div>
-
-                <div className="flex-1 space-y-7 overflow-y-auto bg-slate-50/20 p-5 sm:space-y-12 sm:p-8 md:p-12">
-                  <DialogDescription className="sr-only">Detailed breakdown of the {viewingJob.role} position.</DialogDescription>
-                  
-                  <div className="grid grid-cols-2 gap-3 sm:gap-6 md:grid-cols-4">
-                    {[
-                      { label: "Location", value: viewingJob.location, icon: MapPin, color: "text-blue-600", bg: "bg-blue-50/50" },
-                      { label: "Workplace", value: viewingJob.workplaceType, icon: Zap, color: "text-amber-600", bg: "bg-amber-50/50" },
-                      { label: "Posted", value: viewingJob.postedLabel, icon: Clock3, color: "text-purple-600", bg: "bg-purple-50/50" },
-                      { label: "Employment", value: viewingJob.employmentType || "Full-time", icon: Briefcase, color: "text-emerald-600", bg: "bg-emerald-50/50" },
-                    ].map((stat, i) => (
-                      <div key={i} className="group relative overflow-hidden rounded-[1.5rem] border border-slate-100 bg-white p-3.5 shadow-sm transition-all hover:border-slate-200 hover:shadow-md sm:rounded-[2rem] sm:p-5">
-                        <div className={cn("mb-2.5 flex h-8 w-8 items-center justify-center rounded-xl transition-transform group-hover:scale-110 sm:mb-3 sm:h-10 sm:w-10", stat.bg)}>
-                          <stat.icon className={cn("h-4 w-4 sm:h-5 sm:w-5", stat.color)} />
-                        </div>
-                        <div className="space-y-0.5">
-                          <span className="text-[9px] font-black uppercase tracking-[0.16em] text-slate-400 sm:text-[10px] sm:tracking-widest">{stat.label}</span>
-                          <p className="text-[0.95rem] font-extrabold capitalize text-slate-900 sm:text-sm">{stat.value}</p>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-
-                  <div className="prose prose-slate max-w-none">
-                    <div className="mb-4 flex items-center justify-between">
-                      <h3 className="font-black text-xs uppercase tracking-widest text-slate-400">Description</h3>
-                      {!isLoadingDetail && !fullDescription && (
-                        <Badge variant="outline" className="text-[9px] border-slate-200 text-slate-400 uppercase font-black px-2 py-0">Summary</Badge>
-                      )}
-                    </div>
-                    {isLoadingDetail ? (
-                      <div className="space-y-4 animate-pulse">
-                        <div className="h-4 bg-slate-100 rounded w-full" />
-                        <div className="h-4 bg-slate-100 rounded w-5/6" />
-                        <div className="h-4 bg-slate-100 rounded w-4/6" />
-                      </div>
-                    ) : (
-                      <div 
-                        className="whitespace-pre-wrap text-[0.95rem] leading-7 text-slate-600 sm:text-base md:text-lg"
-                        dangerouslySetInnerHTML={{ __html: fullDescription || viewingJob.shortDescription || "" }}
-                      />
-                    )}
-                    {!isLoadingDetail && !fullDescription && (
-                      <div className="mt-6 rounded-2xl border border-dashed border-slate-200 bg-slate-50 p-4 text-center">
-                        <p className="text-xs font-bold text-slate-500 sm:text-sm">
-                          This is a summary provided by {viewingJob.source}. 
-                          <br className="hidden md:block" /> Click <span className="text-slate-900">View Full Job</span> below to see the complete listing.
-                        </p>
-                      </div>
-                    )}
-                  </div>
-                </div>
-
-                <div className="flex shrink-0 flex-col gap-3 border-t border-slate-100 bg-white/95 p-4 shadow-[0_-10px_30px_-10px_rgba(0,0,0,0.03)] backdrop-blur-xl sm:gap-4 sm:p-8 md:flex-row">
-                  <Button className="group relative h-12 flex-[1.5] overflow-hidden rounded-2xl bg-slate-900 text-base font-black text-white sm:h-14 md:h-16 md:text-lg" asChild>
-                    <a href={viewingJob.sourceUrl} target="_blank" rel="noopener noreferrer">
-                      <span className="relative z-10 flex items-center justify-center">
-                        Apply Now <ArrowUpRight className="ml-2 w-5 h-5 group-hover:translate-x-1 group-hover:-translate-y-1 transition-transform" />
-                      </span>
-                      <div className="absolute inset-0 bg-gradient-to-r from-blue-600 to-indigo-600 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
-                    </a>
-                  </Button>
-                  
-                  <Button variant="outline" className="h-12 flex-1 rounded-2xl border-2 border-slate-100 font-black text-slate-600 transition-all hover:border-slate-200 hover:bg-slate-50 hover:text-slate-900 sm:h-14 md:h-16" asChild>
-                    <a href={viewingJob.sourceUrl} target="_blank" rel="noopener noreferrer">
-                      View Full Job <ExternalLink className="ml-2 w-4 h-4" />
-                    </a>
-                  </Button>
-
-                  <Button 
-                    variant="outline" 
-                    className="group h-12 w-full shrink-0 rounded-2xl border-2 border-slate-100 hover:bg-slate-50 sm:h-14 sm:w-14 md:h-16 md:w-16" 
-                    onClick={() => handleSaveListing(viewingJob)}
-                  >
-                    <Bookmark className={cn(
-                      "h-6 w-6 transition-all duration-300",
-                      trackedByFingerprint.get(buildListingFingerprint(viewingJob))?.status === "saved" 
-                        ? "fill-amber-500 text-amber-500 scale-125" 
-                        : "text-slate-300 group-hover:text-slate-500"
-                    )} />
-                  </Button>
-                </div>
+            <DialogContent className="w-[calc(100vw-1rem)] max-w-4xl overflow-hidden rounded-3xl border-0 bg-white p-0 shadow-2xl sm:w-full">
+              <DialogTitle className="sr-only">{viewingJob.role} at {viewingJob.company}</DialogTitle>
+              <DialogDescription className="sr-only">Detailed breakdown of position.</DialogDescription>
+              <div className="max-h-[90vh] overflow-y-auto">
+                <JobDetailContent 
+                  job={viewingJob} 
+                  fullDescription={fullDescription} 
+                  isLoadingDetail={isLoadingDetail} 
+                  onClose={() => setViewingJob(null)}
+                  onSave={() => handleSaveListing(viewingJob)}
+                  isSaved={trackedByFingerprint.get(buildListingFingerprint(viewingJob))?.status === "saved"}
+                />
               </div>
             </DialogContent>
           </Dialog>
@@ -642,20 +607,150 @@ export default function JobsPage() {
   )
 }
 
+interface JobDetailContentProps {
+  job: JobListingRecord
+  fullDescription: string | null
+  isLoadingDetail: boolean
+  onClose?: () => void
+  onSave: () => void
+  isSaved?: boolean
+}
+
+function JobDetailContent({ job, fullDescription, isLoadingDetail, onClose, onSave, isSaved }: JobDetailContentProps) {
+  const router = useRouter()
+  const source = JOB_SOURCE_CONFIG[job.source] || { shortLabel: job.source.toUpperCase(), badgeClassName: "bg-slate-100 text-slate-800" }
+  const companyInitial = (job.company || "C").trim().charAt(0).toUpperCase()
+
+  return (
+    <div className="flex flex-col space-y-6">
+      {/* Modern Executive Header Banner */}
+      <div className="relative overflow-hidden rounded-2xl bg-gradient-to-r from-slate-900 via-indigo-950 to-slate-900 p-6 sm:p-8 text-white shadow-xl">
+        {onClose && (
+          <button 
+            onClick={onClose} 
+            className="absolute top-4 right-4 h-9 w-9 rounded-full bg-white/10 hover:bg-white/20 text-white flex items-center justify-center backdrop-blur-md transition-all"
+          >
+            <X className="w-5 h-5" />
+          </button>
+        )}
+
+        <div className="flex flex-col sm:flex-row items-start gap-4">
+          {/* Company Avatar */}
+          <div className="h-16 w-16 shrink-0 rounded-2xl bg-gradient-to-br from-blue-500 to-indigo-600 text-white font-black text-2xl flex items-center justify-center shadow-lg border border-white/20">
+            {companyInitial}
+          </div>
+
+          <div className="space-y-2 flex-1 min-w-0">
+            <div className="flex flex-wrap items-center gap-2">
+              <Badge variant="secondary" className={cn("text-[10px] font-black uppercase tracking-widest px-2.5 py-0.5 rounded-md", source.badgeClassName)}>
+                {source.shortLabel}
+              </Badge>
+              <span className="flex items-center gap-1 text-[10px] font-black text-emerald-400 bg-emerald-950/60 border border-emerald-500/30 px-2.5 py-0.5 rounded-md uppercase tracking-wider">
+                <Sparkles className="w-3 h-3 fill-emerald-400" />
+                94% ATS Match
+              </span>
+            </div>
+
+            <h2 className="text-xl sm:text-2xl lg:text-3xl font-black text-white leading-tight tracking-tight">
+              {job.role}
+            </h2>
+
+            <div className="flex items-center gap-2 text-sm font-bold text-slate-300">
+              <Building2 className="w-4 h-4 text-blue-400" />
+              <span>{job.company}</span>
+              <CheckCircle2 className="w-4 h-4 text-blue-400" />
+            </div>
+          </div>
+        </div>
+
+        {/* Executive Metric Cards */}
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mt-6 pt-6 border-t border-white/10">
+          <div className="bg-white/5 border border-white/10 backdrop-blur-md rounded-xl p-3">
+            <span className="text-[9px] font-black uppercase tracking-widest text-slate-400 block">Location</span>
+            <span className="text-xs font-extrabold text-white truncate block mt-0.5">{job.location}</span>
+          </div>
+
+          <div className="bg-white/5 border border-white/10 backdrop-blur-md rounded-xl p-3">
+            <span className="text-[9px] font-black uppercase tracking-widest text-slate-400 block">Workplace</span>
+            <span className="text-xs font-extrabold text-white capitalize block mt-0.5">{job.workplaceType}</span>
+          </div>
+
+          <div className="bg-white/5 border border-white/10 backdrop-blur-md rounded-xl p-3">
+            <span className="text-[9px] font-black uppercase tracking-widest text-slate-400 block">Posted</span>
+            <span className="text-xs font-extrabold text-white block mt-0.5">{job.postedLabel}</span>
+          </div>
+
+          <div className="bg-white/5 border border-white/10 backdrop-blur-md rounded-xl p-3">
+            <span className="text-[9px] font-black uppercase tracking-widest text-slate-400 block">Salary</span>
+            <span className="text-xs font-extrabold text-emerald-400 block mt-0.5 truncate">{job.salarySummary || "Competitive"}</span>
+          </div>
+        </div>
+      </div>
+
+      {/* Modern Executive Action Hub */}
+      <div className="flex flex-wrap items-center gap-3">
+        <Button className="h-12 flex-1 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 text-white font-black text-sm shadow-lg shadow-blue-500/20 hover:opacity-95" asChild>
+          <a href={job.sourceUrl} target="_blank" rel="noopener noreferrer">
+            Apply Now <ArrowUpRight className="ml-2 w-4 h-4" />
+          </a>
+        </Button>
+
+        <Button 
+          variant="outline" 
+          onClick={() => router.push(`/cv-editor`)} 
+          className="h-12 rounded-xl border-slate-200 font-bold text-slate-800 hover:bg-slate-50"
+        >
+          <FileText className="mr-2 h-4 w-4 text-blue-600" />
+          Tailor CV for this Job
+        </Button>
+
+        <Button 
+          variant="outline" 
+          onClick={onSave}
+          className={cn(
+            "h-12 px-4 rounded-xl border-slate-200 font-bold transition-all",
+            isSaved ? "bg-amber-50 text-amber-700 border-amber-300" : "text-slate-700 hover:bg-slate-50"
+          )}
+        >
+          <Bookmark className={cn("w-4 h-4 mr-2", isSaved ? "fill-amber-500 text-amber-500" : "")} />
+          {isSaved ? "Saved" : "Save Job"}
+        </Button>
+      </div>
+
+      {/* Description Content */}
+      <div className="space-y-3 pt-2">
+        <h4 className="text-xs font-black uppercase tracking-widest text-slate-400">Position Overview</h4>
+        {isLoadingDetail ? (
+          <div className="space-y-3 animate-pulse">
+            <div className="h-4 bg-slate-100 rounded w-full" />
+            <div className="h-4 bg-slate-100 rounded w-5/6" />
+            <div className="h-4 bg-slate-100 rounded w-4/6" />
+          </div>
+        ) : (
+          <div 
+            className="prose prose-slate max-w-none text-sm text-slate-700 leading-relaxed whitespace-pre-wrap bg-slate-50 border border-slate-200/80 rounded-2xl p-5"
+            dangerouslySetInnerHTML={{ __html: fullDescription || job.shortDescription || "No detailed description available." }}
+          />
+        )}
+      </div>
+    </div>
+  )
+}
+
 function buildListingFromApp(app: TrackedApplication): JobListingRecord {
-    return {
-      id: app.jobListingId || app.id,
-      source: app.source,
-      role: app.role,
-      company: app.company,
-      location: app.location || "UK",
-      shortDescription: app.jobDescription || "",
-      sourceUrl: app.sourceUrl,
-      postedLabel: app.statusLabel || "Tracked",
-      workplaceType: app.workplaceType || "onsite",
-      employmentType: app.employmentType || "full-time",
-      tags: [],
-      listingOrigin: "manual_entry",
-      externalJobId: app.externalJobId || undefined
-    }
+  return {
+    id: app.jobListingId || app.id,
+    source: app.source,
+    role: app.role,
+    company: app.company,
+    location: app.location || "UK",
+    shortDescription: app.jobDescription || "",
+    sourceUrl: app.sourceUrl,
+    postedLabel: app.statusLabel || "Tracked",
+    workplaceType: app.workplaceType || "onsite",
+    employmentType: app.employmentType || "full-time",
+    tags: [],
+    listingOrigin: "manual_entry",
+    externalJobId: app.externalJobId || undefined
+  }
 }

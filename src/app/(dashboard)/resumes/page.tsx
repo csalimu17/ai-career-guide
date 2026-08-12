@@ -411,13 +411,8 @@ export default function ResumesPage() {
           )
         ) : (
           <div className="flex flex-col items-center justify-center space-y-10 rounded-[3.5rem] bg-[#FAFBFD]/50 px-6 py-24 text-center border border-slate-50 italic font-medium">
-            <div className="relative w-full max-w-[320px] aspect-square">
-              <Image 
-                src="/illustrations/resumes-empty.png" 
-                alt="No Resumes Found" 
-                fill 
-                className="object-contain"
-              />
+            <div className="flex h-24 w-24 items-center justify-center rounded-3xl bg-gradient-to-br from-blue-500 to-indigo-600 text-white shadow-2xl shadow-blue-500/30">
+              <FileText className="h-12 w-12" />
             </div>
             <div className="max-w-md space-y-4">
               <h2 className="text-3xl font-black tracking-tight text-slate-900 leading-[0.9]">

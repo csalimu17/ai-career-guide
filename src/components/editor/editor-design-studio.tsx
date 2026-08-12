@@ -372,7 +372,7 @@ export function EditorDesignStudio({
               <div className={cn("h-1.5 w-full bg-gradient-to-r", theme.overlay)} />
               <div className="relative p-3 pb-0">
                 <div className="relative aspect-[210/297] overflow-hidden rounded-2xl border border-slate-200/60 shadow-sm">
-                  <TemplateThumbnail template={template} className="h-full w-full" />
+                  <TemplateThumbnail template={template} resumeData={resume} highFidelity={true} className="h-full w-full" />
                   
                   {/* Badge Overlay */}
                   <div className="absolute inset-x-0 top-0 flex items-start justify-between p-3">
@@ -486,6 +486,25 @@ export function EditorDesignStudio({
               Reset
             </Button>
           </div>
+        </div>
+      </div>
+
+      {/* Live CV Mini Preview Box for real-time Theme changes */}
+      <div className="border-b border-slate-100 bg-[linear-gradient(180deg,rgba(248,250,252,0.95),rgba(241,245,249,0.7))] p-4 sm:p-5 flex flex-col items-center justify-center">
+        <div className="flex items-center justify-between w-full max-w-[340px] mb-3 px-1">
+          <div className="flex items-center gap-2">
+            <span className="relative flex h-2 w-2">
+              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+              <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
+            </span>
+            <span className="text-[0.68rem] font-black uppercase tracking-[0.16em] text-slate-600">Live Theme Preview</span>
+          </div>
+          <Badge variant="outline" className="rounded-full bg-white px-2.5 py-0.5 text-[0.62rem] font-bold text-slate-600 border-slate-200 shadow-sm">
+            {activeTemplate.name} • {selectedFontLabel}
+          </Badge>
+        </div>
+        <div className="relative aspect-[210/297] w-full max-w-[280px] sm:max-w-[320px] overflow-hidden rounded-xl border border-slate-200/90 shadow-[0_16px_36px_-14px_rgba(15,23,42,0.22)] bg-white transition-all duration-300">
+          <TemplateThumbnail template={activeTemplate} resumeData={resume} highFidelity={true} className="h-full w-full" />
         </div>
       </div>
 

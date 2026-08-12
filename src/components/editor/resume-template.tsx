@@ -135,6 +135,10 @@ function getEntryShellClassName(variant: TemplateEntryVariant, mode: ResumeRende
   switch (variant) {
     case "accented":
       return "border-l-[3px] pl-3.5"
+    case "timeline":
+      return "relative pl-5 border-l-2 ml-1"
+    case "boxed":
+      return `${mode === "print" ? "" : "rounded-[0.65rem]"} border p-3.5 shadow-sm`
     case "outlined":
       return `${mode === "print" ? "" : "rounded-[0.55rem]"} border px-4 py-3`
     default:
@@ -149,6 +153,22 @@ function getEntryShellStyle(variant: TemplateEntryVariant, accent: string, mode:
       backgroundImage: mode === "print"
         ? "none"
         : `linear-gradient(90deg, ${hexToRgba(accent, 0.03)}, transparent 85%)`,
+    }
+  }
+
+  if (variant === "timeline") {
+    return {
+      borderLeftColor: hexToRgba(accent, 0.45),
+    }
+  }
+
+  if (variant === "boxed") {
+    return {
+      borderColor: hexToRgba(accent, 0.15),
+      backgroundColor: subtleFill ? hexToRgba(accent, 0.035) : "#f8fafc",
+      boxShadow: mode === "print"
+        ? "none"
+        : `0 4px 14px -4px ${hexToRgba(accent, 0.06)}`,
     }
   }
 
@@ -365,45 +385,61 @@ function ResumeTemplateHeader({
   spacing: ReturnType<typeof getDensityMetrics>
 }) {
   const contactItems = getContactItems(content)
-  const splitLayout = template.design.contactLayout === "split" && mode !== "mobile"
-  const chipContact = template.design.contactVariant === "chips" && !splitLayout
+  const isBanner = template.design.headerVariant === "banner"
+  const isMonogram = template.design.headerVariant === "monogram"
+  const splitLayout = template.design.contactLayout === "split" && mode !== "mobile" && !isMonogram
+  const chipContact = (template.design.contactVariant === "chips" || isBanner) && !splitLayout
   const photoUrl =
     typeof content?.personal?.photoUrl === "string" && content.personal.photoUrl.trim().length > 0
       ? content.personal.photoUrl
       : null
 
+  const initials = content?.personal?.name
+    ? content.personal.name
+        .split(" ")
+        .map((part: string) => part[0])
+        .join("")
+        .slice(0, 2)
+        .toUpperCase()
+    : "JM"
+
   const headerClassName = cn(
     "resume-header relative flex w-full gap-6",
     familyTone.headerSurfaceClass,
-    template.design.headerAlignment === "center" && !splitLayout ? "flex-col items-center text-center" : "flex-col",
+    (template.design.headerAlignment === "center" || isMonogram) && !splitLayout ? "flex-col items-center text-center" : "flex-col",
     splitLayout && "flex-row items-start justify-between",
     template.design.headerVariant === "classic" && "border-b pb-6",
     template.design.headerVariant === "minimal" && "border-b pb-6",
     template.design.headerVariant === "modern" && cn("rounded-[1.4rem] border px-6", mode === "print" ? "py-3" : "py-5"),
     template.design.headerVariant === "executive" && cn("rounded-[1.4rem] border px-6", mode === "print" ? "py-3" : "py-5"),
+    template.design.headerVariant === "banner" && cn("rounded-[1.4rem] px-6 text-white", mode === "print" ? "py-4" : "py-6"),
+    template.design.headerVariant === "monogram" && cn("rounded-[1.4rem] border px-6 py-6"),
     template.design.headerVariant === "elegant" && cn("rounded-[1.6rem] border px-6", mode === "print" ? "py-4" : "py-6")
   )
 
   const headerStyle: CSSProperties = {
     gap: `${spacing.headerGap}px`,
     ...(familyTone.headerSurfaceStyle ?? {}),
-    borderColor:
-      template.design.headerVariant === "classic" || template.design.headerVariant === "minimal"
+    borderColor: isBanner
+      ? "transparent"
+      : template.design.headerVariant === "classic" || template.design.headerVariant === "minimal"
         ? hexToRgba(accent, 0.24)
         : hexToRgba(accent, 0.18),
     borderBottomWidth:
       template.design.headerVariant === "classic" || template.design.headerVariant === "minimal" ? "1px" : undefined,
     borderTopWidth: template.design.headerVariant === "elegant" ? "1px" : undefined,
-    backgroundColor:
-      template.design.headerVariant === "modern" || template.design.headerVariant === "executive"
+    backgroundColor: isBanner
+      ? accent
+      : template.design.headerVariant === "modern" || template.design.headerVariant === "executive"
         ? hexToRgba(accent, template.design.subtleFill ? 0.05 : 0.03)
-        : template.design.headerVariant === "elegant"
+        : template.design.headerVariant === "elegant" || template.design.headerVariant === "monogram"
           ? hexToRgba(accent, 0.035)
           : undefined,
   }
 
   const nameClassName = cn(
-    "font-black tracking-tight text-slate-900",
+    "font-black tracking-tight",
+    isBanner ? "text-white" : "text-slate-900",
     mode === "print"
       ? "text-[1.85em]"
       : mode === "mobile"
@@ -415,7 +451,8 @@ function ResumeTemplateHeader({
   )
 
   const contactClassName = cn(
-    "flex font-medium text-slate-600",
+    "flex font-medium",
+    isBanner ? "text-white/90" : "text-slate-600",
     mode === "print" ? "text-[0.76em]" : "text-[0.84em]",
     splitLayout
       ? "max-w-[250px] flex-col gap-1.5 text-right"
@@ -424,12 +461,12 @@ function ResumeTemplateHeader({
         : (template.design.contactLayout === "stacked" && mode !== "print") || mode === "mobile"
         ? "flex-col gap-1.5"
         : "flex-wrap items-center gap-x-2 gap-y-0.5",
-    template.design.headerAlignment === "center" && !splitLayout && "items-center justify-center text-center"
+    (template.design.headerAlignment === "center" || isMonogram) && !splitLayout && "items-center justify-center text-center"
   )
 
   const headerIntroClassName = cn(
     "flex min-w-0 gap-4",
-    template.design.headerAlignment === "center" && !splitLayout ? "flex-col items-center text-center" : "items-start"
+    (template.design.headerAlignment === "center" || isMonogram) && !splitLayout ? "flex-col items-center text-center" : "items-start"
   )
 
   return (
@@ -446,7 +483,7 @@ function ResumeTemplateHeader({
         overflow: "hidden"
       }}
     >
-      {template.design.headerBand && (
+      {template.design.headerBand && !isBanner && (
         <div
           className="absolute inset-x-0 top-0 h-1 rounded-t-[1.4rem]"
           style={{
@@ -455,9 +492,22 @@ function ResumeTemplateHeader({
         />
       )}
 
+      {isMonogram && (
+        <div 
+          className="mx-auto flex h-14 w-14 items-center justify-center rounded-full border-2 font-serif text-lg font-black tracking-widest"
+          style={{
+            borderColor: accent,
+            backgroundColor: hexToRgba(accent, 0.08),
+            color: accent,
+          }}
+        >
+          {initials}
+        </div>
+      )}
+
       <div className={cn("min-w-0", splitLayout && "flex-1")}>
         <div className={headerIntroClassName}>
-          {photoUrl ? (
+          {photoUrl && !isMonogram ? (
             <ResumeHeaderPhoto
               photoUrl={photoUrl}
               name={content?.personal?.name}
@@ -468,13 +518,13 @@ function ResumeTemplateHeader({
           ) : null}
 
           <div className={cn("min-w-0", mode === "print" ? "space-y-1.5" : "space-y-3")}>
-            <div className={cn(template.design.headerAlignment === "center" && !splitLayout && "text-center")}>
+            <div className={cn((template.design.headerAlignment === "center" || isMonogram) && !splitLayout && "text-center")}>
               {mode === "thumbnail" ? (
-                <div className={nameClassName} style={{ color: accent }}>
+                <div className={nameClassName} style={{ color: isBanner ? "#ffffff" : accent }}>
                   {content?.personal?.name || "Your Name"}
                 </div>
               ) : (
-                <h1 className={nameClassName} style={{ color: accent }}>
+                <h1 className={nameClassName} style={{ color: isBanner ? "#ffffff" : accent }}>
                   {content?.personal?.name || "Your Name"}
                 </h1>
               )}
@@ -486,7 +536,7 @@ function ResumeTemplateHeader({
                     mode === "mobile" && "text-[0.88em]",
                     mode === "thumbnail" && "text-[0.82em]"
                   )}
-                  style={{ color: hexToRgba(accent, 0.6) }}
+                  style={{ color: isBanner ? "rgba(255,255,255,0.85)" : hexToRgba(accent, 0.6) }}
                 >
                   {content.personal.title}
                 </p>
@@ -498,7 +548,7 @@ function ResumeTemplateHeader({
                 {contactItems.map((item: string, index: number) => (
                   <div key={`${item}-${index}`} className="flex items-center gap-2">
                     {!chipContact && (template.design.contactLayout === "inline" || mode === "print") && index > 0 && mode !== "mobile" && (
-                      <span className="h-1 w-1 rounded-full" style={{ backgroundColor: hexToRgba(accent, 0.35) }} />
+                      <span className="h-1 w-1 rounded-full" style={{ backgroundColor: isBanner ? "rgba(255,255,255,0.5)" : hexToRgba(accent, 0.35) }} />
                     )}
                     <span
                       className={cn(
@@ -509,9 +559,9 @@ function ResumeTemplateHeader({
                       style={
                         chipContact
                           ? {
-                              borderColor: hexToRgba(accent, 0.18),
-                              backgroundColor: hexToRgba(accent, 0.06),
-                              color: accent,
+                              borderColor: isBanner ? "rgba(255,255,255,0.3)" : hexToRgba(accent, 0.18),
+                              backgroundColor: isBanner ? "rgba(255,255,255,0.18)" : hexToRgba(accent, 0.06),
+                              color: isBanner ? "#ffffff" : accent,
                             }
                           : undefined
                       }
@@ -629,11 +679,11 @@ export function ResumeTemplate({
   const baseFontSize = Number(styles.fontSize ?? template.defaults.fontSize)
   const baseLineHeight = Number(styles.lineHeight ?? template.defaults.lineHeight)
   const baseMargins = Number(styles.margins ?? template.defaults.margins)
-  const screenPadding = 48 // 48px padding - 24px mask start = 24px visible top margin
+  const screenPadding = 48
   const mobilePadding = Math.max(28, Math.round(baseMargins * 0.8))
   const thumbnailPadding = Math.max(24, Math.round(baseMargins * 0.6))
   const printPadding = Math.max(8, Math.min(14, pxToMm(baseMargins) * 0.88))
-const rootStyle: CSSProperties & { WebkitPrintColorAdjust?: "exact"; printColorAdjust?: "exact" } = {
+  const rootStyle: CSSProperties & { WebkitPrintColorAdjust?: "exact"; printColorAdjust?: "exact" } = {
     backgroundColor: "#ffffff",
     color: "#0f172a",
     width: noPadding ? "100%" : (renderMode === "mobile" ? "100%" : (isPrint ? "210mm" : "100%")),
@@ -651,10 +701,6 @@ const rootStyle: CSSProperties & { WebkitPrintColorAdjust?: "exact"; printColorA
     position: (isPrint || renderMode === "print") ? "static" : "relative",
     WebkitPrintColorAdjust: "exact",
     printColorAdjust: "exact",
-  }
-
-  const sectionGapStyle: CSSProperties = {
-    gap: `${spacing.sectionGap}px`,
   }
 
   const activeEntryVariant = (styles.entryVariant || template.design.entryVariant) as TemplateEntryVariant
@@ -686,6 +732,12 @@ const rootStyle: CSSProperties & { WebkitPrintColorAdjust?: "exact"; printColorA
                 boxDecorationBreak: "clone",
               } as any}
             >
+              {activeEntryVariant === "timeline" && (
+                <span
+                  className="absolute -left-[5px] top-1.5 h-2 w-2 rounded-full border border-white"
+                  style={{ backgroundColor: accent }}
+                />
+              )}
               <div
                 className={cn(
                   "resume-entry-header flex gap-1",
@@ -740,6 +792,12 @@ const rootStyle: CSSProperties & { WebkitPrintColorAdjust?: "exact"; printColorA
                 boxDecorationBreak: "clone",
               } as any}
             >
+              {activeEntryVariant === "timeline" && (
+                <span
+                  className="absolute -left-[5px] top-1.5 h-2 w-2 rounded-full border border-white"
+                  style={{ backgroundColor: accent }}
+                />
+              )}
               <div
                 className={cn(
                   "resume-entry-header flex gap-1",
@@ -796,6 +854,12 @@ const rootStyle: CSSProperties & { WebkitPrintColorAdjust?: "exact"; printColorA
                 boxDecorationBreak: "clone",
               } as any}
             >
+              {activeEntryVariant === "timeline" && (
+                <span
+                  className="absolute -left-[5px] top-1.5 h-2 w-2 rounded-full border border-white"
+                  style={{ backgroundColor: accent }}
+                />
+              )}
               <div
                 className={cn(
                   "resume-entry-header flex gap-1",
@@ -837,6 +901,34 @@ const rootStyle: CSSProperties & { WebkitPrintColorAdjust?: "exact"; printColorA
           <p className="text-[0.92em] leading-relaxed text-slate-700">
             {items.join(" · ")}
           </p>
+        </ResumeSection>
+      )
+    }
+
+    if (variant === "dots") {
+      return (
+        <ResumeSection title={SECTION_LABELS.skills} template={template} accent={accent} mode={renderMode} familyTone={familyTone} isSidebar={isSidebar} spacing={spacing}>
+          <div className={cn("grid gap-x-4 gap-y-2 text-[0.88em]", isSidebar ? "grid-cols-1" : "grid-cols-2")}>
+            {items.map((skill: string, index: number) => {
+              const filledDots = (index % 3) + 3
+              return (
+                <div key={`${skill}-${index}`} className="flex items-center justify-between gap-2">
+                  <span className="font-medium text-slate-800 truncate">{skill}</span>
+                  <div className="flex gap-1 shrink-0">
+                    {[1, 2, 3, 4, 5].map((dot) => (
+                      <span
+                        key={dot}
+                        className="h-1.5 w-1.5 rounded-full"
+                        style={{
+                          backgroundColor: dot <= filledDots ? accent : hexToRgba(accent, 0.2),
+                        }}
+                      />
+                    ))}
+                  </div>
+                </div>
+              )
+            })}
+          </div>
         </ResumeSection>
       )
     }
@@ -1051,8 +1143,7 @@ const rootStyle: CSSProperties & { WebkitPrintColorAdjust?: "exact"; printColorA
       data-template-id={template.id}
       style={rootStyle}
     >
-      {/* Visual Page Break Indicators for Screen/Mobile */}
-      {/* Unmasked Visual Page Break Indicators (Overlay) */}
+      {/* Visual Page Break Indicators for Screen */}
       {renderMode === "screen" && !isPrint && (
         <div 
           className="absolute inset-x-0 top-0 bottom-0 pointer-events-none z-50" 
@@ -1064,14 +1155,9 @@ const rootStyle: CSSProperties & { WebkitPrintColorAdjust?: "exact"; printColorA
               className="absolute w-full flex flex-col items-center justify-center h-[40px]"
               style={{ top: `calc(${page} * (297mm + 40px) - 40px)` }}
             >
-               {/* Translucent Bar Background with Glow and Blur */}
                <div className="absolute inset-0 bg-slate-950/90 backdrop-blur-md border-y border-white/10 shadow-[0_0_30px_rgba(0,0,0,0.5)]" />
-               
-               {/* Accent Gradient Lines */}
                <div className="absolute top-0 inset-x-0 h-[1px] bg-gradient-to-r from-transparent via-indigo-500/30 to-transparent" />
                <div className="absolute bottom-0 inset-x-0 h-[1px] bg-gradient-to-r from-transparent via-orange-500/20 to-transparent" />
-               
-               {/* Label Badge */}
                <div className="relative flex items-center gap-4 text-[10px] font-black tracking-[0.3em] text-white/50 uppercase pr-2">
                  <div className="h-[1px] w-8 bg-gradient-to-r from-transparent to-white/10" />
                  Page {page} <span className="opacity-20 text-indigo-400 mx-1">/</span> {page + 1}
@@ -1117,7 +1203,6 @@ const rootStyle: CSSProperties & { WebkitPrintColorAdjust?: "exact"; printColorA
               marginTop: `${spacing.sectionGap}px`,
             }}
           >
-            {/* Sidebar — floated, never a BFC so CSS columns can fragment around it */}
             <div
               className={cn("block", sidebarUsesPanel && "rounded-[1rem] p-5")}
               style={{
@@ -1148,9 +1233,6 @@ const rootStyle: CSSProperties & { WebkitPrintColorAdjust?: "exact"; printColorA
                   )
                 })}
             </div>
-            {/* Main column — explicit margin keeps it beside the sidebar without
-                creating a BFC (BFC would make CSS columns treat the whole block
-                as unbreakable, leaving a blank first page). */}
             <div
               className="block"
               style={{
@@ -1181,7 +1263,6 @@ const rootStyle: CSSProperties & { WebkitPrintColorAdjust?: "exact"; printColorA
                   )
                 })}
             </div>
-            {/* Clearfix — ensures this wrapper grows to contain the sidebar float */}
             <div style={{ clear: "both", display: "block" }} />
           </div>
         ) : (

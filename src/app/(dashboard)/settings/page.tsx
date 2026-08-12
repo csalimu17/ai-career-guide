@@ -116,7 +116,7 @@ export default function SettingsPage() {
     if (!user) return;
 
     setIsUpgrading(planId);
-    const selectedPlan = plans.find((plan) => plan.id === planId);
+    const selectedPlan = plans.find((plan) => plan.id.toLowerCase() === planId.toLowerCase());
     if (!selectedPlan || selectedPlan.id === "free") {
       toast({
         variant: "destructive",

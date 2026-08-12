@@ -57,7 +57,7 @@ export default function CvTemplatesPageClient() {
   };
 
   return (
-    <div className="min-h-screen bg-slate-50/50">
+    <div className="min-h-screen bg-transparent relative overflow-hidden">
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(itemListSchema) }}
@@ -91,7 +91,7 @@ export default function CvTemplatesPageClient() {
                 onClick={() => setActiveCategory(category)}
                 aria-pressed={activeCategory === category}
                 className={cn(
-                  "rounded-full px-6 py-2.5 text-xs font-black uppercase tracking-widest transition-all duration-300",
+                  "rounded-full px-6 py-2.5 text-xs font-bold uppercase tracking-widest transition-all duration-300",
                   activeCategory === category
                     ? "brand-gradient-bg text-white shadow-[0_4px_20px_-4px_rgba(110,88,255,0.4)] scale-105"
                     : "border border-border bg-white/80 text-slate-600 hover:text-primary hover:bg-slate-50/50 backdrop-blur-sm"
@@ -108,8 +108,8 @@ export default function CvTemplatesPageClient() {
           >
             {filteredTemplates.map((template) => (
               <Card3D key={template.id} intensity={5} className="h-full">
-                <Card
-                  className="group flex h-full flex-col justify-between overflow-hidden rounded-[2rem] border border-border/70 bg-white/92 shadow-sm transition-all duration-300 hover:shadow-lg backdrop-blur-sm"
+                <div
+                  className="group surface-card flex h-full flex-col justify-between overflow-hidden transition-all duration-300 hover:-translate-y-1 hover:shadow-lg"
                   style={{
                     backgroundImage: `linear-gradient(180deg, #ffffff 0%, ${hexToRgba(template.defaults.primaryColor, 0.015)} 100%)`
                   }}
@@ -122,12 +122,12 @@ export default function CvTemplatesPageClient() {
                       />
 
                       <div className="absolute top-3 right-3 z-20 flex gap-1.5">
-                        <Badge className="border-none bg-slate-900/80 text-[9px] font-black uppercase tracking-wider backdrop-blur-md">
+                        <Badge className="border-none bg-slate-900/80 text-[9px] font-bold uppercase tracking-wider backdrop-blur-md">
                           {template.category}
                         </Badge>
                         <Badge
                           className={cn(
-                            "border-none text-[9px] font-black uppercase tracking-wider backdrop-blur-md",
+                            "border-none text-[9px] font-bold uppercase tracking-wider backdrop-blur-md",
                             template.accessTier === "free"
                               ? "bg-emerald-500/80"
                               : template.accessTier === "pro"
@@ -141,10 +141,10 @@ export default function CvTemplatesPageClient() {
                     </div>
 
                     <div className="space-y-3 p-6">
-                      <h2 className="font-display text-xl font-bold text-slate-900 transition-colors group-hover:text-primary">
+                      <h2 className="font-display text-xl font-semibold text-slate-950 transition-colors group-hover:text-primary">
                         {template.name}
                       </h2>
-                      <p className="line-clamp-2 text-xs leading-relaxed text-muted-foreground">
+                      <p className="line-clamp-2 text-xs leading-relaxed text-slate-600">
                         {template.description}
                       </p>
                       <div className="flex flex-wrap gap-1.5 pt-1">
@@ -166,19 +166,19 @@ export default function CvTemplatesPageClient() {
                   <div className="px-6 pt-2 pb-6 flex gap-2.5">
                     <Button
                       variant="outline"
-                      className="flex-1 rounded-xl py-5 text-xs font-black uppercase tracking-wider transition-all duration-300"
+                      className="flex-1 rounded-xl py-5 text-xs font-bold uppercase tracking-wider transition-all duration-300 hover:border-primary/20 hover:text-primary"
                       onClick={() => setPreviewTemplate(template)}
                     >
                       Preview
                     </Button>
                     <Link
                       href={`/signup?template=${template.id}`}
-                      className="flex-[1.5] flex items-center justify-center gap-2 rounded-xl bg-slate-900 py-3.5 text-xs font-black uppercase tracking-wider text-white shadow-md transition-all duration-300 hover:bg-primary hover:shadow-lg hover:-translate-y-0.5 active:translate-y-0"
+                      className="group flex-[1.5] flex items-center justify-center gap-2 rounded-xl bg-slate-900 py-3.5 text-xs font-bold uppercase tracking-wider text-white shadow-md transition-all duration-300 hover:bg-primary hover:shadow-lg hover:-translate-y-0.5 active:translate-y-0"
                     >
-                      Use This Template <ArrowRight className="h-3.5 w-3.5 transition-transform group-hover:translate-x-0.5" />
+                      Use Template <ArrowRight className="h-3.5 w-3.5 transition-transform group-hover:translate-x-1" />
                     </Link>
                   </div>
-                </Card>
+                </div>
               </Card3D>
             ))}
           </section>
@@ -213,9 +213,9 @@ export default function CvTemplatesPageClient() {
           <DialogContent className="max-w-4xl h-[90vh] flex flex-col p-6 rounded-[2rem] overflow-hidden bg-white">
             <DialogHeader className="flex flex-row items-center justify-between border-b pb-4 pr-6">
               <div>
-                <DialogTitle className="text-xl font-black text-slate-900">{previewTemplate.name} Preview</DialogTitle>
+                <DialogTitle className="text-xl font-bold text-slate-900">{previewTemplate.name} Preview</DialogTitle>
                 <div className="mt-1 flex items-center gap-2">
-                  <Badge className="bg-slate-100 text-slate-700 border-none text-[9px] font-black uppercase tracking-wider hover:bg-slate-100">
+                  <Badge className="bg-slate-100 text-slate-700 border-none text-[9px] font-bold uppercase tracking-wider hover:bg-slate-100">
                     {previewTemplate.category}
                   </Badge>
                   <span className="text-[10px] text-muted-foreground font-semibold">

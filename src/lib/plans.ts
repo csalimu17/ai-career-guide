@@ -35,9 +35,12 @@ export const PLANS: Record<PlanId, Plan> = {
   pro: {
     id: "pro",
     name: "Pro",
-    price: "\u00A312.99",
-    stripePriceId: "price_1TED7BBn4UHJM6HhiXH4EA9h",
-    stripePriceIdAliases: ["price_1TD8OsB6KiU2Sp65vyiGVJar"],
+    price: "£6.99",
+    stripePriceId: "price_1U28vaBn4UHJM6HhCz9qn5So",
+    stripePriceIdAliases: [
+      "price_1TED7BBn4UHJM6HhiXH4EA9h",
+      "price_1TD8OsB6KiU2Sp65vyiGVJar",
+    ],
     features: [
       "10 CVs",
       "50 ATS Scans",
@@ -59,9 +62,10 @@ export const PLANS: Record<PlanId, Plan> = {
   master: {
     id: "master",
     name: "Master",
-    price: "\u00A318.99",
-    stripePriceId: "price_1TEDAXBn4UHJM6HhSgPkwNw8",
+    price: "£10.99",
+    stripePriceId: "price_1U28uhBn4UHJM6HhFp7X4wpG",
     stripePriceIdAliases: [
+      "price_1TEDAXBn4UHJM6HhSgPkwNw8",
       "price_1TD8OtB6KiU2Sp65EilBLETK",
       "price_1TD8OtB6KiU2Sp65EiBLETK",
     ],

@@ -16,7 +16,14 @@ export async function POST(req: Request) {
   if (!authResult.ok) return authResult.response;
 
   try {
-    const { text } = await req.json();
+    let body: any;
+    try {
+      body = await req.json();
+    } catch {
+      return NextResponse.json({ error: "Invalid JSON request body." }, { status: 400 });
+    }
+
+    const { text } = body || {};
     if (!text || typeof text !== 'string') {
       return NextResponse.json({ error: 'Text is required. Please paste your LinkedIn content.' }, { status: 400 });
     }

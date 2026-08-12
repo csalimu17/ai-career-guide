@@ -51,10 +51,13 @@ async function syncSubscriptionState(
   event: Stripe.Event
 ) {
   const userDoc = await findUserByStripeCustomerId(customerId);
-  const activePriceId = subscription.items.data[0]?.price?.id ?? null;
-  const activePlan = activePriceId ? getBillingPlanByPriceId(activePriceId) : null;
+  if (!userDoc) return;
 
-  if (!userDoc || !activePlan) return;
+  const activePriceId = subscription.items.data[0]?.price?.id ?? null;
+  const metadataPlanId = subscription.metadata?.plan || (userDoc.data() as any)?.plan;
+  const activePlan = (activePriceId ? getBillingPlanByPriceId(activePriceId) : null) || (metadataPlanId ? getBillingPlan(metadataPlanId) : null);
+
+  if (!activePlan) return;
 
   // Ordering guard: Stripe can deliver subscription events out of order.
   // Skip the write if we've already applied an event with a newer
