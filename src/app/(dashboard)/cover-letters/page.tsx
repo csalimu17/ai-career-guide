@@ -21,6 +21,7 @@ import {
 
 import { generateCoverLetter } from "@/ai/flows/cover-letter-generator-flow"
 import { useCollection, useDoc, useFirestore, useMemoFirebase, useUser } from "@/firebase"
+import { supabaseDb } from "@/lib/supabase/db"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
@@ -209,7 +210,7 @@ export default function CoverLettersPage() {
         customInstructions: genData.customInstructions || undefined,
       })
 
-      await addDoc(collection(db, "users", user.uid, "coverLetters"), {
+      const letterPayload = {
         userId: user.uid,
         resumeId: genData.resumeId,
         resumeName: selectedResume?.name || "Selected resume",
@@ -224,9 +225,24 @@ export default function CoverLettersPage() {
         customizationTips: result.customizationTips,
         tone: genData.tone,
         length: genData.length,
-        createdAt: serverTimestamp(),
-        updatedAt: serverTimestamp(),
-      })
+        createdAt: serverTimestamp ? serverTimestamp() : new Date().toISOString(),
+        updatedAt: serverTimestamp ? serverTimestamp() : new Date().toISOString(),
+      }
+
+      try {
+        if (db) {
+          await addDoc(collection(db, "users", user.uid, "coverLetters"), letterPayload)
+        } else {
+          throw new Error('No firestore')
+        }
+      } catch (err) {
+        await supabaseDb.saveCoverLetter(user.uid, {
+          companyName: genData.company,
+          jobTitle: genData.role,
+          content: plainTextToRichTextHtml(result.content),
+          jobDescription: genData.jobDescription,
+        })
+      }
 
       toast({
         title: "Cover letter ready",
@@ -250,9 +266,17 @@ export default function CoverLettersPage() {
   }
 
   const handleDelete = async (id: string) => {
-    if (!user || !db) return
+    if (!user) return
     try {
-      await deleteDoc(doc(db, "users", user.uid, "coverLetters", id))
+      try {
+        if (db) {
+          await deleteDoc(doc(db, "users", user.uid, "coverLetters", id))
+        } else {
+          throw new Error('No firestore')
+        }
+      } catch (err) {
+        await supabaseDb.deleteCoverLetter(id)
+      }
       toast({ title: "Letter removed", description: "The cover letter has been deleted." })
     } catch (error) {
       console.error("Failed to delete cover letter:", error)

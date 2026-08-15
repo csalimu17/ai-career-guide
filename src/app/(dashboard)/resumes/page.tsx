@@ -32,6 +32,7 @@ import {
 } from "firebase/firestore"
 
 import { useUser, useFirestore, useCollection, useMemoFirebase } from "@/firebase"
+import { supabaseDb } from "@/lib/supabase/db"
 import { getTemplateConfig } from "@/lib/templates-config"
 import { ResumeTemplate } from "@/components/editor/resume-template"
 import { Button } from "@/components/ui/button"
@@ -142,7 +143,7 @@ export default function ResumesPage() {
   const isDeleting = processingAction === "delete"
 
   const handleDuplicate = async (resume: any) => {
-    if (!user || !db) return
+    if (!user) return
     setProcessingAction("duplicate")
     
     try {
@@ -150,16 +151,28 @@ export default function ResumesPage() {
       const newResume = {
         ...resumeData,
         name: `${resumeData.name} (Copy)`,
-        createdAt: serverTimestamp(),
-        updatedAt: serverTimestamp()
+        createdAt: serverTimestamp ? serverTimestamp() : new Date().toISOString(),
+        updatedAt: serverTimestamp ? serverTimestamp() : new Date().toISOString()
       }
       
-      const docRef = await addDoc(collection(db, "users", user.uid, "resumes"), newResume)
+      let newId = ''
+      try {
+        if (db) {
+          const docRef = await addDoc(collection(db, "users", user.uid, "resumes"), newResume)
+          newId = docRef.id
+        } else {
+          throw new Error('No firestore')
+        }
+      } catch (err) {
+        const created = await supabaseDb.saveResume(user.uid, newResume)
+        newId = created?.id || ''
+      }
+
       toast({
         title: "Resume duplicated",
         description: `Successfully created a copy of "${resumeData.name}".`
       })
-      router.push(`/cv-editor?id=${docRef.id}&returnTo=${encodeURIComponent("/resumes")}`)
+      router.push(`/cv-editor?id=${newId}&returnTo=${encodeURIComponent("/resumes")}`)
     } catch (error) {
       console.error("Duplication failed:", error)
       toast({
@@ -173,15 +186,23 @@ export default function ResumesPage() {
   }
 
   const handleRename = async () => {
-    if (!user || !db || !selectedResume || !newName.trim()) return
+    if (!user || !selectedResume || !newName.trim()) return
     setProcessingAction("rename")
     
     try {
-      const resumeRef = doc(db, "users", user.uid, "resumes", selectedResume.id)
-      await updateDoc(resumeRef, {
-        name: newName.trim(),
-        updatedAt: serverTimestamp()
-      })
+      try {
+        if (db) {
+          const resumeRef = doc(db, "users", user.uid, "resumes", selectedResume.id)
+          await updateDoc(resumeRef, {
+            name: newName.trim(),
+            updatedAt: serverTimestamp ? serverTimestamp() : new Date().toISOString()
+          })
+        } else {
+          throw new Error('No firestore')
+        }
+      } catch (err) {
+        await supabaseDb.saveResume(user.uid, { ...selectedResume, name: newName.trim() })
+      }
       
       toast({
         title: "Resume renamed",
@@ -202,13 +223,21 @@ export default function ResumesPage() {
   }
 
   const handleDelete = async () => {
-    if (!user || !db || !selectedResume) return
+    if (!user || !selectedResume) return
     const resumeToDelete = selectedResume
     setProcessingAction("delete")
     
     try {
-      const resumeRef = doc(db, "users", user.uid, "resumes", resumeToDelete.id)
-      await deleteDoc(resumeRef)
+      try {
+        if (db) {
+          const resumeRef = doc(db, "users", user.uid, "resumes", resumeToDelete.id)
+          await deleteDoc(resumeRef)
+        } else {
+          throw new Error('No firestore')
+        }
+      } catch (err) {
+        await supabaseDb.deleteResume(resumeToDelete.id)
+      }
       
       toast({
         title: "Resume deleted",

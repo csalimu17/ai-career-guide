@@ -5,6 +5,7 @@ import { useEffect, useState } from "react"
 import { useRouter } from "next/navigation"
 import { addDoc, collection, doc, serverTimestamp, updateDoc } from "firebase/firestore"
 import { useCollection, useDoc, useFirestore, useMemoFirebase, useUser } from "@/firebase"
+import { supabaseDb } from "@/lib/supabase/db"
 import { getPlanLimits } from "@/lib/plans"
 import { CvDataExtractionOutput } from "@/types/cv"
 import { toast } from "@/hooks/use-toast"
@@ -177,12 +178,21 @@ export default function ReviewParsedDataPage() {
         updatedAt: serverTimestamp(),
       }
 
-      const resumeDoc = await addDoc(resumesRef, resumeObject)
-      if (userDocRef) {
-        await updateDoc(userDocRef, {
-          onboardingComplete: true,
-          updatedAt: serverTimestamp(),
-        })
+      try {
+        if (db) {
+          await addDoc(resumesRef, resumeObject)
+          if (userDocRef) {
+            await updateDoc(userDocRef, {
+              onboardingComplete: true,
+              updatedAt: serverTimestamp(),
+            })
+          }
+        } else {
+          throw new Error('No firestore')
+        }
+      } catch (err) {
+        await supabaseDb.saveResume(user.uid, resumeObject)
+        await supabaseDb.updateProfile(user.uid, { onboarding_complete: true })
       }
       sessionStorage.removeItem("parsedCvData")
       toast({

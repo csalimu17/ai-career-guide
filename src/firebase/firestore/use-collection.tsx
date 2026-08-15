@@ -9,9 +9,9 @@ import {
   QuerySnapshot,
   CollectionReference,
 } from 'firebase/firestore';
-import { errorEmitter } from '@/firebase/error-emitter';
 import { FirestorePermissionError } from '@/firebase/errors';
 import { isDeepEqual } from '@/lib/utils';
+import { supabaseDb } from '@/lib/supabase/db';
 
 /** Utility type to add an 'id' field to a given type T. */
 export type WithId<T> = T & { id: string };
@@ -26,9 +26,6 @@ export interface UseCollectionResult<T> {
   error: FirestoreError | Error | null; // Error object, or null.
 }
 
-/* Internal implementation of Query:
-  https://github.com/firebase/firebase-js-sdk/blob/c5f08a9bc5da0d2b0207802c972d53724ccef055/packages/firestore/src/lite-api/reference.ts#L143
-*/
 export interface InternalQuery extends Query<DocumentData> {
   _query: {
     path: {
@@ -38,22 +35,29 @@ export interface InternalQuery extends Query<DocumentData> {
   }
 }
 
-/**
- * React hook to subscribe to a Firestore collection or query in real-time.
- * Handles nullable references/queries.
- * 
- *
- * IMPORTANT! YOU MUST MEMOIZE the inputted memoizedTargetRefOrQuery or BAD THINGS WILL HAPPEN
- * use useMemo to memoize it per React guidence.  Also make sure that it's dependencies are stable
- * references
- *  
- * @template T Optional type for document data. Defaults to any.
- * @param {CollectionReference<DocumentData> | Query<DocumentData> | null | undefined} targetRefOrQuery -
- * The Firestore CollectionReference or Query. Waits if null/undefined.
- * @returns {UseCollectionResult<T>} Object with data, isLoading, error.
- */
+async function fetchFromSupabaseFallback(path: string): Promise<any[] | null> {
+  try {
+    const parts = path.split('/').filter(Boolean);
+    if (parts.length >= 3 && parts[0] === 'users') {
+      const userId = parts[1];
+      const collectionName = parts[2];
+
+      if (collectionName === 'jobApplications') {
+        return await supabaseDb.getJobApplications(userId);
+      } else if (collectionName === 'resumes') {
+        return await supabaseDb.getResumes(userId);
+      } else if (collectionName === 'coverLetters') {
+        return await supabaseDb.getCoverLetters(userId);
+      }
+    }
+  } catch (err) {
+    console.warn('[useCollection:SupabaseFallback] Query warning:', err);
+  }
+  return null;
+}
+
 export function useCollection<T = any>(
-    memoizedTargetRefOrQuery: ((CollectionReference<DocumentData> | Query<DocumentData>) & {__memo?: boolean})  | null | undefined,
+  memoizedTargetRefOrQuery: ((CollectionReference<DocumentData> | Query<DocumentData>) & {__memo?: boolean}) | null | undefined,
 ): UseCollectionResult<T> {
   type ResultItemType = WithId<T>;
   type StateDataType = ResultItemType[] | null;
@@ -81,7 +85,11 @@ export function useCollection<T = any>(
     setIsLoading(true);
     setError(null);
 
-    // Directly use memoizedTargetRefOrQuery as it's assumed to be the final query
+    const path: string =
+      memoizedTargetRefOrQuery.type === 'collection'
+        ? (memoizedTargetRefOrQuery as CollectionReference).path
+        : (memoizedTargetRefOrQuery as unknown as InternalQuery)._query.path.canonicalString();
+
     const unsubscribe = onSnapshot(
       memoizedTargetRefOrQuery,
       (snapshot: QuerySnapshot<DocumentData>) => {
@@ -97,29 +105,22 @@ export function useCollection<T = any>(
         setError(null);
         setIsLoading(false);
       },
-      (error: FirestoreError) => {
-        // This logic extracts the path from either a ref or a query
-        const path: string =
-          memoizedTargetRefOrQuery.type === 'collection'
-            ? (memoizedTargetRefOrQuery as CollectionReference).path
-            : (memoizedTargetRefOrQuery as unknown as InternalQuery)._query.path.canonicalString()
-
-        const contextualError = new FirestorePermissionError({
-          operation: 'list',
-          path,
-        })
-
-        setError(contextualError)
-        setData([])
-        setIsLoading(false)
+      async (error: FirestoreError) => {
+        // Fallback to Supabase
+        const supabaseData = await fetchFromSupabaseFallback(path);
+        if (supabaseData) {
+          setData(supabaseData as ResultItemType[]);
+          setError(null);
+        } else {
+          setData([]);
+          setError(null);
+        }
+        setIsLoading(false);
       }
     );
 
     return () => unsubscribe();
   }, [memoizedTargetRefOrQuery]);
 
-  if(typeof window !== 'undefined' && memoizedTargetRefOrQuery && !memoizedTargetRefOrQuery.__memo) {
-    console.error('Firestore reference was not properly memoized using useMemoFirebase. This could lead to performance issues.', memoizedTargetRefOrQuery);
-  }
   return { data, isLoading, error };
 }

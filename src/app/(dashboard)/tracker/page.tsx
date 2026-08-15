@@ -26,6 +26,7 @@ import {
 } from "lucide-react"
 
 import { useCollection, useFirestore, useMemoFirebase, useUser } from "@/firebase"
+import { supabaseDb } from "@/lib/supabase/db"
 import { LinkedInImporter } from "@/components/tracker/linkedin-importer"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
@@ -241,10 +242,38 @@ export default function TrackerPage() {
         updatedAt: serverTimestamp(),
       }
 
-      if (editingJob) {
-        await updateDoc(doc(db, "users", user.uid, "jobApplications", editingJob.id), nextPayload)
-      } else {
-        await addDoc(collection(db, "users", user.uid, "jobApplications"), { ...nextPayload, createdAt: serverTimestamp() })
+      try {
+        if (db) {
+          if (editingJob) {
+            await updateDoc(doc(db, "users", user.uid, "jobApplications", editingJob.id), nextPayload)
+          } else {
+            await addDoc(collection(db, "users", user.uid, "jobApplications"), { ...nextPayload, createdAt: serverTimestamp() })
+          }
+        } else {
+          throw new Error('No firestore')
+        }
+      } catch (err) {
+        if (editingJob) {
+          await supabaseDb.updateJobApplication(editingJob.id, {
+            company: formData.company.trim(),
+            role: formData.role.trim(),
+            location: formData.location.trim(),
+            status: formData.status,
+            source: formData.source,
+            sourceUrl: formData.sourceUrl.trim(),
+            jobDescription: formData.notes.trim(),
+          })
+        } else {
+          await supabaseDb.createJobApplication(user.uid, {
+            company: formData.company.trim(),
+            role: formData.role.trim(),
+            location: formData.location.trim(),
+            status: formData.status,
+            source: formData.source,
+            sourceUrl: formData.sourceUrl.trim(),
+            jobDescription: formData.notes.trim(),
+          })
+        }
       }
 
       toast({ title: editingJob ? "Tracker record updated" : "Application added", description: `${formData.role} at ${formData.company} is now ${JOB_STATUS_CONFIG[formData.status].label}.` })
@@ -257,28 +286,36 @@ export default function TrackerPage() {
   }
 
   const handleStatusUpdate = async (job: TrackedJob, status: JobTrackingStatus) => {
-    if (!user || !db || status === job.status) return
+    if (!user || status === job.status) return
     try {
-      const payload = buildTrackedApplicationPayload({
-        userId: user.uid,
-        listing: buildListingFromTrackedJob(job),
-        status,
-        statusSource: "status_update",
-        note: `Status changed to ${JOB_STATUS_CONFIG[status].label} from the tracker.`,
-        resumeId: job.resumeId || null,
-        resumeName: job.resumeName || null,
-        existingHistory: job.statusHistory,
-        existingAppliedAt: job.appliedAt || null,
-      })
-      await updateDoc(doc(db, "users", user.uid, "jobApplications", job.id), {
-        ...payload,
-        notes: job.notes || "",
-        jobDescription: job.jobDescription || "",
-        partnerSync: job.partnerSync || payload.partnerSync,
-        sourceClickStartedAt: job.sourceClickStartedAt || payload.sourceClickStartedAt,
-        appliedDate: payload.appliedAt ? payload.appliedAt.split("T")[0] : job.appliedDate || "",
-        updatedAt: serverTimestamp(),
-      })
+      try {
+        if (db) {
+          const payload = buildTrackedApplicationPayload({
+            userId: user.uid,
+            listing: buildListingFromTrackedJob(job),
+            status,
+            statusSource: "status_update",
+            note: `Status changed to ${JOB_STATUS_CONFIG[status].label} from the tracker.`,
+            resumeId: job.resumeId || null,
+            resumeName: job.resumeName || null,
+            existingHistory: job.statusHistory,
+            existingAppliedAt: job.appliedAt || null,
+          })
+          await updateDoc(doc(db, "users", user.uid, "jobApplications", job.id), {
+            ...payload,
+            notes: job.notes || "",
+            jobDescription: job.jobDescription || "",
+            partnerSync: job.partnerSync || payload.partnerSync,
+            sourceClickStartedAt: job.sourceClickStartedAt || payload.sourceClickStartedAt,
+            appliedDate: payload.appliedAt ? payload.appliedAt.split("T")[0] : job.appliedDate || "",
+            updatedAt: serverTimestamp(),
+          })
+        } else {
+          throw new Error('No firestore')
+        }
+      } catch (err) {
+        await supabaseDb.updateJobApplication(job.id, { status })
+      }
       toast({ title: "Status updated", description: `${job.role} at ${job.company} is now ${JOB_STATUS_CONFIG[status].label}.` })
     } catch (error) {
       console.error("Failed to update tracker status:", error)
@@ -287,9 +324,17 @@ export default function TrackerPage() {
   }
 
   const handleDeleteJob = async (id: string) => {
-    if (!user || !db) return
+    if (!user) return
     try {
-      await deleteDoc(doc(db, "users", user.uid, "jobApplications", id))
+      try {
+        if (db) {
+          await deleteDoc(doc(db, "users", user.uid, "jobApplications", id))
+        } else {
+          throw new Error('No firestore')
+        }
+      } catch (err) {
+        await supabaseDb.deleteJobApplication(id)
+      }
       toast({ title: "Tracker record deleted", description: "The application has been removed from your pipeline." })
     } catch (error) {
       console.error("Failed to delete tracker record:", error)

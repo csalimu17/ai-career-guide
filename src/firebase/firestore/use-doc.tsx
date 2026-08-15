@@ -8,53 +8,44 @@ import {
   FirestoreError,
   DocumentSnapshot,
 } from 'firebase/firestore';
-import { errorEmitter } from '@/firebase/error-emitter';
-import { FirestorePermissionError } from '@/firebase/errors';
 import { isDeepEqual } from '@/lib/utils';
+import { supabaseDb } from '@/lib/supabase/db';
 
-/** Utility type to add an 'id' field to a given type T. */
 type WithId<T> = T & { id: string };
 
 export interface UseDocOptions {
-  /** If true, permission errors will not be emitted to the global error handler. */
   suppressGlobalError?: boolean;
 }
 
-/**
- * Interface for the return value of the useDoc hook.
- * @template T Type of the document data.
- */
 export interface UseDocResult<T> {
-  data: WithId<T> | null; // Document data with ID, or null.
-  isLoading: boolean;       // True if loading.
-  error: FirestoreError | Error | null; // Error object, or null.
+  data: WithId<T> | null;
+  isLoading: boolean;
+  error: FirestoreError | Error | null;
 }
 
-/**
- * React hook to subscribe to a single Firestore document in real-time.
- * Handles nullable references.
- * 
- * IMPORTANT! YOU MUST MEMOIZE the inputted memoizedTargetRefOrQuery or BAD THINGS WILL HAPPEN
- * use useMemo to memoize it per React guidence.  Also make sure that it's dependencies are stable
- * references
- *
- *
- * @template T Optional type for document data. Defaults to any.
- * @param {DocumentReference<DocumentData> | null | undefined} docRef -
- * The Firestore DocumentReference. Waits if null/undefined.
- * @param {UseDocOptions} options - Configuration for the hook.
- * @returns {UseDocResult<T>} Object with data, isLoading, error.
- */
+async function fetchFromSupabaseDocFallback(path: string): Promise<any | null> {
+  try {
+    const parts = path.split('/').filter(Boolean);
+    if (parts.length === 2 && parts[0] === 'users') {
+      const userId = parts[1];
+      return await supabaseDb.getProfile(userId);
+    } else if (parts.length === 4 && parts[0] === 'users' && parts[2] === 'resumes') {
+      const resumeId = parts[3];
+      return await supabaseDb.getResume(resumeId);
+    }
+  } catch (err) {
+    console.warn('[useDoc:SupabaseFallback] Query warning:', err);
+  }
+  return null;
+}
+
 export function useDoc<T = any>(
   memoizedDocRef: DocumentReference<DocumentData> | null | undefined,
   options: UseDocOptions = {}
 ): UseDocResult<T> {
-  const { suppressGlobalError = false } = options;
   type StateDataType = WithId<T> | null;
 
   const [data, setData] = useState<StateDataType>(null);
-  // If we already have a document reference on first render, start in loading mode
-  // so guards don't treat the absence of data as a confirmed "not found" state.
   const [isLoading, setIsLoading] = useState<boolean>(() => Boolean(memoizedDocRef));
   const [error, setError] = useState<FirestoreError | Error | null>(null);
 
@@ -77,6 +68,8 @@ export function useDoc<T = any>(
     setIsLoading(true);
     setError(null);
 
+    const path = memoizedDocRef.path;
+
     const unsubscribe = onSnapshot(
       memoizedDocRef,
       (snapshot: DocumentSnapshot<DocumentData>) => {
@@ -87,26 +80,25 @@ export function useDoc<T = any>(
             return result;
           });
         } else {
-          // Document does not exist
           setData(null);
         }
-        setError(null); // Clear any previous error on successful snapshot (even if doc doesn't exist)
+        setError(null);
         setIsLoading(false);
       },
-      (error: FirestoreError) => {
-        const contextualError = new FirestorePermissionError({
-          operation: 'get',
-          path: memoizedDocRef.path,
-        })
-
-        setError(contextualError)
-        setData(null)
-        setIsLoading(false)
+      async (error: FirestoreError) => {
+        const supabaseDoc = await fetchFromSupabaseDocFallback(path);
+        if (supabaseDoc) {
+          setData(supabaseDoc as WithId<T>);
+        } else {
+          setData(null);
+        }
+        setError(null);
+        setIsLoading(false);
       }
     );
 
     return () => unsubscribe();
-  }, [memoizedDocRef, suppressGlobalError]);
+  }, [memoizedDocRef]);
 
   return { data, isLoading, error };
 }

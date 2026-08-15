@@ -12,10 +12,10 @@ import { plainTextToRichTextHtml, richTextToPlainText } from "@/lib/rich-text"
 import { buildResumePlainText } from "@/lib/resume-to-text"
 import { atsOptimizationScoring, type AtsOptimizationScoringOutput } from "@/ai/flows/ats-optimization-scoring-flow"
 import { enhanceCvContent } from "@/ai/flows/cv-content-enhancement-flow"
-import { fetchAuthedJson } from "@/lib/client/fetch-json"
 import { classifyCareerRouting, getCareerAgentResponse } from "@/services/CareerRoutingActions"
 import { AgentRole, RoutingResult } from "@/services/CareerAgents"
 import { checkGrammar } from "@/lib/grammar-check"
+import { supabaseDb } from "@/lib/supabase/db"
 
 function normalizeResumeDocument(resumeDoc: any) {
   const normalizedResume = JSON.parse(JSON.stringify(resumeDoc))
@@ -241,8 +241,14 @@ export function useEditorState() {
     
     setIsCollectionCreating(true)
     try {
-      const docRef = await addDoc(resumesRef, newResume)
-      const freshDoc = { id: docRef.id, ...newResume }
+      let freshDoc: any
+      try {
+        const docRef = await addDoc(resumesRef, newResume)
+        freshDoc = { id: docRef.id, ...newResume }
+      } catch (firestoreErr) {
+        const created = await supabaseDb.saveResume(user.uid, newResume)
+        freshDoc = { id: created?.id || 'default-resume', ...newResume }
+      }
       lastSavedContentRef.current = serializeResumeContent(freshDoc)
       setEditorState({
         resume: freshDoc,
@@ -436,8 +442,14 @@ export function useEditorState() {
         lastSavedContentRef.current = serializeResumeContent(resume)
         setSaveStatus("saved")
       } catch (err) {
-        console.error("Autosave failed:", err)
-        setSaveStatus("error")
+        try {
+          await supabaseDb.saveResume(user.uid, resume)
+          lastSavedContentRef.current = serializeResumeContent(resume)
+          setSaveStatus("saved")
+        } catch (supabaseErr) {
+          console.error("Autosave failed:", supabaseErr)
+          setSaveStatus("error")
+        }
       }
     }, 2000)
 
