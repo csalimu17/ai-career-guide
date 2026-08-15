@@ -1,5 +1,5 @@
 -- ==============================================================================
--- AI CAREER GUIDE: SUPABASE POSTGRESQL PRODUCTION SCHEMA & RLS POLICIES
+-- AI CAREER GUIDE: SUPABASE POSTGRESQL PRODUCTION SCHEMA & RLS POLICIES (IDEMPOTENT)
 -- ==============================================================================
 
 -- 1. Enable UUID extension
@@ -22,10 +22,12 @@ create table if not exists public.profiles (
 -- Enable RLS for Profiles
 alter table public.profiles enable row level security;
 
+drop policy if exists "Users can view their own profile." on public.profiles;
 create policy "Users can view their own profile."
   on public.profiles for select
   using (auth.uid() = id);
 
+drop policy if exists "Users can update their own profile." on public.profiles;
 create policy "Users can update their own profile."
   on public.profiles for update
   using (auth.uid() = id);
@@ -41,12 +43,14 @@ begin
     new.raw_user_meta_data->>'full_name',
     new.raw_user_meta_data->>'avatar_url',
     coalesce(new.raw_user_meta_data->>'plan', 'free')
-  );
+  )
+  on conflict (id) do nothing;
   return new;
 end;
 $$ language plpgsql security definer;
 
-create or replace trigger on_auth_user_created
+drop trigger if exists on_auth_user_created on auth.users;
+create trigger on_auth_user_created
   after insert on auth.users
   for each row execute procedure public.handle_new_user();
 
@@ -65,6 +69,7 @@ create table if not exists public.resumes (
 
 alter table public.resumes enable row level security;
 
+drop policy if exists "Users can manage their own resumes." on public.resumes;
 create policy "Users can manage their own resumes."
   on public.resumes for all
   using (auth.uid() = user_id);
@@ -87,6 +92,7 @@ create table if not exists public.job_applications (
 
 alter table public.job_applications enable row level security;
 
+drop policy if exists "Users can manage their own job applications." on public.job_applications;
 create policy "Users can manage their own job applications."
   on public.job_applications for all
   using (auth.uid() = user_id);
@@ -112,6 +118,7 @@ create table if not exists public.cover_letters (
 
 alter table public.cover_letters enable row level security;
 
+drop policy if exists "Users can manage their own cover letters." on public.cover_letters;
 create policy "Users can manage their own cover letters."
   on public.cover_letters for all
   using (auth.uid() = user_id);
@@ -134,19 +141,7 @@ create table if not exists public.ats_reports (
 
 alter table public.ats_reports enable row level security;
 
+drop policy if exists "Users can manage their own ATS reports." on public.ats_reports;
 create policy "Users can manage their own ATS reports."
   on public.ats_reports for all
   using (auth.uid() = user_id);
-
--- 7. Storage Bucket Creation (For CV Uploads & PDFs)
-insert into storage.buckets (id, name, public)
-values ('cv_uploads', 'cv_uploads', true)
-on conflict (id) do nothing;
-
-create policy "Public Access to CV Uploads"
-  on storage.objects for select
-  using (bucket_id = 'cv_uploads');
-
-create policy "Users can upload their own files"
-  on storage.objects for insert
-  with check (bucket_id = 'cv_uploads' and auth.uid()::text = (storage.foldername(name))[1]);
