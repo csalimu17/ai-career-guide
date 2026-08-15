@@ -240,44 +240,55 @@ export const useOptionalUser = (): UserHookResult => {
   const supabaseUser = supabaseContext?.user;
   const isSupabaseLoading = supabaseContext?.isUserLoading ?? false;
 
-  if (supabaseUser) {
-    const syntheticUser = {
+  const syntheticUser = useMemo(() => {
+    if (!supabaseUser) return null;
+    return {
       uid: supabaseUser.id,
       email: supabaseUser.email || null,
       displayName: supabaseUser.user_metadata?.full_name || supabaseUser.email?.split('@')[0] || 'User',
       photoURL: supabaseUser.user_metadata?.avatar_url || null,
       emailVerified: !!supabaseUser.email_confirmed_at,
     } as any;
+  }, [
+    supabaseUser?.id,
+    supabaseUser?.email,
+    supabaseUser?.user_metadata?.full_name,
+    supabaseUser?.user_metadata?.avatar_url,
+    supabaseUser?.email_confirmed_at,
+  ]);
+
+  return useMemo(() => {
+    if (syntheticUser) {
+      return {
+        user: syntheticUser,
+        isUserLoading: isSupabaseLoading,
+        userError: null,
+        impersonatedUid: firebaseContext?.impersonatedUid || null,
+        uid: firebaseContext?.impersonatedUid || syntheticUser.uid,
+        clearImpersonation: firebaseContext?.clearImpersonation || (() => {}),
+      };
+    }
+
+    if (!firebaseContext) {
+      return {
+        user: null,
+        isUserLoading: isSupabaseLoading,
+        userError: null,
+        impersonatedUid: null,
+        uid: null,
+        clearImpersonation: () => {},
+      };
+    }
 
     return {
-      user: syntheticUser,
-      isUserLoading: isSupabaseLoading,
-      userError: null,
-      impersonatedUid: firebaseContext?.impersonatedUid || null,
-      uid: firebaseContext?.impersonatedUid || supabaseUser.id,
-      clearImpersonation: firebaseContext?.clearImpersonation || (() => {}),
+      user: firebaseContext.user,
+      isUserLoading: firebaseContext.isUserLoading && isSupabaseLoading,
+      userError: firebaseContext.userError,
+      impersonatedUid: firebaseContext.impersonatedUid,
+      uid: firebaseContext.impersonatedUid || firebaseContext.user?.uid || null,
+      clearImpersonation: firebaseContext.clearImpersonation,
     };
-  }
-
-  if (!firebaseContext) {
-    return {
-      user: null,
-      isUserLoading: isSupabaseLoading,
-      userError: null,
-      impersonatedUid: null,
-      uid: null,
-      clearImpersonation: () => {},
-    };
-  }
-
-  return {
-    user: firebaseContext.user,
-    isUserLoading: firebaseContext.isUserLoading && isSupabaseLoading,
-    userError: firebaseContext.userError,
-    impersonatedUid: firebaseContext.impersonatedUid,
-    uid: firebaseContext.impersonatedUid || firebaseContext.user?.uid || null,
-    clearImpersonation: firebaseContext.clearImpersonation,
-  };
+  }, [syntheticUser, isSupabaseLoading, firebaseContext]);
 };
 
 /**
