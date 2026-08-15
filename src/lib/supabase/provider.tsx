@@ -28,7 +28,7 @@ interface SupabaseContextType {
   signOut: () => Promise<void>
 }
 
-const SupabaseContext = createContext<SupabaseContextType | null>(null)
+export const SupabaseContext = createContext<SupabaseContextType | null>(null)
 
 export function SupabaseProvider({ children }: { children: React.ReactNode }) {
   const supabase = useMemo(() => createClient(), [])

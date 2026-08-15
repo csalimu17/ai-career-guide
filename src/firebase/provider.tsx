@@ -231,21 +231,14 @@ export function useMemoFirebase<T>(factory: () => T, deps: DependencyList): T | 
   return memoized;
 }
 
-import { useSupabase } from '@/lib/supabase/provider';
+import { SupabaseContext } from '@/lib/supabase/provider';
 
 export const useOptionalUser = (): UserHookResult => {
-  const context = useContext(FirebaseContext);
-  let supabaseUser: any = null;
-  let isSupabaseLoading = false;
+  const firebaseContext = useContext(FirebaseContext);
+  const supabaseContext = useContext(SupabaseContext);
 
-  try {
-    // eslint-disable-next-line react-hooks/rules-of-hooks
-    const supabase = useSupabase();
-    supabaseUser = supabase.user;
-    isSupabaseLoading = supabase.isUserLoading;
-  } catch {
-    // SupabaseProvider not mounted
-  }
+  const supabaseUser = supabaseContext?.user;
+  const isSupabaseLoading = supabaseContext?.isUserLoading ?? false;
 
   if (supabaseUser) {
     const syntheticUser = {
@@ -260,13 +253,13 @@ export const useOptionalUser = (): UserHookResult => {
       user: syntheticUser,
       isUserLoading: isSupabaseLoading,
       userError: null,
-      impersonatedUid: context?.impersonatedUid || null,
-      uid: context?.impersonatedUid || supabaseUser.id,
-      clearImpersonation: context?.clearImpersonation || (() => {}),
+      impersonatedUid: firebaseContext?.impersonatedUid || null,
+      uid: firebaseContext?.impersonatedUid || supabaseUser.id,
+      clearImpersonation: firebaseContext?.clearImpersonation || (() => {}),
     };
   }
 
-  if (!context) {
+  if (!firebaseContext) {
     return {
       user: null,
       isUserLoading: isSupabaseLoading,
@@ -276,13 +269,14 @@ export const useOptionalUser = (): UserHookResult => {
       clearImpersonation: () => {},
     };
   }
+
   return {
-    user: context.user,
-    isUserLoading: context.isUserLoading && isSupabaseLoading,
-    userError: context.userError,
-    impersonatedUid: context.impersonatedUid,
-    uid: context.impersonatedUid || context.user?.uid || null,
-    clearImpersonation: context.clearImpersonation,
+    user: firebaseContext.user,
+    isUserLoading: firebaseContext.isUserLoading && isSupabaseLoading,
+    userError: firebaseContext.userError,
+    impersonatedUid: firebaseContext.impersonatedUid,
+    uid: firebaseContext.impersonatedUid || firebaseContext.user?.uid || null,
+    clearImpersonation: firebaseContext.clearImpersonation,
   };
 };
 
