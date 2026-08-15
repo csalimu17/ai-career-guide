@@ -95,6 +95,7 @@ const sora = Sora({
 });
 
 import { ChunkErrorListener } from "@/components/chunk-error-listener";
+import { SupabaseProvider } from "@/lib/supabase/provider";
 
 export default function RootLayout({
   children,
@@ -108,11 +109,13 @@ export default function RootLayout({
         suppressHydrationWarning
       >
         <ChunkErrorListener />
-        <SiteStructuredData />
-        {children}
-        {process.env.NEXT_PUBLIC_GA_ID && (
-          <GoogleAnalytics gaId={process.env.NEXT_PUBLIC_GA_ID} />
-        )}
+        <SupabaseProvider>
+          <SiteStructuredData />
+          {children}
+          {process.env.NEXT_PUBLIC_GA_ID && (
+            <GoogleAnalytics gaId={process.env.NEXT_PUBLIC_GA_ID} />
+          )}
+        </SupabaseProvider>
       </body>
     </html>
   );

@@ -3,28 +3,17 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
-import { ArrowRight, Loader2, Lock, Mail, UserCircle } from "lucide-react";
-import { collection, doc, limit, query } from "firebase/firestore";
-import { useAuth, useCollection, useDoc, useFirestore, useMemoFirebase, useUser } from "@/firebase";
-import {
-  initiateAnonymousSignIn,
-  initiateEmailSignIn,
-  initiateGoogleSignIn,
-  consumeGoogleRedirectResult,
-} from "@/firebase/non-blocking-login";
+import { ArrowRight, Loader2, Lock, Mail } from "lucide-react";
+import { useSupabase } from "@/lib/supabase/provider";
 import { useToast } from "@/hooks/use-toast";
 import { AuthShell } from "@/components/auth/auth-shell";
 import { GoogleSignInButton } from "@/components/auth/google-sign-in-button";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { getPostAuthDestination, upsertUserProfile } from "@/lib/user-profile";
-import { clearAuthIntent, getIntentDestination, loadAuthIntent, readAuthIntent, saveAuthIntent } from "@/lib/auth-intent";
 
 export default function LoginPageClient() {
-  const auth = useAuth();
-  const db = useFirestore();
-  const { user, isUserLoading, uid } = useUser();
+  const { supabase, user, isUserLoading } = useSupabase();
   const router = useRouter();
   const searchParams = useSearchParams();
   const { toast } = useToast();
@@ -32,72 +21,44 @@ export default function LoginPageClient() {
   const [password, setPassword] = useState("");
   const [isLoggingIn, setIsLoggingIn] = useState(false);
 
-  const userDocRef = useMemoFirebase(() => {
-    if (!db || !uid) return null;
-    return doc(db, "users", uid);
-  }, [db, uid]);
-
-  const { data: profile, isLoading: isProfileLoading } = useDoc(userDocRef);
-
-  const resumesQuery = useMemoFirebase(() => {
-    if (!db || !uid) return null;
-    return query(collection(db, "users", uid, "resumes"), limit(1));
-  }, [db, uid]);
-
-  const { data: resumes, isLoading: isResumesLoading } = useCollection(resumesQuery);
-
   useEffect(() => {
-    if (searchParams) saveAuthIntent(readAuthIntent(searchParams));
-  }, [searchParams]);
-
-  useEffect(() => {
-    // Wait for the Firestore profile + a quick existence check on resumes
-    // before redirecting, so we can honour onboardingComplete and skip
-    // the visible dashboard→onboarding bounce for fresh users.
-    if (!user || isUserLoading || isProfileLoading || isResumesLoading) return;
-
-    const hasWorkspaceData = Array.isArray(resumes) && resumes.length > 0;
-    const destination = getIntentDestination(loadAuthIntent(), hasWorkspaceData);
-    if (destination) {
-      clearAuthIntent();
-      router.replace(destination);
-      return;
+    if (!isUserLoading && user) {
+      const next = searchParams?.get("next") || "/dashboard";
+      router.replace(next);
     }
-
-    router.replace(getPostAuthDestination(profile as any, hasWorkspaceData));
-  }, [user, isUserLoading, isProfileLoading, isResumesLoading, profile, resumes, router]);
-
-  // If the user just returned from a Google redirect sign-in (mobile or
-  // popup-blocked fallback), pick up the credential and upsert their
-  // Firestore profile. No-op when there's no pending redirect.
-  useEffect(() => {
-    if (!auth || !db) return;
-    let cancelled = false;
-    consumeGoogleRedirectResult(auth, db).catch((error: any) => {
-      if (cancelled) return;
-      toast({
-        variant: "destructive",
-        title: "Google sign-in failed",
-        description: error.message || "We couldn't complete Google authentication right now.",
-      });
-    });
-    return () => {
-      cancelled = true;
-    };
-  }, [auth, db, toast]);
+  }, [user, isUserLoading, router, searchParams]);
 
   const handleEmailLogin = async (event: React.FormEvent) => {
     event.preventDefault();
     setIsLoggingIn(true);
 
     try {
-      await initiateEmailSignIn(auth, email, password);
-      // On success the useEffect above redirects once profile + resumes load.
-      // Leave isLoggingIn=true so the button stays in its loading state
-      // through the navigation.
-    } catch {
-      // initiateEmailSignIn already showed a friendly toast for known
-      // Firebase error codes; don't double-toast here.
+      const { error } = await supabase.auth.signInWithPassword({
+        email,
+        password,
+      });
+
+      if (error) {
+        toast({
+          variant: "destructive",
+          title: "Login Failed",
+          description: error.message || "Invalid email or password. Please try again.",
+        });
+        setIsLoggingIn(false);
+      } else {
+        toast({
+          title: "Welcome back!",
+          description: "Signing you into your workspace...",
+        });
+        const next = searchParams?.get("next") || "/dashboard";
+        router.replace(next);
+      }
+    } catch (err: any) {
+      toast({
+        variant: "destructive",
+        title: "Login Error",
+        description: err.message || "An unexpected error occurred.",
+      });
       setIsLoggingIn(false);
     }
   };
@@ -106,38 +67,31 @@ export default function LoginPageClient() {
     setIsLoggingIn(true);
 
     try {
-      const result = await initiateGoogleSignIn(auth);
-      if (result?.user) {
-        const [googleFirstName = "", googleLastName = ""] = result.user.displayName?.split(" ") || [];
-        await upsertUserProfile({
-          db,
-          uid: result.user.uid,
-          email: result.user.email,
-          firstName: googleFirstName,
-          lastName: googleLastName,
-          photoURL: result.user.photoURL,
-          emailVerified: result.user.emailVerified,
+      const redirectOrigin = typeof window !== 'undefined' ? window.location.origin : 'https://aicareerguide.uk';
+      const { error } = await supabase.auth.signInWithOAuth({
+        provider: 'google',
+        options: {
+          redirectTo: `${redirectOrigin}/auth/callback`,
+        },
+      });
+
+      if (error) {
+        toast({
+          variant: "destructive",
+          title: "Google Sign-In Error",
+          description: error.message,
         });
-        // useEffect handles routing; keep isLoggingIn=true through redirect.
-      } else {
-        // User closed the popup or we kicked off a redirect flow.
         setIsLoggingIn(false);
       }
     } catch (error: any) {
+      toast({
+        variant: "destructive",
+        title: "Google Sign-In Error",
+        description: error.message || "Could not complete Google authentication.",
+      });
       setIsLoggingIn(false);
-      // initiateGoogleSignIn toasts most errors itself; surface the one it
-      // intentionally throws clean (unauthorized-domain) so the user sees a
-      // helpful message rather than nothing.
-      if (error?.code === "auth/unauthorized-domain") {
-        toast({
-          variant: "destructive",
-          title: "Domain not authorized",
-          description: error.message,
-        });
-      }
     }
   };
-
 
   if (isUserLoading) {
     return (
