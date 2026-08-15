@@ -110,11 +110,14 @@ export function useCollection<T = any>(
         })
 
         setError(contextualError)
-        setData(null)
+        setData([])
         setIsLoading(false)
 
-        // trigger global error propagation
-        errorEmitter.emit('permission-error', contextualError);
+        // Only trigger global error propagation if not in hybrid/Supabase mode
+        const isSupabaseSession = typeof window !== 'undefined' && !!window.localStorage.getItem('sb-' + (process.env.NEXT_PUBLIC_SUPABASE_URL ? new URL(process.env.NEXT_PUBLIC_SUPABASE_URL).hostname.split('.')[0] : '') + '-auth-token');
+        if (!isSupabaseSession) {
+          errorEmitter.emit('permission-error', contextualError);
+        }
       }
     );
 

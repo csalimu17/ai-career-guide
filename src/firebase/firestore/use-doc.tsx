@@ -104,7 +104,8 @@ export function useDoc<T = any>(
         setIsLoading(false)
 
         // trigger global error propagation if not suppressed
-        if (!suppressGlobalError) {
+        const isSupabaseSession = typeof window !== 'undefined' && !!window.localStorage.getItem('sb-' + (process.env.NEXT_PUBLIC_SUPABASE_URL ? new URL(process.env.NEXT_PUBLIC_SUPABASE_URL).hostname.split('.')[0] : '') + '-auth-token');
+        if (!suppressGlobalError && !isSupabaseSession) {
           errorEmitter.emit('permission-error', contextualError);
         }
       }
