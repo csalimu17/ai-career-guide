@@ -34,7 +34,7 @@ export default function SignupPageClient() {
     setIsSigningUp(true);
 
     try {
-      const { error } = await supabase.auth.signUp({
+      const { data, error } = await supabase.auth.signUp({
         email,
         password,
         options: {
@@ -50,6 +50,12 @@ export default function SignupPageClient() {
           variant: "destructive",
           title: "Sign Up Failed",
           description: error.message,
+        });
+        setIsSigningUp(false);
+      } else if (data?.user && !data?.session) {
+        toast({
+          title: "Check your email inbox! 📩",
+          description: "We sent a confirmation link to your email. Click it to verify your account and sign in.",
         });
         setIsSigningUp(false);
       } else {

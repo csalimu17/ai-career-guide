@@ -231,12 +231,45 @@ export function useMemoFirebase<T>(factory: () => T, deps: DependencyList): T | 
   return memoized;
 }
 
+import { useSupabase } from '@/lib/supabase/provider';
+
 export const useOptionalUser = (): UserHookResult => {
   const context = useContext(FirebaseContext);
+  let supabaseUser: any = null;
+  let isSupabaseLoading = false;
+
+  try {
+    // eslint-disable-next-line react-hooks/rules-of-hooks
+    const supabase = useSupabase();
+    supabaseUser = supabase.user;
+    isSupabaseLoading = supabase.isUserLoading;
+  } catch {
+    // SupabaseProvider not mounted
+  }
+
+  if (supabaseUser) {
+    const syntheticUser = {
+      uid: supabaseUser.id,
+      email: supabaseUser.email || null,
+      displayName: supabaseUser.user_metadata?.full_name || supabaseUser.email?.split('@')[0] || 'User',
+      photoURL: supabaseUser.user_metadata?.avatar_url || null,
+      emailVerified: !!supabaseUser.email_confirmed_at,
+    } as any;
+
+    return {
+      user: syntheticUser,
+      isUserLoading: isSupabaseLoading,
+      userError: null,
+      impersonatedUid: context?.impersonatedUid || null,
+      uid: context?.impersonatedUid || supabaseUser.id,
+      clearImpersonation: context?.clearImpersonation || (() => {}),
+    };
+  }
+
   if (!context) {
     return {
       user: null,
-      isUserLoading: false,
+      isUserLoading: isSupabaseLoading,
       userError: null,
       impersonatedUid: null,
       uid: null,
@@ -245,7 +278,7 @@ export const useOptionalUser = (): UserHookResult => {
   }
   return {
     user: context.user,
-    isUserLoading: context.isUserLoading,
+    isUserLoading: context.isUserLoading && isSupabaseLoading,
     userError: context.userError,
     impersonatedUid: context.impersonatedUid,
     uid: context.impersonatedUid || context.user?.uid || null,

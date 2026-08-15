@@ -80,7 +80,7 @@ export default function DashboardLayoutClient({
     }
   }, [impersonatedUid, profileError, clearImpersonation]);
 
-  if (isUserLoading || isProfileLoading || isResumesLoading) {
+  if (isUserLoading) {
     return (
       <div className="flex min-h-screen items-center justify-center">
         <div className="surface-card flex flex-col items-center gap-6 px-8 py-12 text-center">
