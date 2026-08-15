@@ -101,8 +101,9 @@ export async function initiateGoogleSignIn(authInstance: Auth) {
     // Surface unauthorized-domain through the normal error path so the
     // caller can reset its loading state and we don't double-toast.
     if (error.code === 'auth/unauthorized-domain') {
+      const currentHost = typeof window !== 'undefined' ? window.location.hostname : 'this domain';
       const friendly = new Error(
-        'This domain is not authorized for Google sign-in. Add it under Firebase Console → Authentication → Settings → Authorized Domains.'
+        `Domain "${currentHost}" is not authorized. In Firebase Console → Authentication → Settings → Authorized domains, click "Add domain" and paste: ${currentHost}`
       );
       (friendly as any).code = 'auth/unauthorized-domain';
       throw friendly;
