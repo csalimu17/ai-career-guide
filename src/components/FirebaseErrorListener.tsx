@@ -29,11 +29,7 @@ export function FirebaseErrorListener() {
     };
   }, []);
 
-  // On re-render, if an error exists in state, throw it.
-  if (error) {
-    throw error;
-  }
-
-  // This component renders nothing.
+  // In Supabase mode, do not throw Firestore permission errors to error boundary
+  // This component renders nothing and keeps the app stable.
   return null;
 }
