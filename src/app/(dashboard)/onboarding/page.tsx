@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation"
 import { motion, AnimatePresence } from "framer-motion"
 import { doc, serverTimestamp, setDoc } from "firebase/firestore"
 import { useUser, useFirestore } from "@/firebase"
+import { supabaseDb } from "@/lib/supabase/db"
 import { toast } from "@/hooks/use-toast"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
@@ -93,17 +94,26 @@ export default function OnboardingPage() {
 
   // Non-blocking user profile save + instant navigation
   const handleComplete = (method: "upload" | "scratch") => {
-    if (user && db) {
-      const userRef = doc(db, "users", user.uid)
-      setDoc(
-        userRef,
-        {
-          ...formData,
-          onboardingComplete: true,
-          updatedAt: serverTimestamp(),
-        },
-        { merge: true }
-      ).catch((err) => console.warn("Background onboarding save skipped/failed:", err))
+    if (user) {
+      try {
+        if (db) {
+          const userRef = doc(db, "users", user.uid)
+          setDoc(
+            userRef,
+            {
+              ...formData,
+              onboardingComplete: true,
+              updatedAt: serverTimestamp(),
+            },
+            { merge: true }
+          ).catch((err) => console.warn("Background onboarding save skipped/failed:", err))
+        }
+      } catch {}
+
+      supabaseDb.updateProfile(user.uid, {
+        ...formData,
+        onboarding_complete: true,
+      }).catch((err) => console.warn("Supabase onboarding profile update skipped/failed:", err))
     }
 
     const targetUrl = method === "upload" ? "/onboarding/upload" : "/cv-editor"

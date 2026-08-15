@@ -45,27 +45,7 @@ export default function DashboardLayoutClient({
 
   const { data: resumes, isLoading: isResumesLoading } = useCollection(resumesQuery);
 
-  useEffect(() => {
-    if (impersonatedUid) {
-      return;
-    }
 
-    // Ensure all data is fully loaded and settled before making any redirection decisions.
-    // We check for truthiness to ensure we have actual documents/collections from Firestore.
-    if (isProfileLoading || isUserLoading || isResumesLoading || !user || !profile || !resumes) {
-      return;
-    }
-
-    const targetPath = getPostAuthDestination(profile, resumes.length > 0);
-    const isCurrentlyOnboarding = pathname.startsWith("/onboarding");
-
-    // Rule: If the user hasn't finished onboarding or set up a profile, force them to the onboarding flow
-    if (targetPath === "/onboarding" && !isCurrentlyOnboarding) {
-      router.replace("/onboarding");
-      return;
-    }
-
-  }, [profile, resumes, isProfileLoading, isResumesLoading, isUserLoading, user, pathname, router, impersonatedUid]);
 
   useEffect(() => {
     if (!isUserLoading && !user) {
