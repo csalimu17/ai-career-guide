@@ -48,10 +48,10 @@ export default function LoginPageClient() {
       } else {
         toast({
           title: "Welcome back!",
-          description: "Signing you into your workspace...",
+          description: "Opening your workspace...",
         });
         const next = searchParams?.get("next") || "/dashboard";
-        router.replace(next);
+        window.location.href = next;
       }
     } catch (err: any) {
       toast({

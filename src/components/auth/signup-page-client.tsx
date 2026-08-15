@@ -61,10 +61,10 @@ export default function SignupPageClient() {
       } else {
         toast({
           title: "Account created!",
-          description: "Welcome to AI Career Guide.",
+          description: "Opening your workspace...",
         });
         const next = searchParams?.get("next") || "/dashboard";
-        router.replace(next);
+        window.location.href = next;
       }
     } catch (err: any) {
       toast({
