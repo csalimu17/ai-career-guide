@@ -37,6 +37,24 @@ export function SupabaseProvider({ children }: { children: React.ReactNode }) {
   const [profile, setProfile] = useState<UserProfile | null>(null)
   const [isUserLoading, setIsUserLoading] = useState(true)
 
+  const fetchProfile = React.useCallback(async (userId: string) => {
+    try {
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('*')
+        .eq('id', userId)
+        .single()
+
+      if (!error && data) {
+        setProfile(data as UserProfile)
+      }
+    } catch (err) {
+      console.error('[SupabaseProvider] Error loading user profile:', err)
+    } finally {
+      setIsUserLoading(false)
+    }
+  }, [supabase])
+
   useEffect(() => {
     // 1. Get initial session
     supabase.auth.getSession().then(({ data: { session } }) => {
@@ -66,25 +84,7 @@ export function SupabaseProvider({ children }: { children: React.ReactNode }) {
     return () => {
       subscription.unsubscribe()
     }
-  }, [supabase])
-
-  const fetchProfile = async (userId: string) => {
-    try {
-      const { data, error } = await supabase
-        .from('profiles')
-        .select('*')
-        .eq('id', userId)
-        .single()
-
-      if (!error && data) {
-        setProfile(data as UserProfile)
-      }
-    } catch (err) {
-      console.error('[SupabaseProvider] Error loading user profile:', err)
-    } finally {
-      setIsUserLoading(false)
-    }
-  }
+  }, [supabase, fetchProfile])
 
   const signOut = async () => {
     await supabase.auth.signOut()

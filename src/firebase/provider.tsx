@@ -249,13 +249,7 @@ export const useOptionalUser = (): UserHookResult => {
       photoURL: supabaseUser.user_metadata?.avatar_url || null,
       emailVerified: !!supabaseUser.email_confirmed_at,
     } as any;
-  }, [
-    supabaseUser?.id,
-    supabaseUser?.email,
-    supabaseUser?.user_metadata?.full_name,
-    supabaseUser?.user_metadata?.avatar_url,
-    supabaseUser?.email_confirmed_at,
-  ]);
+  }, [supabaseUser]);
 
   return useMemo(() => {
     if (syntheticUser) {
